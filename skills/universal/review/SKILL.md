@@ -9,6 +9,8 @@ allowed-tools: Bash, Read, Glob, Grep, Task
 
 Run all applicable validators against recent changes and report findings.
 
+**Step 2 (rule injection) is mandatory and must complete before validation.**
+
 ## Step 1: Identify what changed
 
 ```bash
@@ -33,6 +35,8 @@ Use the Read tool to check each path. Collect and read those that exist.
 De-duplicate (a rule file only needs to be read once even if multiple files share it).
 
 **Precedence:** Most specific rules override more general rules.
+
+If two rules conflict and precedence is unclear, prefer the more specific rule and note the conflict in the report.
 
 Record which rule files were loaded.
 
@@ -74,8 +78,8 @@ Collect all results.
 ## Review Results
 
 ### Rules Applied
-- backend/.claude/CLAUDE.md
-- .claude/CLAUDE.md
+- backend/.claude/CLAUDE.md (Go backend rules)
+- .claude/CLAUDE.md (Universal rules)
 
 ### Files Changed
 - cmd/main.go
@@ -113,8 +117,9 @@ Collect all results.
 
 ## Rules
 
-- Do NOT skip Step 2 (rule injection).
+- Step 2 (rule injection) is mandatory. Do NOT skip it.
 - Report ALL findings, don't summarize away details.
 - Be specific with file:line locations.
 - Clearly separate HARD/SHOULD/WARN severity.
+- Note any rule conflicts encountered.
 - If everything passes, say so clearly.

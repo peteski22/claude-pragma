@@ -9,6 +9,8 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Task, WebFetch, WebSearch
 
 Implement the requested feature/fix, then validate before completing.
 
+**Phase 0 is mandatory and must complete successfully before any other phase.**
+
 ## Task
 
 $ARGUMENTS
@@ -20,6 +22,8 @@ Before starting work, collect and read all applicable CLAUDE.md rules.
 ### Step 1: Identify target directories
 
 Based on the task, identify which directories will contain files to be created or modified.
+
+If uncertain, err on the side of including more directories rather than fewer. Extra rules being applied is safe; missing rules is not.
 
 ### Step 2: Walk up and collect rules
 
@@ -48,6 +52,8 @@ Apply rules in order of precedence (most specific first):
 
 Earlier rules override later rules where they conflict.
 
+If two rules conflict and precedence is unclear, prefer the more specific rule and note the conflict in the final report.
+
 ### Step 4: Record applied rules
 
 Track which rule files were loaded for the final report.
@@ -72,7 +78,9 @@ Track which rule files were loaded for the final report.
 
 ## Phase 3: Validate
 
-After implementation is complete, run validation:
+After implementation is complete, run validation.
+
+**Before running validators:** Re-check whether any new directories were introduced during implementation. If so, repeat Phase 0 for those directories and include any newly discovered rules.
 
 1. **Run linters first** (deterministic checks):
    - Go: `golangci-lint run --fix -v`
@@ -102,6 +110,7 @@ Only after validation passes:
 2. List files changed.
 3. List rules that were applied (from Phase 0).
 4. Note any warnings or justified SHOULD violations.
+5. Note any rule conflicts encountered.
 
 ## Output Format
 
@@ -111,8 +120,8 @@ Only after validation passes:
 **Task:** [what was requested]
 
 **Rules Applied:**
-- backend/.claude/CLAUDE.md
-- .claude/CLAUDE.md
+- backend/.claude/CLAUDE.md (Go backend rules)
+- .claude/CLAUDE.md (Universal rules)
 
 **Changes:**
 - file.go: [what changed]
@@ -131,7 +140,7 @@ Ready for review or commit.
 
 ## Rules
 
-- Do NOT skip Phase 0 (rule injection).
+- Phase 0 is mandatory. Do NOT skip rule injection.
 - Do NOT skip validation.
 - Do NOT say "done" until validation passes.
 - Do NOT ignore HARD or SHOULD violations.
