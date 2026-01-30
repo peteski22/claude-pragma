@@ -294,14 +294,12 @@ For `/implement` and `/review`, rule injection is mechanical and explicit. The m
 
 It is **not** on the critical path.
 
-## Future Validators
-
-Placeholder for planned validators:
+## Validators
 
 | Validator | Language | Status |
 |-----------|----------|--------|
 | go-effective | Go | ✅ Done |
 | go-proverbs | Go | ✅ Done |
+| python-style | Python | ✅ Done |
+| typescript-style | TypeScript | ✅ Done |
 | security | All | ✅ Done |
-| python-style | Python | Planned |
-| typescript-style | TypeScript | Planned |

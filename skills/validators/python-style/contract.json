@@ -1,0 +1,49 @@
+{
+  "name": "python-style",
+  "version": "1.0.0",
+  "input": ["git diff (*.py files)"],
+  "output_schema": "hard/should/warn with JSON structure",
+  "assumes": [
+    "ruff has passed",
+    "mypy has passed",
+    "pre-commit checks have passed"
+  ],
+  "scope": [
+    "Google-style docstrings",
+    "Modern type hint syntax",
+    "Exception chaining patterns",
+    "Layered architecture compliance",
+    "Code organization"
+  ],
+  "excludes": [
+    "Security vulnerabilities",
+    "Formatting (handled by ruff)",
+    "Type correctness (handled by mypy)",
+    "Performance",
+    "Test coverage"
+  ],
+  "hard_rules": [
+    "Exception chaining with from e",
+    "No bare except clauses",
+    "Modern type hint syntax",
+    "No circular imports",
+    "Layer separation"
+  ],
+  "should_rules": [
+    "Google-style docstrings",
+    "Single responsibility",
+    "Context managers for resources",
+    "Comments end with full stop"
+  ],
+  "warn_rules": [
+    "Many parameters",
+    "Deep nesting",
+    "Complex comprehensions"
+  ],
+  "references": [
+    "Google Python Style Guide",
+    "PEP 8",
+    "PEP 484"
+  ],
+  "batch_size": 50
+}

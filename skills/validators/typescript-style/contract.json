@@ -1,0 +1,50 @@
+{
+  "name": "typescript-style",
+  "version": "1.0.0",
+  "input": ["git diff (*.ts, *.tsx files)"],
+  "output_schema": "hard/should/warn with JSON structure",
+  "assumes": [
+    "biome has passed",
+    "TypeScript compiler has passed",
+    "pre-commit checks have passed"
+  ],
+  "scope": [
+    "TypeScript strict mode compliance",
+    "React functional component patterns",
+    "Hooks usage and dependencies",
+    "State management patterns",
+    "Code organization"
+  ],
+  "excludes": [
+    "Security vulnerabilities",
+    "Formatting (handled by biome)",
+    "CSS/styling choices",
+    "Performance optimization",
+    "Test coverage"
+  ],
+  "hard_rules": [
+    "Strict mode enabled",
+    "Functional components only",
+    "Proper hook usage",
+    "Complete useEffect dependencies",
+    "No untyped any without justification"
+  ],
+  "should_rules": [
+    "TanStack Query for server state",
+    "One component per file",
+    "Zod for runtime validation",
+    "Generated API types"
+  ],
+  "warn_rules": [
+    "Large components",
+    "Many props",
+    "Complex conditional rendering",
+    "Missing loading states"
+  ],
+  "references": [
+    "React documentation",
+    "TypeScript Handbook",
+    "TanStack Query documentation"
+  ],
+  "batch_size": 50
+}
