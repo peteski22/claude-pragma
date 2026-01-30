@@ -11,7 +11,8 @@ git clone git@github.com:{org}/claude-config.git ~/src/claude-config
 # 2. Set environment variable (add to ~/.zshrc or ~/.bashrc)
 export CLAUDE_CONFIG_PATH="$HOME/src/claude-config"
 
-# 3. Link the setup skill
+# 3. Create skills directory and link the setup skill
+mkdir -p ~/.claude/skills
 ln -s "$CLAUDE_CONFIG_PATH/skills/universal/setup-project" ~/.claude/skills/
 
 # 4. In any project, run:
