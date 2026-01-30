@@ -2,6 +2,22 @@
 
 Composable configuration for Claude Code: rules, skills, hooks, and validators.
 
+## Quick Start
+
+```bash
+# 1. Clone this repo
+git clone git@github.com:{org}/claude-config.git ~/src/claude-config
+
+# 2. Set environment variable (add to ~/.zshrc or ~/.bashrc)
+export CLAUDE_CONFIG_PATH="$HOME/src/claude-config"
+
+# 3. Link the setup skill
+ln -s "$CLAUDE_CONFIG_PATH/skills/universal/setup-project" ~/.claude/skills/
+
+# 4. In any project, run:
+/setup-project
+```
+
 ## Architecture
 
 ```
@@ -38,95 +54,104 @@ CLAUDE.md rules are **guidance** - they can be ignored or forgotten. We need:
 ```
 claude-config/
 ├── claude-md/
-│   ├── universal/           # Rules for all projects
-│   │   └── base.md
+│   ├── universal/
+│   │   ├── base.md              # Universal rules for all projects
+│   │   └── context-aware.md     # Meta-rule for subdirectory awareness
 │   └── languages/
-│       ├── go/
-│       │   └── go.md        # Go Proverbs, Effective Go, etc.
-│       └── python/
-│           └── python.md
-├── hooks/
-│   └── *.sh                 # Hook scripts for deterministic checks
+│       ├── go/go.md             # Go Proverbs, Effective Go, etc.
+│       └── python/python.md     # PEP 8, pytest, etc.
+├── hooks/                       # Hook scripts (deterministic checks)
 ├── skills/
-│   ├── universal/           # Skills for all projects
-│   ├── languages/
-│   │   └── go/              # Go-specific skills
-│   └── validators/          # Validator agent skills
-│       ├── go-proverbs/
-│       ├── effective-go/
-│       └── security/
-└── scripts/
-    └── assemble.sh          # Assemble CLAUDE.md for a project
+│   ├── universal/
+│   │   ├── setup-project/       # Configure Claude for a project
+│   │   ├── implement/           # Implement with auto-validation
+│   │   └── review/              # Review changes against validators
+│   └── validators/
+│       ├── validate/            # Orchestrator - runs all validators
+│       ├── go-effective/        # Effective Go (HARD/SHOULD/WARN)
+│       ├── go-proverbs/         # Go Proverbs
+│       └── security/            # Security vulnerabilities
+└── reference/
+    └── go/golangci-lint.yml     # Reference linter config
 ```
 
-## Usage
+## Skills
 
-### Assembling a CLAUDE.md
+| Skill | Purpose |
+|-------|---------|
+| `/setup-project` | Auto-detect languages, create CLAUDE.md files, link validators |
+| `/implement <task>` | Implement with validation loop built-in |
+| `/review` | Review current changes against all validators |
+| `/validate` | Run all validators (called by /implement and /review) |
 
-For a Go project, concatenate the relevant fragments:
+## Workflow
 
 ```bash
-cat claude-md/universal/base.md \
-    claude-md/languages/go/go.md \
-    > /path/to/project/.claude/CLAUDE.md
+# In a new project
+/setup-project
+
+# When implementing features
+/implement add user authentication
+
+# To check your work anytime
+/review
+
+# When ready to commit
+/commit
 ```
 
-Or use the assembly script:
+### What `/implement` Does
 
-```bash
-./scripts/assemble.sh --lang go --output /path/to/project/.claude/CLAUDE.md
-```
+1. Implements the requested feature
+2. Runs linters (golangci-lint, pre-commit, etc.)
+3. Spawns validator agents in parallel
+4. Fixes HARD violations automatically
+5. Reports SHOULD violations (fix or justify)
+6. Only says "done" when validation passes
 
-### Installing Skills
+## Monorepo Support
 
-Symlink relevant skills to your Claude config:
-
-```bash
-# Universal skills
-ln -s /path/to/claude-config/skills/universal/* ~/.claude/skills/
-
-# Language-specific skills (Go project)
-ln -s /path/to/claude-config/skills/languages/go/* ~/.claude/skills/
-
-# Validators
-ln -s /path/to/claude-config/skills/validators/* ~/.claude/skills/
-```
-
-### Running Validators
-
-After making changes, run validators:
+`/setup-project` detects languages at root AND in subdirectories:
 
 ```
-/validate           # Run all validators
-/validate-go        # Run Go-specific validators
+myproject/
+├── .claude/CLAUDE.md           # Universal + meta-rule
+├── backend/
+│   ├── .claude/CLAUDE.md       # Python rules
+│   └── pyproject.toml
+├── frontend/
+│   ├── .claude/CLAUDE.md       # TypeScript rules
+│   └── package.json
 ```
 
-Validators examine git diff and check against their rulesets, reporting violations.
+The root CLAUDE.md includes a **meta-rule** that tells Claude to read subdirectory rules when working in that context.
 
 ## Validator Agent Pattern
 
 Validators are skills with `context: fork` that:
 
-1. Examine recent changes (git diff, staged files)
+1. Examine recent changes (git diff)
 2. Check against a specific, focused ruleset
 3. Report violations with file:line references
 4. Can fetch current documentation (not relying on training data)
 
-Example validator structure:
+### Severity Levels
 
-```yaml
----
-name: validate-go-proverbs
-description: Check Go code against Go Proverbs
-context: fork
-agent: general-purpose
-user-invocable: false
----
+| Level | Meaning |
+|-------|---------|
+| **HARD** | Must fix - validation fails |
+| **SHOULD** | Fix or justify - fails unless justified |
+| **WARN** | Advisory only - doesn't fail |
 
-[Focused instructions for checking Go Proverbs]
+## Gitignore
+
+Generated CLAUDE.md files should be gitignored:
+
+```gitignore
+**/.claude/CLAUDE.md
 ```
 
-The orchestrator (`/validate`) spawns these in parallel and aggregates results.
+Each developer runs `/setup-project` to generate their local copy. The source of truth is this config repo.
 
 ## Why This Works Better
 
@@ -140,3 +165,4 @@ The orchestrator (`/validate`) spawns these in parallel and aggregates results.
 - **Hooks** catch obvious violations deterministically (linting, formatting)
 - **Validators** check nuanced rules that need LLM understanding
 - **Composable configs** mean only relevant rules are loaded
+- **`/implement`** bakes validation into the workflow
