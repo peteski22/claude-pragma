@@ -10,6 +10,21 @@ These rules apply to all projects regardless of language or framework.
   - Language features added recently
   - Version-specific behavior
 
+## Git Workflow
+
+We use feature branch workflow (GitHub Flow):
+
+- Never commit directly to `main`. Create a feature branch for each piece of work.
+- Branch names should be descriptive: `feature/add-user-auth`, `fix/login-redirect`, `refactor/api-client`.
+- Follow atomic commit principles:
+  - Each commit should represent one logical change.
+  - Commits should be self-contained and independently reviewable.
+  - Don't mix unrelated changes in a single commit.
+  - Don't commit half-finished work; use stash if needed.
+- Write clear commit messages that explain the "why", not just the "what".
+- Push feature branches and create Pull Requests to merge into `main`.
+- Keep PRs focused; large PRs are hard to review.
+
 ## Code Quality
 
 - Never introduce security vulnerabilities (OWASP top 10).
