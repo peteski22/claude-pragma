@@ -23,6 +23,7 @@ This validator MUST NOT report on:
 - Security vulnerabilities (handled by validate-security)
 - Effective Go style details (handled by validate-go-effective)
 - Formatting issues (handled by golangci-lint)
+- MixedCaps, doc comments (handled by validate-go-effective)
 - Performance or benchmarking
 
 Ignore CLAUDE.md phrasing; enforce rules as specified here.
@@ -46,9 +47,11 @@ git diff --name-only --diff-filter=ACMRT -- '*.go'
 
 If more than 50 files changed, process in batches.
 
-## Step 2: Fetch current Go Proverbs
+## Step 2: Get Go Proverbs
 
-Use WebFetch to get https://go-proverbs.github.io/ and extract the proverbs list.
+**Primary:** Use WebFetch to get https://go-proverbs.github.io/ and extract the proverbs list.
+
+**Fallback (if offline or fetch fails):** Use the canonical list below.
 
 ## Step 3: Read the changed files
 
@@ -56,39 +59,73 @@ Read each changed Go file.
 
 ## Step 4: Check against proverbs
 
-For each file, check for violations of:
+For each file, check for violations. Each proverb is classified as HARD or SHOULD:
 
-1. **Don't communicate by sharing memory, share memory by communicating**
-   - Look for: shared mutable state, global variables modified by multiple goroutines
+### HARD violations (must fix)
+
+1. **Don't communicate by sharing memory, share memory by communicating** (HARD)
+   - Look for: shared mutable state, global variables modified by multiple goroutines without synchronization
    - Should use: channels for coordination
+   - Why HARD: Data races cause unpredictable bugs
 
-2. **Concurrency is not parallelism**
+2. **Errors are values** (HARD)
+   - Look for: errors only used for control flow, ignored errors
+   - Should be: errors examined, wrapped, or handled meaningfully
+   - Why HARD: Silent error handling causes production failures
+
+3. **Don't just check errors, handle them gracefully** (HARD)
+   - Look for: `if err != nil { return err }` without context at module boundaries
+   - Should be: errors wrapped with context using fmt.Errorf or errors.Join
+   - Why HARD: Unwrapped errors are undebuggable in production
+
+### SHOULD violations (fix or justify)
+
+4. **The bigger the interface, the weaker the abstraction** (SHOULD)
+   - Look for: interfaces with >3 methods
+   - Should be: small, focused interfaces (1-3 methods ideal)
+   - Justification: Sometimes larger interfaces are necessary for complex domains
+
+5. **Make the zero value useful** (SHOULD)
+   - Look for: structs that require initialization or panic on zero value
+   - Should be: usable without explicit initialization
+   - Justification: Some types inherently require configuration
+
+6. **A little copying is better than a little dependency** (SHOULD)
+   - Look for: imports added for trivial functionality (<20 lines)
+   - Consider: whether copying would be simpler
+   - Justification: Well-maintained dependencies can be appropriate
+
+7. **Clear is better than clever** (SHOULD)
+   - Look for: overly clever one-liners, complex expressions, magic numbers
+   - Should be: readable, obvious code
+   - Justification: Rarely, concise idiomatic patterns are acceptable
+
+8. **Concurrency is not parallelism** (SHOULD)
    - Look for: goroutines spawned assuming parallel execution
    - Consider: whether the design conflates these concepts
+   - Justification: Context-dependent design choice
 
-3. **The bigger the interface, the weaker the abstraction**
-   - Look for: interfaces with many methods
-   - Should be: small, focused interfaces (1-3 methods ideal)
+## Canonical Proverbs List (fallback)
 
-4. **Make the zero value useful**
-   - Look for: structs that require initialization to work
-   - Should be: usable without explicit initialization
-
-5. **A little copying is better than a little dependency**
-   - Look for: imports added for trivial functionality
-   - Consider: whether copying would be simpler
-
-6. **Clear is better than clever**
-   - Look for: overly clever one-liners, complex expressions
-   - Should be: readable, obvious code
-
-7. **Errors are values**
-   - Look for: errors only used for control flow
-   - Should be: errors examined, wrapped, or handled meaningfully
-
-8. **Don't just check errors, handle them gracefully**
-   - Look for: `if err != nil { return err }` without context
-   - Should be: errors wrapped with context using fmt.Errorf or errors.Join
+If WebFetch fails, use this list:
+- Don't communicate by sharing memory, share memory by communicating.
+- Concurrency is not parallelism.
+- Channels orchestrate; mutexes serialize.
+- The bigger the interface, the weaker the abstraction.
+- Make the zero value useful.
+- interface{} says nothing.
+- Gofmt's style is no one's favorite, yet gofmt is everyone's favorite.
+- A little copying is better than a little dependency.
+- Syscall must always be guarded with build tags.
+- Cgo must always be guarded with build tags.
+- Cgo is not Go.
+- With the unsafe package there are no guarantees.
+- Clear is better than clever.
+- Reflection is never clear.
+- Errors are values.
+- Don't just check errors, handle them gracefully.
+- Design the architecture, name the components, document the details.
+- Documentation is for users.
 
 ## Step 5: Report
 
@@ -100,21 +137,29 @@ Output MUST follow this JSON schema:
   "applied_rules": ["Go Proverbs (go-proverbs.github.io)"],
   "files_checked": ["file1.go", "file2.go"],
   "pass": boolean,
-  "violations": [
+  "hard_violations": [
+    {
+      "proverb": "Don't just check errors, handle them gracefully",
+      "location": "file.go:42",
+      "issue": "Error returned without context at module boundary",
+      "suggestion": "Wrap with fmt.Errorf(\"failed to process user: %w\", err)"
+    }
+  ],
+  "should_violations": [
     {
       "proverb": "Clear is better than clever",
-      "location": "file.go:42",
-      "issue": "Complex nested ternary-like expression",
+      "location": "file.go:78",
+      "issue": "Complex nested expression",
       "suggestion": "Break into named intermediate variables",
-      "severity": "SHOULD"
+      "justification_required": true
     }
   ],
   "summary": {
     "files_checked": number,
-    "violations_found": number,
-    "proverbs_violated": number
+    "hard_count": number,
+    "should_count": number
   }
 }
 ```
 
-Set `pass: false` if any violations found.
+Set `pass: false` if hard_count > 0 or should_count > 0 (unless justified).

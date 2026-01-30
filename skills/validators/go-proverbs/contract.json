@@ -1,24 +1,39 @@
 {
   "name": "go-proverbs",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "input": ["git diff (*.go files)"],
-  "output_schema": "pass/violations with JSON structure",
+  "output_schema": "hard/should with JSON structure",
   "assumes": [
     "golangci-lint has passed"
   ],
   "scope": [
     "Go Proverbs philosophy",
-    "Concurrency patterns",
-    "Abstraction choices",
-    "Code clarity principles"
+    "Concurrency patterns (channels vs shared memory)",
+    "Abstraction choices (interface size)",
+    "Code clarity (clear vs clever)",
+    "Error handling philosophy"
   ],
   "excludes": [
     "Security vulnerabilities",
     "Effective Go style details",
     "Formatting",
+    "MixedCaps, doc comments",
     "Performance"
+  ],
+  "hard_rules": [
+    "Don't communicate by sharing memory, share memory by communicating",
+    "Errors are values",
+    "Don't just check errors, handle them gracefully"
+  ],
+  "should_rules": [
+    "The bigger the interface, the weaker the abstraction",
+    "Make the zero value useful",
+    "A little copying is better than a little dependency",
+    "Clear is better than clever",
+    "Concurrency is not parallelism"
   ],
   "references": [
     "go-proverbs.github.io"
-  ]
+  ],
+  "fallback": "Canonical proverbs list embedded in SKILL.md"
 }
