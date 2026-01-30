@@ -255,7 +255,12 @@ Then include in the summary:
 **Usage:**
   /implement <task>    - implement with validation loop
   /review              - validate current changes
-  /star-chamber        - get advisory feedback from multiple LLMs
+
+**Star-Chamber Usage:**
+  /star-chamber                                                 - review recent changes using configured providers
+  /star-chamber --file <file> --provider <provider1,provider2>  - target specific files and providers
+  /star-chamber --deliberate N                                  - sequential council deliberation (feed responses around)
+  /star-chamber --interject N                                   - parallel interjections from all providers (rubber-ducking)
 
 **Note:** Add `**/.claude/CLAUDE.md` to .gitignore
 ```
