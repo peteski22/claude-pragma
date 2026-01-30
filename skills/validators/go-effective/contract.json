@@ -1,0 +1,28 @@
+{
+  "name": "go-effective",
+  "version": "1.0.0",
+  "input": ["git diff (*.go files)"],
+  "output_schema": "hard/should/warn with JSON structure",
+  "assumes": [
+    "gofmt has run",
+    "golangci-lint has passed"
+  ],
+  "scope": [
+    "Naming conventions",
+    "Error handling style",
+    "Interface design",
+    "Control flow patterns",
+    "Idiomatic Go (Effective Go)"
+  ],
+  "excludes": [
+    "Security vulnerabilities",
+    "Go Proverbs philosophy",
+    "Formatting (gofmt handles)",
+    "Performance",
+    "Dependencies"
+  ],
+  "references": [
+    "go.dev/doc/effective_go",
+    "github.com/golang/go/wiki/CodeReviewComments"
+  ]
+}

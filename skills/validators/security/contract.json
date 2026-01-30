@@ -1,0 +1,23 @@
+{
+  "name": "security",
+  "version": "1.0.0",
+  "input": ["git diff (all files)"],
+  "output_schema": "critical/warning with JSON structure",
+  "assumes": [],
+  "scope": [
+    "Hardcoded secrets and credentials",
+    "Injection vulnerabilities (SQL, command, XSS)",
+    "Path traversal",
+    "Insecure configurations",
+    "Authentication/authorization gaps"
+  ],
+  "excludes": [
+    "Code style or formatting",
+    "Language idioms",
+    "Performance",
+    "Test coverage"
+  ],
+  "references": [
+    "OWASP Top 10"
+  ]
+}

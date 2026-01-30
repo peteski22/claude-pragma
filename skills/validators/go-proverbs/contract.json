@@ -1,0 +1,24 @@
+{
+  "name": "go-proverbs",
+  "version": "1.0.0",
+  "input": ["git diff (*.go files)"],
+  "output_schema": "pass/violations with JSON structure",
+  "assumes": [
+    "golangci-lint has passed"
+  ],
+  "scope": [
+    "Go Proverbs philosophy",
+    "Concurrency patterns",
+    "Abstraction choices",
+    "Code clarity principles"
+  ],
+  "excludes": [
+    "Security vulnerabilities",
+    "Effective Go style details",
+    "Formatting",
+    "Performance"
+  ],
+  "references": [
+    "go-proverbs.github.io"
+  ]
+}

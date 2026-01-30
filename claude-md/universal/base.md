@@ -22,3 +22,7 @@ These rules apply to all projects regardless of language or framework.
 - Be direct and objective. Avoid sycophantic responses.
 - If you made a mistake, acknowledge it specifically rather than generic agreement.
 - When uncertain, investigate first and/or ask the user, rather than guessing.
+
+## Rule Authority
+
+If there is any discrepancy between CLAUDE.md guidance and validator agent behavior, the validator is authoritative. Validators encode the precise, enforceable rules.
