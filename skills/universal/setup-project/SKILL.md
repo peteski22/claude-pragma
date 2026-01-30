@@ -9,31 +9,30 @@ allowed-tools: Bash, Read, Write, Glob
 
 Automatically configure Claude Code for the current project.
 
-## Step 0: Locate config repo
+## Step 0: Verify config repo
 
-Find the claude-config repo. Check in order:
-
-1. Environment variable: `$CLAUDE_CONFIG_PATH`
-2. Common locations:
-   - `~/src/claude-config`
-   - `~/claude-config`
-   - `~/.claude-config`
+Requires `$CLAUDE_CONFIG_PATH` environment variable to be set.
 
 ```bash
-for dir in "${CLAUDE_CONFIG_PATH:-}" "$HOME/src/claude-config" "$HOME/claude-config" "$HOME/.claude-config"; do
-  [[ -n "$dir" ]] && [[ -d "$dir" ]] && [[ -f "$dir/claude-md/universal/base.md" ]] && echo "$dir" && break
-done
+[[ -z "$CLAUDE_CONFIG_PATH" ]] && echo "ERROR: CLAUDE_CONFIG_PATH not set"
+[[ ! -d "$CLAUDE_CONFIG_PATH" ]] && echo "ERROR: CLAUDE_CONFIG_PATH does not exist"
+[[ ! -f "$CLAUDE_CONFIG_PATH/claude-md/universal/base.md" ]] && echo "ERROR: Invalid claude-config repo"
 ```
 
-If not found anywhere, clone it:
-```bash
-git clone git@github.com:{org}/claude-config.git ~/src/claude-config
-# Or HTTPS: https://github.com/{org}/claude-config.git
+If not set, tell the user:
+```
+CLAUDE_CONFIG_PATH is not set.
+
+1. Clone the config repo:
+   git clone git@github.com:{org}/claude-config.git ~/src/claude-config
+
+2. Set the environment variable (add to ~/.zshrc or ~/.bashrc):
+   export CLAUDE_CONFIG_PATH="$HOME/src/claude-config"
+
+3. Re-run /setup-project
 ```
 
-Replace `{org}` with the appropriate GitHub org/user.
-
-**Store the found path as `$CONFIG_REPO` for all subsequent steps.**
+**STOP if not set. Do not proceed.**
 
 ## Step 1: Detect project metadata
 
