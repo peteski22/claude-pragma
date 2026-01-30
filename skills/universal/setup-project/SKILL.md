@@ -53,7 +53,7 @@ Check root directory AND immediate subdirectories for language markers.
 ```bash
 # Root level
 [[ -f go.mod ]] && echo "root:go"
-[[ -f pyproject.toml ]] || [[ -f setup.py ]] && echo "root:python"
+{ [[ -f pyproject.toml ]] || [[ -f setup.py ]]; } && echo "root:python"
 [[ -f package.json ]] && echo "root:javascript"
 [[ -f tsconfig.json ]] && echo "root:typescript"
 [[ -f Cargo.toml ]] && echo "root:rust"
@@ -61,11 +61,12 @@ Check root directory AND immediate subdirectories for language markers.
 # Subdirectories (one level deep)
 for dir in */; do
   [[ -f "${dir}go.mod" ]] && echo "${dir%/}:go"
-  [[ -f "${dir}pyproject.toml" ]] || [[ -f "${dir}setup.py" ]] && echo "${dir%/}:python"
+  { [[ -f "${dir}pyproject.toml" ]] || [[ -f "${dir}setup.py" ]]; } && echo "${dir%/}:python"
   [[ -f "${dir}package.json" ]] && echo "${dir%/}:javascript"
   [[ -f "${dir}tsconfig.json" ]] && echo "${dir%/}:typescript"
   [[ -f "${dir}Cargo.toml" ]] && echo "${dir%/}:rust"
 done
+true
 ```
 
 This produces output like:
@@ -79,6 +80,7 @@ This produces output like:
 for dir in */; do
   [[ -f "${dir}.claude/CLAUDE.md" ]] && echo "${dir%/}:exists"
 done
+true
 ```
 
 If any exist, read them. If they have `<!-- Assembled by /setup-project -->` comment, safe to overwrite. Otherwise ASK before overwriting.
@@ -177,7 +179,8 @@ ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/typescript-style" ~/.claude/skills
 
 For Go projects, if no golangci-lint config exists:
 ```bash
-[[ ! -f .golangci.yml ]] && [[ ! -f .golangci.yaml ]] && echo "no-lint-config"
+{ [[ ! -f .golangci.yml ]] && [[ ! -f .golangci.yaml ]]; } && echo "no-lint-config"
+true
 ```
 
 If missing, offer to copy from `$CLAUDE_CONFIG_PATH/reference/go/golangci-lint.yml`, replacing `{org}` and `{repo}`.
