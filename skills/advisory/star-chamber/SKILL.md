@@ -49,29 +49,48 @@ CONFIG_PATH="${STAR_CHAMBER_CONFIG:-$HOME/.config/star-chamber/providers.json}"
 [[ -f "$CONFIG_PATH" ]] && echo "config:exists" || echo "config:missing"
 ```
 
-**If config is missing**, offer to create it:
+**If config is missing**, ask how to manage API keys:
 
 ```
 Star-Chamber requires provider configuration.
 
-Would you like me to create the default configuration?
+How would you like to manage API keys?
 
-Location: ~/.config/star-chamber/providers.json
-
-This will configure:
-- OpenAI (gpt-4o)
-- Anthropic (claude-sonnet-4-20250514)
-- Gemini (gemini-2.0-flash)
-
-API keys are read from environment variables:
-- OPENAI_API_KEY
-- ANTHROPIC_API_KEY
-- GEMINI_API_KEY
-
-[Yes, create it] / [No, I'll set it up manually]
+[any-llm.ai platform] - Single ANY_LLM_KEY, centralized key vault, usage tracking
+[Direct provider keys] - Set OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY individually
+[Skip] - I'll set it up manually later
 ```
 
-**If user accepts**, create the config:
+**If user chooses "any-llm.ai platform":**
+
+```bash
+mkdir -p ~/.config/star-chamber
+cat > ~/.config/star-chamber/providers.json << 'EOF'
+{
+  "platform": "any-llm",
+  "providers": [
+    {"provider": "openai", "model": "gpt-4o"},
+    {"provider": "anthropic", "model": "claude-sonnet-4-20250514"},
+    {"provider": "gemini", "model": "gemini-2.0-flash"}
+  ],
+  "consensus_threshold": 2,
+  "timeout_seconds": 60
+}
+EOF
+```
+
+Then show:
+```
+Created ~/.config/star-chamber/providers.json (platform mode)
+
+Setup:
+  1. Create account at https://any-llm.ai
+  2. Create a project and add your provider API keys
+  3. Copy your project key and set:
+     export ANY_LLM_KEY="ANY.v1...."
+```
+
+**If user chooses "Direct provider keys":**
 
 ```bash
 mkdir -p ~/.config/star-chamber
@@ -90,35 +109,20 @@ EOF
 
 Then show:
 ```
-Created ~/.config/star-chamber/providers.json
+Created ~/.config/star-chamber/providers.json (direct keys mode)
 
-Make sure these environment variables are set:
+Set these environment variables:
   export OPENAI_API_KEY="sk-..."
   export ANTHROPIC_API_KEY="sk-ant-..."
   export GEMINI_API_KEY="..."
 
-You can edit the config to:
-- Remove providers you don't have keys for
-- Change models (e.g., gpt-4-turbo instead of gpt-4o)
-- Add other providers supported by any-llm-sdk
+Edit the config to remove providers you don't have keys for.
 ```
 
-**If user declines**, show manual setup instructions:
+**If user chooses "Skip":**
 
 ```
-To set up manually:
-
-1. Create the config directory:
-   mkdir -p ~/.config/star-chamber
-
-2. Create providers.json with your providers:
-   $EDITOR ~/.config/star-chamber/providers.json
-
-3. Add configuration (see example in Configuration section below)
-
-4. Set your API keys as environment variables
-
-Re-run /star-chamber when ready.
+To set up manually later, see the Configuration section below or run /star-chamber again.
 ```
 
 **STOP if config is missing. Do not proceed without configuration.**
