@@ -50,37 +50,53 @@ Also get the file list:
 git diff HEAD~1 --name-only --diff-filter=ACMRT
 ```
 
-If more than 50 files changed, process in batches.
+If more than 50 files changed, process in batches of 50. Note batch number in output.
 
 ## Step 2: Check for vulnerabilities
 
-### Secrets and Credentials (CRITICAL)
+### HARD violations (must fix)
+
+**Secrets and Credentials**
 - Hardcoded API keys, passwords, tokens
 - AWS credentials, private keys
 - Connection strings with embedded passwords
+- Why HARD: Secrets in code get leaked via version control
 
-### Injection Vulnerabilities (CRITICAL)
+**Injection Vulnerabilities**
 - SQL injection: string concatenation in queries
 - Command injection: unsanitized input in shell commands
 - XSS: unescaped user input in HTML output
+- Why HARD: Direct attack vectors
 
-### Path Traversal (CRITICAL)
+**Path Traversal**
 - File operations using unsanitized user input
-- Missing validation of file paths
+- Missing validation of file paths (e.g., `../../../etc/passwd`)
+- Why HARD: Allows unauthorized file access
 
-### Insecure Configurations (WARNING)
-- Debug mode enabled in production code
-- Disabled security features (CSRF, CORS misconfiguration)
-- Insecure TLS/SSL settings
-
-### Authentication/Authorization (CRITICAL)
-- Missing authentication checks
-- Hardcoded bypass conditions
+**Authentication/Authorization**
+- Missing authentication checks on sensitive endpoints
+- Hardcoded bypass conditions (`if user == "admin"`)
 - Insecure session handling
+- Why HARD: Bypasses security boundaries
+
+### SHOULD violations (fix or justify)
+
+**Insecure Configurations**
+- Debug mode enabled in production code
+- Disabled security features (CSRF disabled, permissive CORS)
+- Insecure TLS/SSL settings (TLS 1.0, weak ciphers)
+- Justification: May be acceptable in development/testing contexts
+
+### WARN (advisory)
+
+**Potential Issues**
+- Strings that look like secrets but may be placeholders
+- Deprecated security functions (may still work)
+- Missing security headers (defense in depth)
 
 ## Step 3: Report
 
-Output MUST follow this JSON schema:
+Output MUST follow this JSON schema (unified with other validators):
 
 ```json
 {
@@ -88,28 +104,37 @@ Output MUST follow this JSON schema:
   "applied_rules": ["OWASP Top 10", "Secret Detection"],
   "files_checked": ["file1.go", "file2.py"],
   "pass": boolean,
-  "critical": [
+  "hard_violations": [
     {
-      "vulnerability": "SQL Injection",
+      "rule": "SQL Injection",
       "location": "file.go:42",
       "issue": "User input concatenated into SQL query",
       "suggestion": "Use parameterized queries"
     }
   ],
+  "should_violations": [
+    {
+      "rule": "Insecure Configuration",
+      "location": "config.yaml:15",
+      "issue": "Debug mode enabled",
+      "suggestion": "Disable debug mode for production",
+      "justification_required": true
+    }
+  ],
   "warnings": [
     {
-      "vulnerability": "Possible hardcoded secret",
-      "location": "config.yaml:15",
-      "issue": "String looks like an API key",
-      "suggestion": "Use environment variables"
+      "rule": "Possible hardcoded secret",
+      "location": "config.yaml:20",
+      "note": "String looks like an API key - verify it's a placeholder"
     }
   ],
   "summary": {
     "files_checked": number,
-    "critical_count": number,
+    "hard_count": number,
+    "should_count": number,
     "warning_count": number
   }
 }
 ```
 
-Set `pass: false` if critical_count > 0.
+Set `pass: false` if hard_count > 0 or should_count > 0 (unless justified).

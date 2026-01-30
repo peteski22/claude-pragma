@@ -1,8 +1,8 @@
 {
   "name": "security",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "input": ["git diff (all files)"],
-  "output_schema": "critical/warning with JSON structure",
+  "output_schema": "hard/should/warn with JSON structure (unified)",
   "assumes": [],
   "scope": [
     "Hardcoded secrets and credentials",
@@ -17,7 +17,20 @@
     "Performance",
     "Test coverage"
   ],
+  "hard_rules": [
+    "Secrets and Credentials",
+    "Injection Vulnerabilities",
+    "Path Traversal",
+    "Authentication/Authorization gaps"
+  ],
+  "should_rules": [
+    "Insecure Configurations"
+  ],
+  "warn_rules": [
+    "Potential issues (placeholders, deprecated functions, missing headers)"
+  ],
   "references": [
     "OWASP Top 10"
-  ]
+  ],
+  "batch_size": 50
 }
