@@ -41,30 +41,77 @@ Each validator declares:
 
 This prevents overlap and makes maintenance clear.
 
-## Monorepo Structure
+## Monorepo Validator Map
+
+This diagram shows the complete flow for a multi-language monorepo from `/implement` through validation.
+
+```mermaid
+flowchart TB
+    subgraph Trigger["Trigger"]
+        Start["/implement task"]
+    end
+
+    subgraph Phase0["Phase 0: Rule Injection"]
+        P0[Identify changed files]
+        P0 --> DetectLang{Detect language}
+
+        DetectLang -->|.py files| PyRules["Load: backend/.claude/CLAUDE.md<br/>+ .claude/CLAUDE.md"]
+        DetectLang -->|.ts/.tsx files| TSRules["Load: frontend/.claude/CLAUDE.md<br/>+ .claude/CLAUDE.md"]
+        DetectLang -->|.go files| GoRules["Load: services/go/.claude/CLAUDE.md<br/>+ .claude/CLAUDE.md"]
+    end
+
+    subgraph Phase12["Phase 1-2: Implement"]
+        Impl[Work done following injected rules]
+    end
+
+    subgraph Phase3["Phase 3: Validate"]
+        subgraph DetChecks["Deterministic Linters"]
+            PyRules --> PyLint["ruff + ty/mypy"]
+            TSRules --> TSLint["biome + tsc"]
+            GoRules --> GoLint["golangci-lint"]
+        end
+
+        PyLint & TSLint & GoLint --> LintPass{All pass?}
+        LintPass -->|No| FixLint[Fix lint errors]
+        FixLint --> PyLint & TSLint & GoLint
+
+        subgraph SemVal["Semantic Validators"]
+            LintPass -->|Yes| SecVal["security<br/>(all files)"]
+
+            LintPass -->|Yes, .py| PyStyle["python-style"]
+            LintPass -->|Yes, .ts/.tsx| TSStyle["typescript-style"]
+            LintPass -->|Yes, .go| GoEff["go-effective"]
+            LintPass -->|Yes, .go| GoProv["go-proverbs"]
+        end
+
+        SecVal & PyStyle & TSStyle & GoEff & GoProv --> Agg[Aggregate results]
+        Agg --> ValPass{All pass?}
+        ValPass -->|No| FixViol[Fix violations]
+        FixViol --> PyLint & TSLint & GoLint
+    end
+
+    subgraph Phase4["Phase 4: Complete"]
+        ValPass -->|Yes| Output["Output JSON:<br/>- applied_rules<br/>- files_changed<br/>- validation_results"]
+    end
+
+    Start --> P0
+    PyRules & TSRules & GoRules --> Impl
+    Impl --> Phase3
+```
+
+## Monorepo Directory Structure
 
 ```mermaid
 graph TD
-    Root[".claude/CLAUDE.md<br/>(Universal rules + meta)"]
+    Root[".claude/CLAUDE.md<br/>(Universal rules)"]
 
     Root --> Backend["backend/.claude/CLAUDE.md<br/>(Python rules)"]
     Root --> Frontend["frontend/.claude/CLAUDE.md<br/>(TypeScript rules)"]
     Root --> Services["services/go/.claude/CLAUDE.md<br/>(Go rules)"]
 
-    Backend --> BI["/implement<br/>Phase 0: Load rules"]
-    Backend --> BR["/review<br/>Step 2: Load rules"]
-
-    Frontend --> FI["/implement<br/>Phase 0: Load rules"]
-    Frontend --> FR["/review<br/>Step 2: Load rules"]
-
-    Services --> SI["/implement<br/>Phase 0: Load rules"]
-    Services --> SR["/review<br/>Step 2: Load rules"]
-
-    BI & BR --> PyVal["python-style"]
-    FI & FR --> TSVal["typescript-style"]
-    SI & SR --> GoVal["go-effective<br/>go-proverbs"]
-
-    PyVal & TSVal & GoVal --> Sec["security<br/>(all languages)"]
+    Backend --> PyFiles["backend/**/*.py"]
+    Frontend --> TSFiles["frontend/**/*.ts,tsx"]
+    Services --> GoFiles["services/go/**/*.go"]
 ```
 
 ## System Flow
