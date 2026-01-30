@@ -35,16 +35,29 @@ repos:
     hooks:
       - id: uv-lock
 
+  # Preferred: Astral's ty (10-60x faster than mypy)
   - repo: local
     hooks:
-      - id: mypy
-        name: mypy
-        entry: uv run mypy .
+      - id: ty
+        name: ty
+        entry: uv run ty check .
         language: system
         types: [python]
         require_serial: true
         pass_filenames: false
         verbose: true
+
+  # Alternative: mypy (use if already configured in project)
+  # - repo: local
+  #   hooks:
+  #     - id: mypy
+  #       name: mypy
+  #       entry: uv run mypy .
+  #       language: system
+  #       types: [python]
+  #       require_serial: true
+  #       pass_filenames: false
+  #       verbose: true
 
 ci:
   autofix_commit_msg: "[pre-commit.ci] Auto format"

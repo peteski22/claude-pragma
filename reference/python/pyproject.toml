@@ -10,7 +10,8 @@ dependencies = []
 [dependency-groups]
 dev = [
     "pytest>=8.0.0",
-    "mypy>=1.0.0",
+    "ty>=0.0.1",          # Preferred: Astral's type checker (faster, uv/ruff ecosystem)
+    # "mypy>=1.0.0",      # Alternative: use if already configured in project
     "ruff>=0.14.0",
     "pre-commit>=4.0.0",
     "coverage>=7.0.0",
@@ -20,9 +21,14 @@ dev = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.mypy]
-strict = true
-exclude = ["venv", ".venv", "alembic"]
+# Preferred: Astral's ty (10-60x faster than mypy)
+[tool.ty]
+python-version = "3.11"
+
+# Alternative: mypy (use if already configured in project)
+# [tool.mypy]
+# strict = true
+# exclude = ["venv", ".venv", "alembic"]
 
 [tool.ruff]
 line-length = 120

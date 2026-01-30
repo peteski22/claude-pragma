@@ -46,17 +46,29 @@ repos:
         args: [--project, backend]
         files: backend/pyproject.toml
 
+  # Preferred: Astral's ty (10-60x faster than mypy)
   - repo: local
     hooks:
-      - id: mypy
-        name: mypy
-        entry: bash backend/scripts/run-mypy.sh
+      - id: ty
+        name: ty
+        entry: bash -c 'cd backend && uv run ty check .'
         language: system
         types: [python]
         files: ^backend/(app|tests)/
         require_serial: true
         pass_filenames: false
         verbose: true
+
+      # Alternative: mypy (use if already configured in project)
+      # - id: mypy
+      #   name: mypy
+      #   entry: bash backend/scripts/run-mypy.sh
+      #   language: system
+      #   types: [python]
+      #   files: ^backend/(app|tests)/
+      #   require_serial: true
+      #   pass_filenames: false
+      #   verbose: true
 
       # TypeScript frontend hooks.
       - id: biome-check

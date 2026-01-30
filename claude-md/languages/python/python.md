@@ -38,7 +38,8 @@
 
 ## Type Checking
 
-- Use mypy with strict mode enabled.
+- Prefer Astral's ty for new projects (faster, integrated with uv/ruff ecosystem).
+- Use mypy with strict mode if already configured in the project.
 - Configure ruff with pyupgrade rules.
 
 ## Before Committing

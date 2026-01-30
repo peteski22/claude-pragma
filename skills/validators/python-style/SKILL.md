@@ -23,7 +23,7 @@ This validator checks ONLY:
 This validator MUST NOT report on:
 - Security vulnerabilities (handled by validate-security)
 - Formatting issues (handled by ruff)
-- Type correctness (handled by mypy)
+- Type correctness (handled by ty or mypy)
 - Test coverage
 - Performance
 
@@ -192,7 +192,7 @@ Set `pass: false` if hard_count > 0 or should_count > 0.
   - formatting (PEP 8)
   - import sorting
   - basic linting
-- mypy has already enforced:
+- ty or mypy has already enforced:
   - type correctness
 - Your focus is semantic correctness and idiomatic Python.
 
