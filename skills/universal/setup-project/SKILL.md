@@ -9,13 +9,37 @@ allowed-tools: Bash, Read, Write, Glob
 
 Automatically configure Claude Code for the current project.
 
-## Config repo location
+## Step 0: Locate config repo
 
-Use: `~/src/peteski/claude-config`
+Find the claude-config repo. Check in order:
+
+1. Environment variable: `$CLAUDE_CONFIG_PATH`
+2. Common locations:
+   - `~/src/peteski/claude-config`
+   - `~/src/claude-config`
+   - `~/claude-config`
+   - `~/.claude-config`
+
+```bash
+for dir in "${CLAUDE_CONFIG_PATH:-}" "$HOME/src/peteski/claude-config" "$HOME/src/claude-config" "$HOME/claude-config" "$HOME/.claude-config"; do
+  [[ -n "$dir" ]] && [[ -d "$dir" ]] && [[ -f "$dir/claude-md/universal/base.md" ]] && echo "$dir" && break
+done
+```
+
+If not found anywhere, clone it:
+```bash
+git clone git@github.com:peteski22/claude-config.git ~/src/claude-config
+# Or HTTPS: https://github.com/peteski22/claude-config.git
+```
+
+**Store the found path as `$CONFIG_REPO` for all subsequent steps.**
+
+GitHub repo: https://github.com/peteski22/claude-config
 
 ## Step 1: Detect project metadata
 
 Get org and repo name:
+
 ```bash
 # From git remote
 git remote get-url origin 2>/dev/null | sed -E 's|.*[:/]([^/]+)/([^/]+)(\.git)?$|\1/\2|' | tr -d '\n'
@@ -31,7 +55,6 @@ Store these for templating configs later.
 Run these checks and collect which languages are present:
 
 ```bash
-# Check for each language
 [[ -f go.mod ]] && echo "go"
 [[ -f pyproject.toml ]] || [[ -f setup.py ]] && echo "python"
 [[ -f package.json ]] && echo "javascript"
@@ -55,8 +78,8 @@ mkdir -p .claude
 ```
 
 Use the Write tool to create `.claude/CLAUDE.md` with contents assembled from:
-1. Always: `~/src/peteski/claude-config/claude-md/universal/base.md`
-2. For each detected language: `~/src/peteski/claude-config/claude-md/languages/{lang}/{lang}.md`
+1. Always: `$CONFIG_REPO/claude-md/universal/base.md`
+2. For each detected language: `$CONFIG_REPO/claude-md/languages/{lang}/{lang}.md`
 
 Add a header comment:
 ```markdown
@@ -76,16 +99,16 @@ mkdir -p ~/.claude/skills
 
 **Universal skills (always):**
 ```bash
-ln -sf ~/src/peteski/claude-config/skills/universal/implement ~/.claude/skills/
-ln -sf ~/src/peteski/claude-config/skills/universal/review ~/.claude/skills/
-ln -sf ~/src/peteski/claude-config/skills/validators/validate ~/.claude/skills/
-ln -sf ~/src/peteski/claude-config/skills/validators/security ~/.claude/skills/
+ln -sf $CONFIG_REPO/skills/universal/implement ~/.claude/skills/
+ln -sf $CONFIG_REPO/skills/universal/review ~/.claude/skills/
+ln -sf $CONFIG_REPO/skills/validators/validate ~/.claude/skills/
+ln -sf $CONFIG_REPO/skills/validators/security ~/.claude/skills/
 ```
 
 **Go projects:**
 ```bash
-ln -sf ~/src/peteski/claude-config/skills/validators/go-proverbs ~/.claude/skills/
-ln -sf ~/src/peteski/claude-config/skills/validators/go-effective ~/.claude/skills/
+ln -sf $CONFIG_REPO/skills/validators/go-proverbs ~/.claude/skills/
+ln -sf $CONFIG_REPO/skills/validators/go-effective ~/.claude/skills/
 ```
 
 ## Step 6: Copy reference configs (if missing)
@@ -96,7 +119,7 @@ For Go projects, if no golangci-lint config exists:
 ```
 
 If missing, offer to copy the reference config:
-- Source: `~/src/peteski/claude-config/reference/go/golangci-lint.yml`
+- Source: `$CONFIG_REPO/reference/go/golangci-lint.yml`
 - Destination: `.golangci.yml`
 - Replace `{org}` and `{repo}` with detected values.
 
@@ -105,6 +128,7 @@ If missing, offer to copy the reference config:
 ```
 ## Setup Complete
 
+**Config repo:** $CONFIG_REPO
 **Project:** {repo}
 **Org:** {org}
 **Languages detected:** Go
