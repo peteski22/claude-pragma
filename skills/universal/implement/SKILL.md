@@ -85,6 +85,7 @@ After implementation is complete, run validation.
 1. **Run linters first** (deterministic checks):
    - Go: `golangci-lint run --fix -v`
    - Python: `uv run pre-commit run --all-files`
+   - TypeScript: `pnpm run lint` or `npx biome check .`
    - Fix any issues before proceeding.
 
 2. **Run semantic validators** (LLM checks):
@@ -92,6 +93,8 @@ After implementation is complete, run validation.
      - `validate-security` (always)
      - `validate-go-effective` (if Go files changed)
      - `validate-go-proverbs` (if Go files changed)
+     - `validate-python-style` (if Python files changed)
+     - `validate-typescript-style` (if TypeScript files changed)
 
 3. **Fix violations**:
    - HARD violations: must fix.

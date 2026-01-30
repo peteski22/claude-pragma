@@ -65,6 +65,12 @@ golangci-lint run -v 2>&1 | tail -50
 uv run pre-commit run --all-files 2>&1 | tail -50
 ```
 
+**TypeScript:**
+```bash
+pnpm run lint 2>&1 | tail -50
+# or: npx biome check . 2>&1 | tail -50
+```
+
 Report linter results. If linters fail, report and stop - fix these first.
 
 ## Step 4: Run semantic validators
@@ -74,12 +80,15 @@ Use the Task tool to spawn validators in parallel based on what changed:
 **Always run:**
 - `validate-security`
 
-**If Go files changed:**
+**If Go files changed (.go):**
 - `validate-go-effective`
 - `validate-go-proverbs`
 
-**If Python files changed:**
-- (future: validate-python-style)
+**If Python files changed (.py):**
+- `validate-python-style`
+
+**If TypeScript files changed (.ts, .tsx):**
+- `validate-typescript-style`
 
 Collect all results.
 

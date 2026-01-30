@@ -156,6 +156,16 @@ ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/go-proverbs" ~/.claude/skills/
 ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/go-effective" ~/.claude/skills/
 ```
 
+**Python (if detected anywhere):**
+```bash
+ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/python-style" ~/.claude/skills/
+```
+
+**TypeScript (if detected anywhere):**
+```bash
+ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/typescript-style" ~/.claude/skills/
+```
+
 ## Step 7: Offer reference configs
 
 For Go projects, if no golangci-lint config exists:
