@@ -19,8 +19,9 @@ Advisory skill that fans out code reviews to multiple LLM providers (Claude, Ope
 
 | Flag | Description | Manual Only |
 |------|-------------|-------------|
-| `--provider <list>` | Comma-separated LLM providers (e.g., `openai,claude`) | No |
-| `--file <path>` | Specify file to review (repeatable) | No |
+| `--provider <name>` | LLM provider to use (repeatable, e.g., `--provider openai --provider gemini`). Defaults to all in config. | No |
+| `--file <path>` | Specify file to review (repeatable). Defaults to recent git changes. | No |
+| `--list-sdks` | Show configured providers, which have API keys set, and required SDK packages. Diagnostic only. | No |
 | `--deliberate N` | Sequential chaining - pass through N rounds of LLMs | **Yes** |
 | `--interject N` | Parallel interjections - each LLM can respond N times | **Yes** |
 
@@ -142,7 +143,7 @@ done
 
 ## Step 3: Construct Review Prompt
 
-Build a structured prompt for the LLM council:
+Build a structured prompt for Star-Chamber:
 
 ```
 You are a senior software craftsman reviewing code for quality, idioms, and architectural soundness.
@@ -179,22 +180,64 @@ Provide your review as structured JSON:
 }
 ```
 
-## Step 4: Fan Out to LLM Council
+## Step 4: Fan Out to Star-Chamber
 
-Execute the multi-LLM review using uvx:
+First, determine which SDK packages are needed for the configured providers:
 
 ```bash
-echo "$PROMPT" | uvx --from any-llm-sdk python "$CLAUDE_CONFIG_PATH/skills/advisory/star-chamber/llm_council.py" \
-  ${PROVIDERS:+$(echo "$PROVIDERS" | sed 's/,/ --provider /g' | sed 's/^/--provider /')} \
-  ${FILES:+$(echo "$FILES" | sed 's/ / --file /g' | sed 's/^/--file /')} \
-  ${DELIBERATE:+--deliberate $DELIBERATE} \
-  ${INTERJECT:+--interject $INTERJECT}
+uvx --from any-llm-sdk python "$CLAUDE_CONFIG_PATH/skills/advisory/star-chamber/llm_council.py" \
+  --list-sdks \
+  [--provider <name>...]
 ```
 
+This outputs JSON with `uvx_with_flags` containing the required `--with` arguments (e.g., `--with anthropic --with google-genai`).
+
+Then execute the review with the dynamically determined SDKs:
+
+```bash
+echo "$PROMPT" | uvx --from any-llm-sdk $UVX_WITH_FLAGS \
+  python "$CLAUDE_CONFIG_PATH/skills/advisory/star-chamber/llm_council.py" \
+  [--provider <name>...] \
+  [--file <path>...] \
+  [--deliberate N] \
+  [--interject N]
+```
+
+The SDK mapping is defined in `$CLAUDE_CONFIG_PATH/reference/star-chamber/sdk_map.json` and supports all any-llm providers.
+
 **Execution modes:**
-- Default: parallel independent calls to all providers
-- `--deliberate N`: sequential chaining, feeding output to next LLM (debate mode)
-- `--interject N`: multiple parallel interjections per provider (rubber-ducking mode)
+
+| Mode | Flag | Flow | Use Case |
+|------|------|------|----------|
+| Parallel | (default) | All providers review independently at once | Fast consensus gathering |
+| Deliberate | `--deliberate N` | Sequential: each LLM sees previous responses | Deep debate, building on ideas |
+| Interject | `--interject N` | Each provider responds N times in parallel | Multiple perspectives per model |
+
+**Parallel (default):**
+```
+Prompt → [OpenAI] ──→ Response A
+      → [Claude] ──→ Response B    (all at once)
+      → [Gemini] ──→ Response C
+```
+
+**Deliberate (--deliberate 2):**
+```
+Prompt → OpenAI → "I think X..."
+                     ↓
+      "OpenAI said X" → Claude → "I agree but also Y..."
+                                    ↓
+               "Claude said Y" → Gemini → "Actually, Z..."
+                                             ↓
+                              (repeat for round 2)
+```
+
+**Interject (--interject 2):**
+```
+Prompt → [OpenAI] ──→ Response A1
+      → [OpenAI] ──→ Response A2   (2 parallel calls per provider)
+      → [Claude] ──→ Response B1
+      → [Claude] ──→ Response B2
+```
 
 ## Step 5: Aggregate Results
 
@@ -218,20 +261,24 @@ Generate both human-readable and machine-readable output:
 
 ### Markdown Report
 
+The output combines two dimensions:
+- **Agreement** (section headers): How many providers flagged the issue (consensus = all, majority = 2+, individual = 1)
+- **Severity** (issue labels): How serious - HIGH (security/correctness), MEDIUM (potential bugs), LOW (style/optimization)
+
 ```markdown
 ## Star-Chamber Review
 
 **Files:** {list of reviewed files}
 **Providers:** {list of providers used}
 
-### Consensus Issues (All Providers)
-1. **{SEVERITY}** - `{location}` - {description}
+### Consensus Issues (All Providers Agree)
+1. `{location}` [{SEVERITY}] - {description}
 
-### Majority Issues (2+ Providers)
-1. **{SEVERITY}** - `{location}` - {description}
+### Majority Issues (N/M Providers)
+1. `{location}` [{SEVERITY}, {N}/{M}] - {description}
 
 ### Individual Observations
-- **{Provider}**: {observation}
+- **{Provider}**: `{location}` - {observation}
 
 ### Summary
 | Provider | Quality | Issues |
@@ -266,7 +313,7 @@ Generate both human-readable and machine-readable output:
 /star-chamber
 
 # Specific files and providers
-/star-chamber --file backend/app/auth.py --provider openai,claude
+/star-chamber --file backend/app/auth.py --provider openai --provider anthropic
 
 # Sequential deliberation - 3 rounds of debate
 /star-chamber --deliberate 3
@@ -275,7 +322,7 @@ Generate both human-readable and machine-readable output:
 /star-chamber --interject 2 --file frontend/src/hooks/useAuth.ts
 
 # Combined workflow
-/star-chamber --file auth.py --provider openai,gemini --deliberate 2 --interject 1
+/star-chamber --file auth.py --provider openai --provider gemini --deliberate 2
 ```
 
 ## Configuration
