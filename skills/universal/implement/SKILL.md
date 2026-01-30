@@ -120,8 +120,8 @@ Only after validation passes:
 **Task:** [what was requested]
 
 **Rules Applied:**
-- backend/.claude/CLAUDE.md (Go backend rules)
-- .claude/CLAUDE.md (Universal rules)
+- backend/.claude/CLAUDE.md
+- .claude/CLAUDE.md
 
 **Changes:**
 - file.go: [what changed]

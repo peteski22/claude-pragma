@@ -78,8 +78,8 @@ Collect all results.
 ## Review Results
 
 ### Rules Applied
-- backend/.claude/CLAUDE.md (Go backend rules)
-- .claude/CLAUDE.md (Universal rules)
+- backend/.claude/CLAUDE.md
+- .claude/CLAUDE.md
 
 ### Files Changed
 - cmd/main.go
