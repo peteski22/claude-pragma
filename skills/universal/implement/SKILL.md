@@ -13,19 +13,65 @@ Implement the requested feature/fix, then validate before completing.
 
 $ARGUMENTS
 
-## Workflow
+## Phase 0: Inject Applicable Rules
 
-### Phase 1: Understand
+Before starting work, collect and read all applicable CLAUDE.md rules.
+
+### Step 1: Identify target directories
+
+Based on the task, identify which directories will contain files to be created or modified.
+
+### Step 2: Walk up and collect rules
+
+For each directory, walk upward to repo root collecting `.claude/CLAUDE.md` files:
+
+```
+For a file in backend/app/handlers/:
+  Check: backend/app/handlers/.claude/CLAUDE.md
+  Check: backend/app/.claude/CLAUDE.md
+  Check: backend/.claude/CLAUDE.md
+  Check: .claude/CLAUDE.md (root)
+```
+
+Use the Read tool to check each path. Collect those that exist.
+
+### Step 3: Read and apply rules
+
+Read each discovered CLAUDE.md file.
+Apply rules in order of precedence (most specific first):
+
+```
+1. backend/app/.claude/CLAUDE.md (if exists) - highest precedence
+2. backend/.claude/CLAUDE.md (if exists)
+3. .claude/CLAUDE.md (root) - lowest precedence
+```
+
+Earlier rules override later rules where they conflict.
+
+### Step 4: Record applied rules
+
+Track which rule files were loaded for the final report.
+
+---
+
+## Phase 1: Understand
+
 1. Clarify requirements if ambiguous.
 2. Identify files that need changes.
 3. Understand existing patterns in the codebase.
 
-### Phase 2: Implement
+---
+
+## Phase 2: Implement
+
 1. Make the necessary code changes.
-2. Follow the project's CLAUDE.md rules.
+2. Follow the rules loaded in Phase 0.
 3. Keep changes focused - don't over-engineer.
 
-### Phase 3: Validate
+---
+
+## Phase 3: Validate
+
 After implementation is complete, run validation:
 
 1. **Run linters first** (deterministic checks):
@@ -46,12 +92,16 @@ After implementation is complete, run validation:
 
 4. **Re-validate** if fixes were made.
 
-### Phase 4: Complete
+---
+
+## Phase 4: Complete
+
 Only after validation passes:
 
 1. Summarize what was implemented.
 2. List files changed.
-3. Note any warnings or justified SHOULD violations.
+3. List rules that were applied (from Phase 0).
+4. Note any warnings or justified SHOULD violations.
 
 ## Output Format
 
@@ -59,6 +109,10 @@ Only after validation passes:
 ## Implementation Complete
 
 **Task:** [what was requested]
+
+**Rules Applied:**
+- backend/.claude/CLAUDE.md
+- .claude/CLAUDE.md
 
 **Changes:**
 - file.go: [what changed]
@@ -77,6 +131,7 @@ Ready for review or commit.
 
 ## Rules
 
+- Do NOT skip Phase 0 (rule injection).
 - Do NOT skip validation.
 - Do NOT say "done" until validation passes.
 - Do NOT ignore HARD or SHOULD violations.

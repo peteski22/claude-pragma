@@ -12,19 +12,33 @@ Run all applicable validators against recent changes and report findings.
 ## Step 1: Identify what changed
 
 ```bash
-# Get list of changed files
 git diff HEAD~1 --name-only 2>/dev/null || git diff --cached --name-only 2>/dev/null || git status --porcelain | awk '{print $2}'
 ```
 
-Categorize by type:
-- Go files (*.go)
-- Python files (*.py)
-- Config files
-- Other
+Collect the list of changed files and their directories.
 
-## Step 2: Run deterministic checks
+## Step 2: Inject applicable rules
 
-Based on detected languages, run linters:
+For each changed file, walk upward from its directory to repo root, collecting `.claude/CLAUDE.md` files:
+
+```
+For a file in backend/app/handlers/:
+  Check: backend/app/handlers/.claude/CLAUDE.md
+  Check: backend/app/.claude/CLAUDE.md
+  Check: backend/.claude/CLAUDE.md
+  Check: .claude/CLAUDE.md (root)
+```
+
+Use the Read tool to check each path. Collect and read those that exist.
+De-duplicate (a rule file only needs to be read once even if multiple files share it).
+
+**Precedence:** Most specific rules override more general rules.
+
+Record which rule files were loaded.
+
+## Step 3: Run deterministic checks
+
+Based on detected file types, run linters:
 
 **Go:**
 ```bash
@@ -38,7 +52,7 @@ uv run pre-commit run --all-files 2>&1 | tail -50
 
 Report linter results. If linters fail, report and stop - fix these first.
 
-## Step 3: Run semantic validators
+## Step 4: Run semantic validators
 
 Use the Task tool to spawn validators in parallel based on what changed:
 
@@ -54,10 +68,14 @@ Use the Task tool to spawn validators in parallel based on what changed:
 
 Collect all results.
 
-## Step 4: Aggregate and report
+## Step 5: Aggregate and report
 
 ```
 ## Review Results
+
+### Rules Applied
+- backend/.claude/CLAUDE.md
+- .claude/CLAUDE.md
 
 ### Files Changed
 - cmd/main.go
@@ -83,6 +101,7 @@ Collect all results.
 1. handler.go:120 - Complex function, consider breaking up
 
 ### Summary
+- Rules applied: 2
 - Hard violations: 1
 - Should violations: 1
 - Warnings: 1
@@ -94,6 +113,7 @@ Collect all results.
 
 ## Rules
 
+- Do NOT skip Step 2 (rule injection).
 - Report ALL findings, don't summarize away details.
 - Be specific with file:line locations.
 - Clearly separate HARD/SHOULD/WARN severity.
