@@ -197,15 +197,50 @@ If missing, offer to set it up:
 ```
 /star-chamber requires provider configuration for multi-LLM reviews.
 
-Would you like to set up the default configuration?
-
-This will configure OpenAI, Anthropic, and Gemini providers.
-API keys are read from environment variables.
+Would you like to set up the configuration?
 
 [Yes, set it up] / [No, skip for now]
 ```
 
-**If user accepts:**
+**If user accepts**, ask about API key management:
+
+```
+How would you like to manage API keys?
+
+[any-llm.ai platform] - Single ANY_LLM_KEY, centralized key vault, usage tracking
+[Direct provider keys] - Set OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY individually
+```
+
+**If user chooses "any-llm.ai platform":**
+```bash
+mkdir -p ~/.config/star-chamber
+cat > ~/.config/star-chamber/providers.json << 'EOF'
+{
+  "platform": "any-llm",
+  "providers": [
+    {"provider": "openai", "model": "gpt-4o"},
+    {"provider": "anthropic", "model": "claude-sonnet-4-20250514"},
+    {"provider": "gemini", "model": "gemini-2.0-flash"}
+  ],
+  "consensus_threshold": 2,
+  "timeout_seconds": 60
+}
+EOF
+```
+
+Then include in the summary:
+```
+**Star-Chamber configured (any-llm.ai platform mode):**
+  Config: ~/.config/star-chamber/providers.json
+
+  Setup:
+    1. Create account at https://any-llm.ai
+    2. Create a project and add your provider API keys
+    3. Copy your project key and set:
+       export ANY_LLM_KEY="ANY.v1...."
+```
+
+**If user chooses "Direct provider keys":**
 ```bash
 mkdir -p ~/.config/star-chamber
 cp "$CLAUDE_PRAGMA_PATH/reference/star-chamber/providers.json" ~/.config/star-chamber/providers.json
@@ -213,18 +248,18 @@ cp "$CLAUDE_PRAGMA_PATH/reference/star-chamber/providers.json" ~/.config/star-ch
 
 Then include in the summary:
 ```
-**Star-Chamber configured:**
+**Star-Chamber configured (direct keys mode):**
   Config: ~/.config/star-chamber/providers.json
 
-  Required environment variables:
-    - OPENAI_API_KEY
-    - ANTHROPIC_API_KEY
-    - GEMINI_API_KEY
+  Set these environment variables:
+    export OPENAI_API_KEY="sk-..."
+    export ANTHROPIC_API_KEY="sk-ant-..."
+    export GEMINI_API_KEY="..."
 
   Edit the config to remove providers you don't have keys for.
 ```
 
-**If user declines**, note in summary:
+**If user declines setup**, note in summary:
 ```
 **Star-Chamber:** Not configured (run /star-chamber to set up later)
 ```

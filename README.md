@@ -28,6 +28,7 @@ ln -s "$CLAUDE_PRAGMA_PATH/skills/universal/setup-project" ~/.claude/skills/
 | `OPENAI_API_KEY` | For star-chamber | OpenAI API key |
 | `ANTHROPIC_API_KEY` | For star-chamber | Anthropic API key |
 | `GEMINI_API_KEY` | For star-chamber | Google Gemini API key |
+| `ANY_LLM_KEY` | For star-chamber | Platform key from any-llm.ai (alternative to individual provider keys) |
 
 ## Architecture
 

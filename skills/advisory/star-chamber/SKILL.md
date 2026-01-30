@@ -15,6 +15,10 @@ Advisory skill that fans out code reviews to multiple LLM providers (Claude, Ope
 - Uses `any-llm-sdk` via `uvx` (no global Python install needed)
 - Supports parallel and sequential review modes
 
+**Requirements:**
+- Configuration file at `~/.config/star-chamber/providers.json`
+- API keys: either individual keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`) or single `ANY_LLM_KEY` from any-llm.ai platform
+
 ## Arguments
 
 | Flag | Description | Manual Only |
@@ -26,6 +30,15 @@ Advisory skill that fans out code reviews to multiple LLM providers (Claude, Ope
 | `--rounds N` | Number of debate rounds (default: 2, requires --debate) | **Yes** |
 
 **Manual-only flags** are ignored in automated workflows.
+
+## Skill Base Directory
+
+The skill loader provides the base directory in the header: `Base directory for this skill: <path>`. Use this to locate llm_council.py:
+
+```bash
+SKILL_BASE="<base directory from header>"
+# e.g., SKILL_BASE="$HOME/.claude/skills/star-chamber"
+```
 
 ## Step 0: Check Configuration
 
@@ -62,7 +75,17 @@ API keys are read from environment variables:
 
 ```bash
 mkdir -p ~/.config/star-chamber
-cp "$CLAUDE_PRAGMA_PATH/reference/star-chamber/providers.json" ~/.config/star-chamber/providers.json
+cat > ~/.config/star-chamber/providers.json << 'EOF'
+{
+  "providers": [
+    {"provider": "openai", "model": "gpt-4o", "api_key": "${OPENAI_API_KEY}"},
+    {"provider": "anthropic", "model": "claude-sonnet-4-20250514", "api_key": "${ANTHROPIC_API_KEY}"},
+    {"provider": "gemini", "model": "gemini-2.0-flash", "api_key": "${GEMINI_API_KEY}"}
+  ],
+  "consensus_threshold": 2,
+  "timeout_seconds": 60
+}
+EOF
 ```
 
 Then show:
@@ -88,11 +111,10 @@ To set up manually:
 1. Create the config directory:
    mkdir -p ~/.config/star-chamber
 
-2. Copy the reference config:
-   cp $CLAUDE_PRAGMA_PATH/reference/star-chamber/providers.json ~/.config/star-chamber/
-
-3. Edit to match your available API keys:
+2. Create providers.json with your providers:
    $EDITOR ~/.config/star-chamber/providers.json
+
+3. Add configuration (see example in Configuration section below)
 
 4. Set your API keys as environment variables
 
@@ -182,28 +204,29 @@ Provide your review as structured JSON:
 
 ## Step 4: Fan Out to Star-Chamber
 
-First, determine which SDK packages are needed for the configured providers:
+First, determine which SDK packages are needed:
 
 ```bash
-uvx --from any-llm-sdk python "$CLAUDE_PRAGMA_PATH/skills/advisory/star-chamber/llm_council.py" \
-  --list-sdks \
-  [--provider <name>...]
+uvx --from any-llm-sdk python "$SKILL_BASE/llm_council.py" --list-sdks
 ```
 
-This outputs JSON with `uvx_with_flags` containing the required `--with` arguments (e.g., `--with anthropic --with google-genai`).
+This outputs JSON with `required_sdks` array listing needed packages (e.g., `["anthropic", "google-genai"]`).
 
-Then execute the review with the dynamically determined SDKs:
+Then execute the review, adding a `--with` flag for **each** SDK:
 
 ```bash
-echo "$PROMPT" | uvx --from any-llm-sdk $UVX_WITH_FLAGS \
-  python "$CLAUDE_PRAGMA_PATH/skills/advisory/star-chamber/llm_council.py" \
+echo "$PROMPT" | uvx --from any-llm-sdk \
+  --with anthropic --with google-genai \
+  python "$SKILL_BASE/llm_council.py" \
   [--provider <name>...] \
   [--file <path>...] \
   [--debate] \
   [--rounds N]
 ```
 
-The SDK mapping is defined in `$CLAUDE_PRAGMA_PATH/reference/star-chamber/sdk_map.json` and supports all any-llm providers.
+**Important:** Each `--with` must be a separate argument. Do NOT quote multiple `--with` flags together.
+
+The SDK mapping is built into llm_council.py and supports all any-llm providers.
 
 **Execution modes:**
 
@@ -372,6 +395,52 @@ Provider configuration is read from `~/.config/star-chamber/providers.json`:
 ```
 
 Override config path with `STAR_CHAMBER_CONFIG` environment variable.
+
+## Using any-llm.ai Managed Platform (Optional)
+
+Instead of setting individual API keys, you can use the [any-llm.ai](https://any-llm.ai) managed platform for:
+- **Centralized key management** - Store provider keys securely (encrypted client-side)
+- **Usage tracking** - Automatic cost and token tracking across all providers
+- **Single authentication** - One `ANY_LLM_KEY` instead of multiple provider keys
+
+### Platform Setup
+
+1. Create account at https://any-llm.ai
+2. Create a project and add your provider API keys (OpenAI, Anthropic, Gemini, etc.)
+3. Copy your project key
+4. Set environment variable:
+   ```bash
+   export ANY_LLM_KEY="ANY.v1.abc123..."
+   ```
+5. Enable platform mode in your config (`~/.config/star-chamber/providers.json`):
+   ```json
+   {
+     "platform": "any-llm",
+     ...
+   }
+   ```
+
+### What Gets Tracked
+
+The platform tracks **metadata only** (never prompts/responses):
+- Provider and model used
+- Token counts (input/output)
+- Request timestamps
+- Cost estimates
+
+### Platform Config Example
+
+```json
+{
+  "platform": "any-llm",
+  "providers": [
+    {"provider": "openai", "model": "gpt-4o"},
+    {"provider": "anthropic", "model": "claude-sonnet-4-20250514"}
+  ]
+}
+```
+
+Note: `api_key` fields are omitted - the library fetches them from the platform automatically.
 
 ## Cost Warning
 

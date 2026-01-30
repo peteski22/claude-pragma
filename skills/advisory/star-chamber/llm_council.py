@@ -19,28 +19,20 @@ from typing import Any
 
 
 def load_sdk_map() -> dict[str, str | None]:
-    """Load provider-to-SDK mapping from reference file."""
-    claude_config = os.environ.get("CLAUDE_PRAGMA_PATH", "")
-    sdk_map_path = Path(claude_config) / "reference/star-chamber/sdk_map.json"
-    if sdk_map_path.exists():
-        with open(sdk_map_path) as f:
-            data = json.load(f)
-            # Remove comment key.
-            data.pop("_comment", None)
-            return data
-    # Fallback: common providers that need SDKs. If not listed, none needed.
-    return {
-        "anthropic": "anthropic",
-        "gemini": "google-genai",
-        "vertexai": "google-genai",
-        "groq": "groq",
-        "mistral": "mistralai",
-        "cohere": "cohere",
-        "bedrock": "boto3",
-        "sagemaker": "boto3",
-        "together": "together",
-        "ollama": "ollama",
-    }
+    """Load provider-to-SDK mapping."""
+    sdk_map_path = Path(__file__).resolve().parent / "sdk_map.json"
+    if not sdk_map_path.exists():
+        print(
+            json.dumps({
+                "error": f"SDK map not found: {sdk_map_path}",
+                "hint": "Ensure star-chamber skill is set up correctly.",
+            }),
+        )
+        sys.exit(1)
+    with open(sdk_map_path) as f:
+        data: dict[str, str | None] = json.load(f)
+        data.pop("_comment", None)
+        return data
 
 
 def get_required_sdks(provider_names: list[str]) -> list[str]:
@@ -57,18 +49,25 @@ def get_required_sdks(provider_names: list[str]) -> list[str]:
 async def get_review(
     provider: str, model: str, prompt: str, api_key: str
 ) -> dict[str, Any]:
-    """Send prompt to a single provider and return structured response."""
+    """Send prompt to a single provider and return structured response.
+
+    If api_key is empty and ANY_LLM_KEY is set, the SDK auto-detects platform mode.
+    """
     try:
         # Import here to allow uvx to install the dependency.
         from any_llm import acompletion
 
-        response = await acompletion(
-            model=model,
-            provider=provider,
-            messages=[{"role": "user", "content": prompt}],
-            api_key=api_key,
-            temperature=0.3,
-        )
+        kwargs = {
+            "model": model,
+            "provider": provider,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.3,
+        }
+        if api_key:
+            kwargs["api_key"] = api_key
+        # If no api_key, SDK checks ANY_LLM_KEY and auto-routes through platform.
+
+        response = await acompletion(**kwargs)
         return {
             "provider": provider,
             "model": model,
@@ -120,8 +119,23 @@ async def get_review(
         return {"provider": provider, "model": model, "success": False, "error": str(e)}
 
 
-def resolve_api_keys(providers: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Resolve environment variable placeholders in API keys."""
+def resolve_api_keys(
+    providers: list[dict[str, Any]], use_platform: bool
+) -> list[dict[str, Any]]:
+    """Resolve API keys - from env vars or platform."""
+    if use_platform:
+        # Platform mode: ignore any api_key in config, platform provides keys.
+        ignored = [p["provider"] for p in providers if p.get("api_key")]
+        if ignored:
+            print(
+                f"[star-chamber] Using platform mode, ignoring api_key for: {', '.join(ignored)}",
+                file=sys.stderr,
+            )
+        for p in providers:
+            p["api_key"] = ""
+        return providers
+
+    # Direct mode: resolve from environment variables.
     for p in providers:
         api_key = p.get("api_key", "")
         if api_key.startswith("${") and api_key.endswith("}"):
@@ -204,7 +218,9 @@ async def run_council(
                     )
 
                 tasks.append(
-                    (provider_name, get_review(p["provider"], p["model"], round_prompt, p["api_key"]))
+                    (provider_name, get_review(
+                        p["provider"], p["model"], round_prompt, p["api_key"]
+                    ))
                 )
 
             # Execute round in parallel.
@@ -266,27 +282,11 @@ def main() -> None:
     )
 
     if not os.path.exists(config_path):
-        claude_config = os.environ.get("CLAUDE_PRAGMA_PATH", "")
-        reference_path = (
-            f"{claude_config}/reference/star-chamber/providers.json"
-            if claude_config
-            else "~/.config/star-chamber/providers.json"
-        )
         print(
             json.dumps(
                 {
                     "error": f"Config file not found: {config_path}",
-                    "setup": {
-                        "step1": "mkdir -p ~/.config/star-chamber",
-                        "step2": f"cp {reference_path} ~/.config/star-chamber/providers.json",
-                        "step3": "Edit the file to configure your API keys",
-                    },
-                    "required_env_vars": [
-                        "OPENAI_API_KEY",
-                        "ANTHROPIC_API_KEY",
-                        "GEMINI_API_KEY",
-                    ],
-                    "hint": "Remove providers from the config if you don't have their API keys.",
+                    "hint": "Run /star-chamber to set up configuration, or create manually.",
                 },
                 indent=2,
             )
@@ -296,8 +296,30 @@ def main() -> None:
     with open(config_path) as f:
         config = json.load(f)
 
+    platform = config.get("platform")
+
+    # Validate platform mode prerequisites.
+    if platform == "any-llm":
+        any_llm_key = os.environ.get("ANY_LLM_KEY", "")
+        if not any_llm_key:
+            print(
+                json.dumps(
+                    {
+                        "error": "Platform mode enabled but ANY_LLM_KEY not set",
+                        "setup": {
+                            "step1": "Create project at https://any-llm.ai",
+                            "step2": "Add your provider API keys to the project",
+                            "step3": "Copy your project key and set: export ANY_LLM_KEY='...'",
+                        },
+                        "docs": "https://any-llm.ai/docs",
+                    },
+                    indent=2,
+                )
+            )
+            sys.exit(1)
+
     providers = config.get("providers", [])
-    providers = resolve_api_keys(providers)
+    providers = resolve_api_keys(providers, platform == "any-llm")
 
     # Filter to requested providers if specified.
     if args.provider:
@@ -321,27 +343,38 @@ def main() -> None:
         provider_names = [p["provider"] for p in providers]
         sdks = get_required_sdks(provider_names)
 
+        # In platform mode, add platform SDK.
+        if platform == "any-llm":
+            sdk_map = load_sdk_map()
+            platform_sdk = sdk_map.get("platform")
+            if platform_sdk:
+                sdks = sorted(set(sdks + [platform_sdk]))
+
         # Check which providers have API keys set.
         ready = []
         missing_key = []
+        platform_provided = []
         for p in providers:
-            if p.get("api_key"):
+            if platform == "any-llm":
+                platform_provided.append(p["provider"])
+            elif p.get("api_key"):
                 ready.append(p["provider"])
             else:
                 missing_key.append(p["provider"])
 
-        print(
-            json.dumps(
-                {
-                    "providers_configured": provider_names,
-                    "providers_ready": ready,
-                    "providers_missing_key": missing_key,
-                    "required_sdks": sdks,
-                    "uvx_with_flags": " ".join(f"--with {sdk}" for sdk in sdks),
-                },
-                indent=2,
-            )
-        )
+        output = {
+            "providers_configured": provider_names,
+            "providers_ready": ready,
+            "providers_missing_key": missing_key,
+            "required_sdks": sdks,
+            "uvx_with_flags": " ".join(f"--with {sdk}" for sdk in sdks),
+            "platform": platform,
+        }
+        if platform == "any-llm":
+            output["providers_platform_provided"] = platform_provided
+            output["platform_key_set"] = bool(os.environ.get("ANY_LLM_KEY"))
+
+        print(json.dumps(output, indent=2))
         sys.exit(0)
 
     # Read prompt from stdin.
