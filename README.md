@@ -1,4 +1,4 @@
-# Claude Config
+# Claude Pragma
 
 Composable configuration for Claude Code: rules, skills, hooks, and validators.
 
@@ -6,18 +6,28 @@ Composable configuration for Claude Code: rules, skills, hooks, and validators.
 
 ```bash
 # 1. Clone this repo
-git clone git@github.com:{org}/claude-config.git ~/src/claude-config
+git clone git@github.com:{org}/claude-pragma.git ~/src/claude-pragma
 
 # 2. Set environment variable (add to ~/.zshrc or ~/.bashrc)
-export CLAUDE_CONFIG_PATH="$HOME/src/claude-config"
+export CLAUDE_PRAGMA_PATH="$HOME/src/claude-pragma"
 
 # 3. Create skills directory and link the setup skill
 mkdir -p ~/.claude/skills
-ln -s "$CLAUDE_CONFIG_PATH/skills/universal/setup-project" ~/.claude/skills/
+ln -s "$CLAUDE_PRAGMA_PATH/skills/universal/setup-project" ~/.claude/skills/
 
 # 4. In any project, run:
 /setup-project
 ```
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `CLAUDE_PRAGMA_PATH` | Yes | Path to cloned claude-pragma repo |
+| `STAR_CHAMBER_CONFIG` | No | Custom path to star-chamber providers.json (default: `~/.config/star-chamber/providers.json`) |
+| `OPENAI_API_KEY` | For star-chamber | OpenAI API key |
+| `ANTHROPIC_API_KEY` | For star-chamber | Anthropic API key |
+| `GEMINI_API_KEY` | For star-chamber | Google Gemini API key |
 
 ## Architecture
 
@@ -53,7 +63,7 @@ CLAUDE.md rules are **guidance** - they can be ignored or forgotten. We need:
 ## Directory Structure
 
 ```
-claude-config/
+claude-pragma/
 ├── claude-md/
 │   ├── universal/
 │   │   ├── base.md              # Universal rules for all projects
@@ -84,6 +94,7 @@ claude-config/
 | `/implement <task>` | Implement with validation loop built-in |
 | `/review` | Review current changes against all validators |
 | `/validate` | Run all validators (called by /implement and /review) |
+| `/star-chamber` | Multi-LLM advisory review (OpenAI, Anthropic, Gemini consensus) |
 
 ## Workflow
 

@@ -12,3 +12,10 @@ __pycache__/
 
 # OS
 .DS_Store
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+providers.json

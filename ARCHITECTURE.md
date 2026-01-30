@@ -1,6 +1,6 @@
 # Architecture
 
-This document explains the design decisions behind claude-config.
+This document explains the design decisions behind claude-pragma.
 
 ## User Flow: End-to-End
 
@@ -9,8 +9,8 @@ This diagram shows the complete workflow from project setup through implementati
 ```mermaid
 flowchart TB
     subgraph Setup["One-Time Setup"]
-        S1["Clone claude-config repo"]
-        S2["Set $CLAUDE_CONFIG_PATH"]
+        S1["Clone claude-pragma repo"]
+        S2["Set $CLAUDE_PRAGMA_PATH"]
         S3["Run /setup-project"]
         S1 --> S2 --> S3
         S3 --> S3a["Detects: backend/ (Python)<br/>frontend/ (TypeScript)<br/>services/go/ (Go)"]

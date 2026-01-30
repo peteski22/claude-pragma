@@ -62,7 +62,7 @@ API keys are read from environment variables:
 
 ```bash
 mkdir -p ~/.config/star-chamber
-cp "$CLAUDE_CONFIG_PATH/reference/star-chamber/providers.json" ~/.config/star-chamber/providers.json
+cp "$CLAUDE_PRAGMA_PATH/reference/star-chamber/providers.json" ~/.config/star-chamber/providers.json
 ```
 
 Then show:
@@ -89,7 +89,7 @@ To set up manually:
    mkdir -p ~/.config/star-chamber
 
 2. Copy the reference config:
-   cp $CLAUDE_CONFIG_PATH/reference/star-chamber/providers.json ~/.config/star-chamber/
+   cp $CLAUDE_PRAGMA_PATH/reference/star-chamber/providers.json ~/.config/star-chamber/
 
 3. Edit to match your available API keys:
    $EDITOR ~/.config/star-chamber/providers.json
@@ -185,7 +185,7 @@ Provide your review as structured JSON:
 First, determine which SDK packages are needed for the configured providers:
 
 ```bash
-uvx --from any-llm-sdk python "$CLAUDE_CONFIG_PATH/skills/advisory/star-chamber/llm_council.py" \
+uvx --from any-llm-sdk python "$CLAUDE_PRAGMA_PATH/skills/advisory/star-chamber/llm_council.py" \
   --list-sdks \
   [--provider <name>...]
 ```
@@ -196,14 +196,14 @@ Then execute the review with the dynamically determined SDKs:
 
 ```bash
 echo "$PROMPT" | uvx --from any-llm-sdk $UVX_WITH_FLAGS \
-  python "$CLAUDE_CONFIG_PATH/skills/advisory/star-chamber/llm_council.py" \
+  python "$CLAUDE_PRAGMA_PATH/skills/advisory/star-chamber/llm_council.py" \
   [--provider <name>...] \
   [--file <path>...] \
   [--deliberate N] \
   [--interject N]
 ```
 
-The SDK mapping is defined in `$CLAUDE_CONFIG_PATH/reference/star-chamber/sdk_map.json` and supports all any-llm providers.
+The SDK mapping is defined in `$CLAUDE_PRAGMA_PATH/reference/star-chamber/sdk_map.json` and supports all any-llm providers.
 
 **Execution modes:**
 

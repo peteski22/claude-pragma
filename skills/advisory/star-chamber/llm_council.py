@@ -22,7 +22,7 @@ from typing import Any
 
 def load_sdk_map() -> dict[str, str | None]:
     """Load provider-to-SDK mapping from reference file."""
-    claude_config = os.environ.get("CLAUDE_CONFIG_PATH", "")
+    claude_config = os.environ.get("CLAUDE_PRAGMA_PATH", "")
     sdk_map_path = Path(claude_config) / "reference/star-chamber/sdk_map.json"
     if sdk_map_path.exists():
         with open(sdk_map_path) as f:
@@ -213,7 +213,7 @@ def main() -> None:
     )
 
     if not os.path.exists(config_path):
-        claude_config = os.environ.get("CLAUDE_CONFIG_PATH", "")
+        claude_config = os.environ.get("CLAUDE_PRAGMA_PATH", "")
         reference_path = (
             f"{claude_config}/reference/star-chamber/providers.json"
             if claude_config

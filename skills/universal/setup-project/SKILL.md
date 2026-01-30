@@ -11,25 +11,25 @@ Automatically configure Claude Code for the current project. Supports monorepos 
 
 ## Step 0: Verify config repo
 
-Requires `$CLAUDE_CONFIG_PATH` environment variable to be set.
+Requires `$CLAUDE_PRAGMA_PATH` environment variable to be set.
 
 ```bash
-echo "$CLAUDE_CONFIG_PATH"
-[[ -z "$CLAUDE_CONFIG_PATH" ]] && echo "ERROR: CLAUDE_CONFIG_PATH not set"
-[[ ! -d "$CLAUDE_CONFIG_PATH" ]] && echo "ERROR: CLAUDE_CONFIG_PATH does not exist"
-[[ ! -f "$CLAUDE_CONFIG_PATH/claude-md/universal/base.md" ]] && echo "ERROR: Invalid claude-config repo"
+echo "$CLAUDE_PRAGMA_PATH"
+[[ -z "$CLAUDE_PRAGMA_PATH" ]] && echo "ERROR: CLAUDE_PRAGMA_PATH not set"
+[[ ! -d "$CLAUDE_PRAGMA_PATH" ]] && echo "ERROR: CLAUDE_PRAGMA_PATH does not exist"
+[[ ! -f "$CLAUDE_PRAGMA_PATH/claude-md/universal/base.md" ]] && echo "ERROR: Invalid claude-pragma repo"
 ```
 
 If not set, tell the user:
 
 ```
-CLAUDE_CONFIG_PATH is not set.
+CLAUDE_PRAGMA_PATH is not set.
 
 1. Clone the config repo:
-   git clone git@github.com:{org}/claude-config.git ~/src/claude-config
+   git clone git@github.com:{org}/claude-pragma.git ~/src/claude-pragma
 
 2. Set the environment variable (add to ~/.zshrc or ~/.bashrc):
-   export CLAUDE_CONFIG_PATH="$HOME/src/claude-config"
+   export CLAUDE_PRAGMA_PATH="$HOME/src/claude-pragma"
 
 3. Re-run /setup-project
 ```
@@ -94,13 +94,13 @@ mkdir -p .claude
 
 Assemble root CLAUDE.md with:
 1. Header comment
-2. Universal rules from `$CLAUDE_CONFIG_PATH/claude-md/universal/base.md`
+2. Universal rules from `$CLAUDE_PRAGMA_PATH/claude-md/universal/base.md`
 3. **Meta-rule for subdirectory awareness** (always include this)
 4. Root-level language rules (if any detected at root)
 
 **Header:**
 ```markdown
-<!-- Assembled by /setup-project from claude-config -->
+<!-- Assembled by /setup-project from claude-pragma -->
 <!-- Org/Repo: {org}/{repo} -->
 <!-- Re-run /setup-project to regenerate -->
 ```
@@ -128,11 +128,11 @@ mkdir -p {subdir}/.claude
 
 Assemble with:
 1. Header comment (noting it's for that subdirectory)
-2. Language-specific rules from `$CLAUDE_CONFIG_PATH/claude-md/languages/{lang}/{lang}.md`
+2. Language-specific rules from `$CLAUDE_PRAGMA_PATH/claude-md/languages/{lang}/{lang}.md`
 
 **Header:**
 ```markdown
-<!-- Assembled by /setup-project from claude-config -->
+<!-- Assembled by /setup-project from claude-pragma -->
 <!-- Subdirectory: {subdir} -->
 <!-- Languages: {lang} -->
 <!-- Re-run /setup-project to regenerate -->
@@ -146,31 +146,31 @@ mkdir -p ~/.claude/skills
 
 **Universal skills (always):**
 ```bash
-ln -sf "$CLAUDE_CONFIG_PATH/skills/universal/implement" ~/.claude/skills/
-ln -sf "$CLAUDE_CONFIG_PATH/skills/universal/review" ~/.claude/skills/
-ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/validate" ~/.claude/skills/
-ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/security" ~/.claude/skills/
+ln -sf "$CLAUDE_PRAGMA_PATH/skills/universal/implement" ~/.claude/skills/
+ln -sf "$CLAUDE_PRAGMA_PATH/skills/universal/review" ~/.claude/skills/
+ln -sf "$CLAUDE_PRAGMA_PATH/skills/validators/validate" ~/.claude/skills/
+ln -sf "$CLAUDE_PRAGMA_PATH/skills/validators/security" ~/.claude/skills/
 ```
 
 **Advisory skills (always):**
 ```bash
-ln -sf "$CLAUDE_CONFIG_PATH/skills/advisory/star-chamber" ~/.claude/skills/
+ln -sf "$CLAUDE_PRAGMA_PATH/skills/advisory/star-chamber" ~/.claude/skills/
 ```
 
 **Go (if detected anywhere):**
 ```bash
-ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/go-proverbs" ~/.claude/skills/
-ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/go-effective" ~/.claude/skills/
+ln -sf "$CLAUDE_PRAGMA_PATH/skills/validators/go-proverbs" ~/.claude/skills/
+ln -sf "$CLAUDE_PRAGMA_PATH/skills/validators/go-effective" ~/.claude/skills/
 ```
 
 **Python (if detected anywhere):**
 ```bash
-ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/python-style" ~/.claude/skills/
+ln -sf "$CLAUDE_PRAGMA_PATH/skills/validators/python-style" ~/.claude/skills/
 ```
 
 **TypeScript (if detected anywhere):**
 ```bash
-ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/typescript-style" ~/.claude/skills/
+ln -sf "$CLAUDE_PRAGMA_PATH/skills/validators/typescript-style" ~/.claude/skills/
 ```
 
 ## Step 7: Offer reference configs
@@ -183,7 +183,7 @@ For Go projects, if no golangci-lint config exists:
 true
 ```
 
-If missing, offer to copy from `$CLAUDE_CONFIG_PATH/reference/go/golangci-lint.yml`, replacing `{org}` and `{repo}`.
+If missing, offer to copy from `$CLAUDE_PRAGMA_PATH/reference/go/golangci-lint.yml`, replacing `{org}` and `{repo}`.
 
 ### Star-Chamber provider config
 
@@ -208,7 +208,7 @@ API keys are read from environment variables.
 **If user accepts:**
 ```bash
 mkdir -p ~/.config/star-chamber
-cp "$CLAUDE_CONFIG_PATH/reference/star-chamber/providers.json" ~/.config/star-chamber/providers.json
+cp "$CLAUDE_PRAGMA_PATH/reference/star-chamber/providers.json" ~/.config/star-chamber/providers.json
 ```
 
 Then include in the summary:
