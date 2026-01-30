@@ -49,6 +49,7 @@ graph TD
 
     Root --> Backend["backend/.claude/CLAUDE.md<br/>(Python rules)"]
     Root --> Frontend["frontend/.claude/CLAUDE.md<br/>(TypeScript rules)"]
+    Root --> Services["services/go/.claude/CLAUDE.md<br/>(Go rules)"]
 
     Backend --> BI["/implement<br/>Phase 0: Load rules"]
     Backend --> BR["/review<br/>Step 2: Load rules"]
@@ -56,14 +57,14 @@ graph TD
     Frontend --> FI["/implement<br/>Phase 0: Load rules"]
     Frontend --> FR["/review<br/>Step 2: Load rules"]
 
-    BI --> Validators["Validator Agents<br/>(forked)"]
-    BR --> Validators
-    FI --> Validators
-    FR --> Validators
+    Services --> SI["/implement<br/>Phase 0: Load rules"]
+    Services --> SR["/review<br/>Step 2: Load rules"]
 
-    Validators --> GoEff["go-effective"]
-    Validators --> GoProv["go-proverbs"]
-    Validators --> Sec["security"]
+    BI & BR --> PyVal["python-style"]
+    FI & FR --> TSVal["typescript-style"]
+    SI & SR --> GoVal["go-effective<br/>go-proverbs"]
+
+    PyVal & TSVal & GoVal --> Sec["security<br/>(all languages)"]
 ```
 
 ## System Flow
@@ -85,15 +86,17 @@ flowchart TD
 
     subgraph Phase3["Phase 3: Validate"]
         subgraph Deterministic["Deterministic Checks"]
-            Lint[golangci-lint / pre-commit]
+            Lint[pre-commit / golangci-lint / biome]
             LintFail{Pass?}
             Lint --> LintFail
         end
 
-        subgraph Semantic["Semantic Validators (parallel)"]
-            V1[security]
-            V2[go-effective]
-            V3[go-proverbs]
+        subgraph Semantic["Semantic Validators (by language)"]
+            SecVal[security - all languages]
+            PyVal[python-style - Python]
+            TSVal[typescript-style - TypeScript]
+            GoEff[go-effective - Go]
+            GoProv[go-proverbs - Go]
         end
 
         Agg[Aggregate Results]
@@ -102,8 +105,8 @@ flowchart TD
 
         LintFail -->|No| FixLint[Fix lint errors]
         FixLint --> Lint
-        LintFail -->|Yes| V1 & V2 & V3
-        V1 & V2 & V3 --> Agg
+        LintFail -->|Yes| SecVal & PyVal & TSVal & GoEff & GoProv
+        SecVal & PyVal & TSVal & GoEff & GoProv --> Agg
         Agg --> Fix
         Fix --> ReVal
         ReVal -->|Yes| Lint
@@ -121,37 +124,74 @@ flowchart TD
 
 ## Rule Injection Detail
 
+Rule injection walks up from the changed file to the repo root, collecting `.claude/CLAUDE.md` files. Most specific rules take precedence.
+
+### Go Example
+
 ```mermaid
 flowchart TD
-    File["Changed file:<br/>backend/app/handlers/user.go"]
+    File["Changed file:<br/>services/go/handlers/user.go"]
 
-    File --> Check1{"backend/app/handlers/<br/>.claude/CLAUDE.md?"}
-    Check1 -->|exists| Rule1["Load (highest precedence)"]
+    File --> Check1{"services/go/handlers/<br/>.claude/CLAUDE.md?"}
     Check1 -->|missing| Check2
 
-    Rule1 --> Check2{"backend/app/<br/>.claude/CLAUDE.md?"}
-    Check2 -->|exists| Rule2["Load"]
+    Check2{"services/go/<br/>.claude/CLAUDE.md?"}
+    Check2 -->|exists| Rule2["Load Go rules"]
     Check2 -->|missing| Check3
 
-    Rule2 --> Check3{"backend/<br/>.claude/CLAUDE.md?"}
-    Check3 -->|exists| Rule3["Load"]
-    Check3 -->|missing| Check4
+    Rule2 --> Check3{".claude/CLAUDE.md?<br/>(root)"}
+    Check3 -->|exists| Rule3["Load universal rules"]
 
-    Rule3 --> Check4{".claude/CLAUDE.md?<br/>(root)"}
-    Check4 -->|exists| Rule4["Load (lowest precedence)"]
+    Rule3 --> Apply["Apply: Go rules + Universal"]
+```
 
-    Rule4 --> Apply["Apply in order<br/>Record as 'Rules Applied'"]
+### Python Example
+
+```mermaid
+flowchart TD
+    File["Changed file:<br/>backend/app/services/users.py"]
+
+    File --> Check1{"backend/app/services/<br/>.claude/CLAUDE.md?"}
+    Check1 -->|missing| Check2
+
+    Check2{"backend/<br/>.claude/CLAUDE.md?"}
+    Check2 -->|exists| Rule2["Load Python rules"]
+
+    Rule2 --> Check3{".claude/CLAUDE.md?<br/>(root)"}
+    Check3 -->|exists| Rule3["Load universal rules"]
+
+    Rule3 --> Apply["Apply: Python rules + Universal"]
+```
+
+### TypeScript Example
+
+```mermaid
+flowchart TD
+    File["Changed file:<br/>frontend/src/components/Button.tsx"]
+
+    File --> Check1{"frontend/src/components/<br/>.claude/CLAUDE.md?"}
+    Check1 -->|missing| Check2
+
+    Check2{"frontend/<br/>.claude/CLAUDE.md?"}
+    Check2 -->|exists| Rule2["Load TypeScript rules"]
+
+    Rule2 --> Check3{".claude/CLAUDE.md?<br/>(root)"}
+    Check3 -->|exists| Rule3["Load universal rules"]
+
+    Rule3 --> Apply["Apply: TypeScript rules + Universal"]
 ```
 
 ## Validator Contracts
 
 Each validator has a `contract.json` defining its scope:
 
-| Validator | Scope | Excludes | Assumes |
-|-----------|-------|----------|---------|
-| **go-effective** | Naming, Error handling, Interface design, Control flow | Security, Go Proverbs, Formatting | gofmt, golangci-lint |
-| **go-proverbs** | Idiomatic Go philosophy, Concurrency patterns, Abstraction | Security, Effective Go details, Formatting | golangci-lint |
-| **security** | Secrets, Injection, Path traversal, Auth gaps | Code style, Language idioms, Performance | (none) |
+| Validator | Language | Scope | Excludes | Assumes |
+|-----------|----------|-------|----------|---------|
+| **go-effective** | Go | Naming, Error handling, Interface design, Control flow | Security, Go Proverbs, Formatting | gofmt, golangci-lint |
+| **go-proverbs** | Go | Idiomatic Go philosophy, Concurrency patterns, Abstraction | Security, Effective Go details, Formatting | golangci-lint |
+| **python-style** | Python | Google docstrings, Type hints, Error handling, Layered architecture | Security, Performance | ruff, mypy, pre-commit |
+| **typescript-style** | TypeScript | Strict mode, React patterns, Hooks usage, State management | Security, Performance | biome, pre-commit |
+| **security** | All | Secrets, Injection, Path traversal, Auth gaps | Code style, Language idioms, Performance | (none) |
 
 **HARD vs SHOULD by validator:**
 
@@ -159,6 +199,8 @@ Each validator has a `contract.json` defining its scope:
 |-----------|------------|--------------|
 | **go-effective** | Doc comments, Error return position, No pointer-to-interface | Interface size, Early returns, Parameter count |
 | **go-proverbs** | Share memory by communicating, Errors are values, Handle errors gracefully | Interface size, Zero value, Clear vs clever |
+| **python-style** | Exception chaining with `from e`, No bare `except:` | Google docstrings, Modern type hints (`str \| None`) |
+| **typescript-style** | Strict mode enabled, Functional components only | Proper hook dependencies, TanStack Query for server state |
 | **security** | Secrets, Injection, Path traversal, Auth gaps | Insecure configurations |
 
 This prevents:

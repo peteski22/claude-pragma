@@ -1,0 +1,51 @@
+# Reference .pre-commit-config.yaml for Python projects.
+# Copy to your project root as .pre-commit-config.yaml.
+
+repos:
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        exclude: |
+            (?x)^(
+                htmlcov/.*
+            )$
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-added-large-files
+      - id: check-toml
+      - id: check-yaml
+        args:
+          - --unsafe
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.3
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.9.7
+    hooks:
+      - id: uv-lock
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: uv run mypy .
+        language: system
+        types: [python]
+        require_serial: true
+        pass_filenames: false
+        verbose: true
+
+ci:
+  autofix_commit_msg: "[pre-commit.ci] Auto format"
+  autoupdate_commit_msg: "[pre-commit.ci] pre-commit autoupdate"

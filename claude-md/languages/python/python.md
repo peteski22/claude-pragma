@@ -3,31 +3,43 @@
 ## Style
 
 - Follow PEP 8 for code style.
-- Follow PEP 257 for docstrings.
-- Use type hints (PEP 484) for function signatures.
+- Use Google-style docstrings (Args, Returns, Raises sections).
+- Use modern type hints: `str | None` not `Optional[str]`.
+- End single-line comments with a full stop.
 
 ## Project Structure
 
 - Use pyproject.toml for project configuration.
-- Prefer uv or poetry for dependency management.
+- Use Astral's uv for dependency management.
+- Use src layout or app layout with clear module separation.
+- Organize by layer: routes/api, services, repositories, models.
 
 ## Code Quality
 
 - Prefer composition over inheritance.
-- Use dataclasses or Pydantic for data structures.
+- Use Pydantic or SQLModel for data structures.
 - Use context managers for resource management.
+- Use mixins for shared model fields (timestamps, primary keys).
 
 ## Error Handling
 
-- Be specific with exception types.
+- Create custom exception hierarchies inheriting from a base ServiceError.
+- Map exceptions to HTTP status codes at the route layer.
+- Always chain exceptions with `raise ... from e`.
 - Don't use bare `except:` clauses.
-- Use custom exceptions for domain-specific errors.
 
 ## Testing
 
 - Use pytest as the test framework.
-- Use fixtures for test setup.
-- Aim for focused, isolated unit tests.
+- Name test case variables `tc` not `tt`.
+- Use `t.Parallel()` equivalent: run independent tests in parallel.
+- Use fixtures with proper scope (module/function) and cleanup.
+- Mirror app structure in tests directory.
+
+## Type Checking
+
+- Use mypy with strict mode enabled.
+- Configure ruff with pyupgrade rules.
 
 ## Before Committing
 

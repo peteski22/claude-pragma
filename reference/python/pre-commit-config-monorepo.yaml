@@ -1,0 +1,81 @@
+# Reference .pre-commit-config.yaml for monorepos with Python backend + TypeScript frontend.
+# Copy to your project root as .pre-commit-config.yaml.
+
+repos:
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        exclude: |
+            (?x)^(
+                frontend/.*|
+                backend/htmlcov/.*
+            )$
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-added-large-files
+      - id: check-toml
+      - id: check-yaml
+        args:
+          - --unsafe
+      - id: end-of-file-fixer
+        exclude: |
+            (?x)^(
+                frontend/src/client/.*
+            )$
+      - id: trailing-whitespace
+        exclude: ^frontend/src/client/.*
+
+  # Python backend hooks.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.3
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^backend/
+      - id: ruff-format
+        files: ^backend/
+
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.9.7
+    hooks:
+      - id: uv-lock
+        args: [--project, backend]
+        files: backend/pyproject.toml
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: bash backend/scripts/run-mypy.sh
+        language: system
+        types: [python]
+        files: ^backend/(app|tests)/
+        require_serial: true
+        pass_filenames: false
+        verbose: true
+
+      # TypeScript frontend hooks.
+      - id: biome-check
+        name: biome check
+        entry: bash -c 'cd frontend && pnpm run lint'
+        language: system
+        types: [text]
+        files: ^frontend/
+
+      # Auto-regenerate TypeScript client when backend API changes.
+      - id: generate-client
+        name: generate client
+        entry: bash scripts/pre-commit-generate-client.sh
+        language: system
+        files: ^backend/app/api/.*\.py$
+        pass_filenames: false
+        require_serial: true
+        verbose: true
+
+ci:
+  autofix_commit_msg: "[pre-commit.ci] Auto format"
+  autoupdate_commit_msg: "[pre-commit.ci] pre-commit autoupdate"
