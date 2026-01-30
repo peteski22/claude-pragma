@@ -13,18 +13,18 @@
     "providers": {
       "type": "array",
       "items": {"type": "string"},
-      "description": "LLM providers to use (e.g., openai, claude, gemini)",
+      "description": "LLM providers to use (e.g., openai, anthropic, gemini)",
       "required": false
     },
-    "deliberate": {
-      "type": "integer",
-      "description": "Sequential chaining rounds of LLM responses (manual only)",
+    "debate": {
+      "type": "boolean",
+      "description": "Enable debate mode: multiple rounds where each provider sees others' responses (manual only)",
       "required": false,
       "manualOnly": true
     },
-    "interject": {
+    "rounds": {
       "type": "integer",
-      "description": "Number of interjections allowed per LLM (manual only)",
+      "description": "Number of debate rounds (default: 2, requires --debate, manual only)",
       "required": false,
       "manualOnly": true
     }
@@ -40,6 +40,8 @@
       "schema": {
         "files_reviewed": {"type": "array", "items": {"type": "string"}},
         "providers_used": {"type": "array", "items": {"type": "string"}},
+        "mode": {"type": "string", "enum": ["parallel", "debate"]},
+        "rounds": {"type": "integer"},
         "consensus_issues": {
           "type": "array",
           "items": {
@@ -89,6 +91,6 @@
       }
     }
   },
-  "manualOnlyFlags": ["deliberate", "interject"],
+  "manualOnlyFlags": ["debate", "rounds"],
   "defaultProvidersConfigPath": "~/.config/star-chamber/providers.json"
 }

@@ -22,8 +22,8 @@ Advisory skill that fans out code reviews to multiple LLM providers (Claude, Ope
 | `--provider <name>` | LLM provider to use (repeatable, e.g., `--provider openai --provider gemini`). Defaults to all in config. | No |
 | `--file <path>` | Specify file to review (repeatable). Defaults to recent git changes. | No |
 | `--list-sdks` | Show configured providers, which have API keys set, and required SDK packages. Diagnostic only. | No |
-| `--deliberate N` | Sequential chaining - pass through N rounds of LLMs | **Yes** |
-| `--interject N` | Parallel interjections - each LLM can respond N times | **Yes** |
+| `--debate` | Enable debate mode: multiple rounds where each provider sees others' responses | **Yes** |
+| `--rounds N` | Number of debate rounds (default: 2, requires --debate) | **Yes** |
 
 **Manual-only flags** are ignored in automated workflows.
 
@@ -199,44 +199,74 @@ echo "$PROMPT" | uvx --from any-llm-sdk $UVX_WITH_FLAGS \
   python "$CLAUDE_PRAGMA_PATH/skills/advisory/star-chamber/llm_council.py" \
   [--provider <name>...] \
   [--file <path>...] \
-  [--deliberate N] \
-  [--interject N]
+  [--debate] \
+  [--rounds N]
 ```
 
 The SDK mapping is defined in `$CLAUDE_PRAGMA_PATH/reference/star-chamber/sdk_map.json` and supports all any-llm providers.
 
 **Execution modes:**
 
-| Mode | Flag | Flow | Use Case |
-|------|------|------|----------|
+| Mode | Flags | Flow | Use Case |
+|------|-------|------|----------|
 | Parallel | (default) | All providers review independently at once | Fast consensus gathering |
-| Deliberate | `--deliberate N` | Sequential: each LLM sees previous responses | Deep debate, building on ideas |
-| Interject | `--interject N` | Each provider responds N times in parallel | Multiple perspectives per model |
+| Debate | `--debate --rounds N` | Multiple rounds, each provider sees others' responses | Deep deliberation, refining ideas |
 
 **Parallel (default):**
 ```
 Prompt → [OpenAI] ──→ Response A
-      → [Claude] ──→ Response B    (all at once)
+      → [Claude] ──→ Response B    (all at once, independent)
       → [Gemini] ──→ Response C
 ```
 
-**Deliberate (--deliberate 2):**
+**Debate (--debate --rounds 3):**
 ```
-Prompt → OpenAI → "I think X..."
-                     ↓
-      "OpenAI said X" → Claude → "I agree but also Y..."
-                                    ↓
-               "Claude said Y" → Gemini → "Actually, Z..."
-                                             ↓
-                              (repeat for round 2)
+Round 1 (parallel, all get original prompt):
+  [OpenAI] ──→ "X looks problematic..."
+  [Claude] ──→ "I'd focus on Y..."
+  [Gemini] ──→ "Consider Z as well..."
+
+Round 2 (parallel, each sees what OTHERS said):
+  [OpenAI] sees Claude + Gemini responses ──→ "Agree with Claude on Y, but..."
+  [Claude] sees OpenAI + Gemini responses ──→ "Good point about X, however..."
+  [Gemini] sees OpenAI + Claude responses ──→ "Building on both points..."
+
+Round 3 (parallel, each sees round 2 responses):
+  [OpenAI] sees others' round 2 ──→ final thoughts
+  [Claude] sees others' round 2 ──→ final thoughts
+  [Gemini] sees others' round 2 ──→ final thoughts
 ```
 
-**Interject (--interject 2):**
+In debate mode, the final round responses are used for consensus building.
+
+**Example debate evolution:**
+
 ```
-Prompt → [OpenAI] ──→ Response A1
-      → [OpenAI] ──→ Response A2   (2 parallel calls per provider)
-      → [Claude] ──→ Response B1
-      → [Claude] ──→ Response B2
+Round 1 - OpenAI:
+  "The config loader silently ignores missing env vars. This could cause
+   runtime errors when OAuth credentials are empty strings."
+
+Round 1 - Claude:
+  "Good separation of concerns. However, the linear search in
+   get_resource_definition could be slow for large configs."
+
+Round 1 - Gemini:
+  "Type hints look solid. Consider adding a strict mode for env var
+   validation in production environments."
+
+Round 2 - OpenAI (after seeing Claude + Gemini):
+  "Agree with Gemini on strict mode - that would address my env var concern.
+   Claude's point about linear search is valid but likely premature optimization
+   for typical config sizes (<100 resources)."
+
+Round 2 - Claude (after seeing OpenAI + Gemini):
+  "OpenAI and Gemini both flagged the silent env var handling - this is now
+   a consensus issue. I'll upgrade my assessment. The strict mode suggestion
+   elegantly solves it."
+
+Round 2 - Gemini (after seeing OpenAI + Claude):
+  "Strong agreement forming around env var validation. Claude's performance
+   concern is noted but I agree with OpenAI it's not critical for v1."
 ```
 
 ## Step 5: Aggregate Results
@@ -309,20 +339,20 @@ The output combines two dimensions:
 ## Usage Examples
 
 ```bash
-# Basic - review recent changes with default providers
+# Basic - review recent changes with default providers (parallel, single round)
 /star-chamber
 
 # Specific files and providers
 /star-chamber --file backend/app/auth.py --provider openai --provider anthropic
 
-# Sequential deliberation - 3 rounds of debate
-/star-chamber --deliberate 3
+# Debate mode - 2 rounds (default) where each provider sees others' responses
+/star-chamber --debate
 
-# Parallel interjections - each provider responds twice
-/star-chamber --interject 2 --file frontend/src/hooks/useAuth.ts
+# Debate mode - 3 rounds of deliberation
+/star-chamber --debate --rounds 3
 
-# Combined workflow
-/star-chamber --file auth.py --provider openai --provider gemini --deliberate 2
+# Debate with specific files
+/star-chamber --debate --rounds 2 --file auth.py --provider openai --provider gemini
 ```
 
 ## Configuration
@@ -347,11 +377,11 @@ Override config path with `STAR_CHAMBER_CONFIG` environment variable.
 
 Each invocation calls all configured providers. With 3 providers reviewing ~2000 tokens:
 - ~$0.02-0.10 per invocation depending on models
-- This skill is advisory. Claude may invoke it for design decisions (without --deliberate/--interject).
+- This skill is advisory. Claude may invoke it for design decisions (without --debate).
 
 ## When Claude May Self-Invoke
 
-Claude may invoke this skill (basic mode only, no --deliberate/--interject) when:
+Claude may invoke this skill (basic mode only, no --debate) when:
 - Facing significant architectural decisions with multiple valid approaches
 - Uncertain about design trade-offs that would benefit from diverse perspectives
 - The user has asked for a "second opinion" or "what do others think"
@@ -361,4 +391,4 @@ Do NOT self-invoke for:
 - Well-established patterns
 - When time/cost is a concern (ask user first)
 
-The --deliberate and --interject flags are manual-only and ignored in automated/self-invoked workflows.
+The --debate and --rounds flags are manual-only and ignored in automated/self-invoked workflows.

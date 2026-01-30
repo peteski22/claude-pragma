@@ -258,9 +258,9 @@ Then include in the summary:
 
 **Star-Chamber Usage:**
   /star-chamber                                                 - review recent changes using configured providers
-  /star-chamber --file <file> --provider <provider1,provider2>  - target specific files and providers
-  /star-chamber --deliberate N                                  - sequential council deliberation (feed responses around)
-  /star-chamber --interject N                                   - parallel interjections from all providers (rubber-ducking)
+  /star-chamber --file <file> --provider openai --provider gemini  - target specific files and providers
+  /star-chamber --debate                                        - enable debate mode (2 rounds, each sees others' responses)
+  /star-chamber --debate --rounds 3                             - debate mode with 3 rounds of deliberation
 
 **Note:** Add `**/.claude/CLAUDE.md` to .gitignore
 ```

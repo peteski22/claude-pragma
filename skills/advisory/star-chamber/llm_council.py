@@ -5,9 +5,7 @@ Multi-LLM council for star-chamber skill.
 Features:
 - Target specific files or recent changes
 - Select providers or use default config
-- Manual-only flags:
-    --deliberate N: sequential chaining of LLM responses
-    --interject N: parallel advisory interjections
+- Debate mode: multiple rounds where each provider sees others' responses
 """
 
 import argparse
@@ -79,8 +77,11 @@ async def get_review(
         }
     except ImportError:
         sdk_map = load_sdk_map()
-        sdk = sdk_map.get(provider.lower(), provider)
-        hint = f"Add '--with {sdk}' to uvx command" if sdk else "Check provider name"
+        sdk = sdk_map.get(provider.lower())
+        if sdk:
+            hint = f"Install with: pip install {sdk} (or add '--with {sdk}' to uvx)"
+        else:
+            hint = "This provider may use the OpenAI-compatible API (no extra SDK needed)"
         return {
             "provider": provider,
             "model": model,
@@ -89,20 +90,32 @@ async def get_review(
         }
     except Exception as e:
         error_msg = str(e).lower()
+        # Map providers to their env var names for helpful errors.
+        env_var_map = {
+            "openai": "OPENAI_API_KEY",
+            "anthropic": "ANTHROPIC_API_KEY",
+            "gemini": "GEMINI_API_KEY",
+            "google": "GEMINI_API_KEY",
+            "cohere": "COHERE_API_KEY",
+            "mistral": "MISTRAL_API_KEY",
+            "groq": "GROQ_API_KEY",
+        }
+        env_var = env_var_map.get(provider.lower(), f"{provider.upper()}_API_KEY")
+
         # Detect common API key issues.
         if "api_key" in error_msg or "unauthorized" in error_msg or "401" in error_msg:
             return {
                 "provider": provider,
                 "model": model,
                 "success": False,
-                "error": f"Authentication failed for {provider}. Check API key is set and valid.",
+                "error": f"Authentication failed for {provider}. Check {env_var} is set and valid.",
             }
         if "api key" in error_msg or "apikey" in error_msg:
             return {
                 "provider": provider,
                 "model": model,
                 "success": False,
-                "error": f"Missing or invalid API key for {provider}.",
+                "error": f"Missing API key for {provider}. Set {env_var} in your environment.",
             }
         return {"provider": provider, "model": model, "success": False, "error": str(e)}
 
@@ -142,46 +155,81 @@ def get_changed_files() -> list[str]:
 async def run_council(
     prompt: str,
     providers: list[dict[str, Any]],
-    deliberate: int = 0,
-    interject: int = 0,
+    debate: bool = False,
+    rounds: int = 2,
 ) -> dict[str, Any]:
-    """Run multi-LLM council review."""
-    results: list[dict[str, Any]] = []
+    """Run multi-LLM council review.
 
-    if deliberate > 0:
-        # Sequential chaining - feed each response to next LLM.
-        current_prompt = prompt
-        for _round_idx in range(deliberate):
+    Default mode: All providers review in parallel independently.
+
+    Debate mode: Multiple rounds where each provider sees others' responses.
+      Round 1: All providers get original prompt (parallel)
+      Round 2+: Each provider sees what the others said and responds (parallel)
+    """
+    all_results: list[dict[str, Any]] = []
+
+    if debate:
+        # Debate mode: parallel rounds with cross-pollination.
+        # Track responses by provider for each round.
+        previous_responses: dict[str, str] = {}
+
+        for round_num in range(1, rounds + 1):
+            round_results: list[dict[str, Any]] = []
+
+            # Build tasks for this round.
+            tasks = []
             for p in providers:
-                res = await get_review(
-                    p["provider"], p["model"], current_prompt, p["api_key"]
-                )
-                results.append(res)
-                if res.get("success"):
-                    # Build on previous response for debate mode.
-                    current_prompt = (
-                        f"Previous reviewer said:\n{res['content']}\n\n"
-                        f"Original review request:\n{prompt}\n\n"
-                        f"Please provide your perspective, agreeing or disagreeing with specific points."
+                provider_name = p["provider"]
+
+                if round_num == 1:
+                    # First round: everyone gets the original prompt.
+                    round_prompt = prompt
+                else:
+                    # Subsequent rounds: include other providers' responses.
+                    other_responses = []
+                    for other_provider, response in previous_responses.items():
+                        if other_provider != provider_name:
+                            other_responses.append(
+                                f"**{other_provider}** said:\n{response}"
+                            )
+
+                    round_prompt = (
+                        f"{prompt}\n\n"
+                        f"---\n"
+                        f"## Other council members' responses (round {round_num - 1}):\n\n"
+                        f"{chr(10).join(other_responses)}\n\n"
+                        f"---\n"
+                        f"Please provide your perspective, responding to the other members' points. "
+                        f"Note areas of agreement and disagreement."
                     )
-    elif interject > 0:
-        # Parallel interjections with limited count.
-        tasks = []
-        for p in providers:
-            for _ in range(interject):
+
                 tasks.append(
-                    get_review(p["provider"], p["model"], prompt, p["api_key"])
+                    (provider_name, get_review(p["provider"], p["model"], round_prompt, p["api_key"]))
                 )
-        results = list(await asyncio.gather(*tasks))
+
+            # Execute round in parallel.
+            results = await asyncio.gather(*[t[1] for t in tasks])
+
+            # Process results and update previous_responses for next round.
+            previous_responses = {}
+            for i, res in enumerate(results):
+                provider_name = tasks[i][0]
+                res["round"] = round_num
+                round_results.append(res)
+                if res.get("success"):
+                    previous_responses[provider_name] = res["content"]
+
+            all_results.extend(round_results)
+
+        return {"reviews": all_results, "rounds": rounds}
     else:
-        # Default: parallel independent.
+        # Default: parallel independent reviews.
         tasks = [
             get_review(p["provider"], p["model"], prompt, p["api_key"])
             for p in providers
         ]
         results = list(await asyncio.gather(*tasks))
-
-    return {"reviews": results}
+        return {"reviews": results, "rounds": 1}
 
 
 def main() -> None:
@@ -194,10 +242,15 @@ def main() -> None:
         "--provider", "-p", action="append", help="LLM providers to use"
     )
     parser.add_argument(
-        "--deliberate", type=int, default=0, help="Sequential chaining rounds"
+        "--debate",
+        action="store_true",
+        help="Enable debate mode: multiple rounds where each provider sees others' responses",
     )
     parser.add_argument(
-        "--interject", type=int, default=0, help="Parallel interjections per provider"
+        "--rounds",
+        type=int,
+        default=2,
+        help="Number of debate rounds (default: 2, requires --debate)",
     )
     parser.add_argument(
         "--list-sdks",
@@ -306,7 +359,7 @@ def main() -> None:
 
     # Run the council.
     result = asyncio.run(
-        run_council(combined_prompt, providers, args.deliberate, args.interject)
+        run_council(combined_prompt, providers, args.debate, args.rounds)
     )
 
     # Separate successful and failed reviews.
@@ -319,11 +372,8 @@ def main() -> None:
         "reviews": successful,
         "files_reviewed": files_to_review,
         "providers_used": [p["provider"] for p in providers],
-        "mode": (
-            "deliberate"
-            if args.deliberate > 0
-            else "interject" if args.interject > 0 else "parallel"
-        ),
+        "mode": "debate" if args.debate else "parallel",
+        "rounds": result.get("rounds", 1),
     }
 
     if failed:

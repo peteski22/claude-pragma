@@ -618,11 +618,10 @@ The `/star-chamber` skill fans out code reviews to multiple LLM providers (Claud
 - Supports parallel and sequential review modes
 
 **Execution modes:**
-| Mode | Flag | Description |
-|------|------|-------------|
+| Mode | Flags | Description |
+|------|-------|-------------|
 | Parallel | (default) | Independent calls to all providers simultaneously |
-| Deliberate | `--deliberate N` | Sequential chaining - each LLM responds to the previous (debate mode) |
-| Interject | `--interject N` | Multiple parallel interjections per provider (rubber-ducking mode) |
+| Debate | `--debate --rounds N` | Multiple rounds where each provider sees others' responses |
 
 **Integration:**
 ```mermaid
