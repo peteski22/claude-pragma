@@ -7,19 +7,21 @@ allowed-tools: Bash, Read, Write, Glob
 
 # Project Setup
 
-Automatically configure Claude Code for the current project.
+Automatically configure Claude Code for the current project. Supports monorepos with multiple languages in subdirectories.
 
 ## Step 0: Verify config repo
 
 Requires `$CLAUDE_CONFIG_PATH` environment variable to be set.
 
 ```bash
+echo "$CLAUDE_CONFIG_PATH"
 [[ -z "$CLAUDE_CONFIG_PATH" ]] && echo "ERROR: CLAUDE_CONFIG_PATH not set"
 [[ ! -d "$CLAUDE_CONFIG_PATH" ]] && echo "ERROR: CLAUDE_CONFIG_PATH does not exist"
 [[ ! -f "$CLAUDE_CONFIG_PATH/claude-md/universal/base.md" ]] && echo "ERROR: Invalid claude-config repo"
 ```
 
 If not set, tell the user:
+
 ```
 CLAUDE_CONFIG_PATH is not set.
 
@@ -36,60 +38,105 @@ CLAUDE_CONFIG_PATH is not set.
 
 ## Step 1: Detect project metadata
 
-Get org and repo name:
+Get org and repo name from git remote:
 
 ```bash
-# From git remote
-git remote get-url origin 2>/dev/null | sed -E 's|.*[:/]([^/]+)/([^/]+)(\.git)?$|\1/\2|' | tr -d '\n'
-
-# Or from go.mod
-grep -m1 "^module" go.mod 2>/dev/null | awk '{print $2}' | sed 's|.*/||'
+git remote get-url origin 2>/dev/null | sed -E 's|.*[:/]([^/]+)/([^/]+)(\.git)?$|\1 \2|'
 ```
 
-Store these for templating configs later.
+Store `{org}` and `{repo}` for templating.
 
-## Step 2: Detect project languages
+## Step 2: Scan for languages (root and subdirectories)
 
-Run these checks and collect which languages are present:
+Check root directory AND immediate subdirectories for language markers.
 
 ```bash
-[[ -f go.mod ]] && echo "go"
-[[ -f pyproject.toml ]] || [[ -f setup.py ]] && echo "python"
-[[ -f package.json ]] && echo "javascript"
-[[ -f tsconfig.json ]] && echo "typescript"
-[[ -f Cargo.toml ]] && echo "rust"
+# Root level
+[[ -f go.mod ]] && echo "root:go"
+[[ -f pyproject.toml ]] || [[ -f setup.py ]] && echo "root:python"
+[[ -f package.json ]] && echo "root:javascript"
+[[ -f tsconfig.json ]] && echo "root:typescript"
+[[ -f Cargo.toml ]] && echo "root:rust"
+
+# Subdirectories (one level deep)
+for dir in */; do
+  [[ -f "${dir}go.mod" ]] && echo "${dir%/}:go"
+  [[ -f "${dir}pyproject.toml" ]] || [[ -f "${dir}setup.py" ]] && echo "${dir%/}:python"
+  [[ -f "${dir}package.json" ]] && echo "${dir%/}:javascript"
+  [[ -f "${dir}tsconfig.json" ]] && echo "${dir%/}:typescript"
+  [[ -f "${dir}Cargo.toml" ]] && echo "${dir%/}:rust"
+done
 ```
 
-## Step 3: Check for existing config
+This produces output like:
+- `root:go` (single-language project)
+- `backend:python`, `frontend:typescript` (monorepo)
+
+## Step 3: Check for existing configs
 
 ```bash
-[[ -f .claude/CLAUDE.md ]] && echo "exists"
+[[ -f .claude/CLAUDE.md ]] && echo "root:exists"
+for dir in */; do
+  [[ -f "${dir}.claude/CLAUDE.md" ]] && echo "${dir%/}:exists"
+done
 ```
 
-If exists, read it and check if it was assembled by us (has the "Assembled from claude-config" comment). If user-created, ASK before overwriting.
+If any exist, read them. If they have `<!-- Assembled by /setup-project -->` comment, safe to overwrite. Otherwise ASK before overwriting.
 
-## Step 4: Assemble and write CLAUDE.md
+## Step 4: Create root .claude/CLAUDE.md
 
 Create the directory:
 ```bash
 mkdir -p .claude
 ```
 
-Use the Write tool to create `.claude/CLAUDE.md` with contents assembled from:
-1. Always: `$CONFIG_REPO/claude-md/universal/base.md`
-2. For each detected language: `$CONFIG_REPO/claude-md/languages/{lang}/{lang}.md`
+Assemble root CLAUDE.md with:
+1. Header comment
+2. Universal rules from `$CLAUDE_CONFIG_PATH/claude-md/universal/base.md`
+3. **Meta-rule for subdirectory awareness** (always include this)
+4. Root-level language rules (if any detected at root)
 
-Add a header comment:
+**Header:**
 ```markdown
 <!-- Assembled by /setup-project from claude-config -->
-<!-- Languages: go, python -->
 <!-- Org/Repo: {org}/{repo} -->
 <!-- Re-run /setup-project to regenerate -->
 ```
 
-## Step 5: Link skills
+**Meta-rule to include after universal rules:**
+```markdown
+## Context-Aware Rules
 
-Create symlinks for skills that aren't already linked:
+When working on files in a subdirectory, check if that subdirectory contains a `.claude/CLAUDE.md` file. If so, read it and apply those rules in addition to these universal rules.
+
+For example:
+- Editing `backend/app/main.py` → also read `backend/.claude/CLAUDE.md`
+- Editing `frontend/src/App.tsx` → also read `frontend/.claude/CLAUDE.md`
+
+Always apply the most specific rules available for the code you're working on.
+```
+
+## Step 5: Create subdirectory .claude/CLAUDE.md files
+
+For each subdirectory with detected languages, create `{subdir}/.claude/CLAUDE.md`:
+
+```bash
+mkdir -p {subdir}/.claude
+```
+
+Assemble with:
+1. Header comment (noting it's for that subdirectory)
+2. Language-specific rules from `$CLAUDE_CONFIG_PATH/claude-md/languages/{lang}/{lang}.md`
+
+**Header:**
+```markdown
+<!-- Assembled by /setup-project from claude-config -->
+<!-- Subdirectory: {subdir} -->
+<!-- Languages: {lang} -->
+<!-- Re-run /setup-project to regenerate -->
+```
+
+## Step 6: Link skills
 
 ```bash
 mkdir -p ~/.claude/skills
@@ -97,55 +144,52 @@ mkdir -p ~/.claude/skills
 
 **Universal skills (always):**
 ```bash
-ln -sf $CONFIG_REPO/skills/universal/implement ~/.claude/skills/
-ln -sf $CONFIG_REPO/skills/universal/review ~/.claude/skills/
-ln -sf $CONFIG_REPO/skills/validators/validate ~/.claude/skills/
-ln -sf $CONFIG_REPO/skills/validators/security ~/.claude/skills/
+ln -sf "$CLAUDE_CONFIG_PATH/skills/universal/implement" ~/.claude/skills/
+ln -sf "$CLAUDE_CONFIG_PATH/skills/universal/review" ~/.claude/skills/
+ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/validate" ~/.claude/skills/
+ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/security" ~/.claude/skills/
 ```
 
-**Go projects:**
+**Go (if detected anywhere):**
 ```bash
-ln -sf $CONFIG_REPO/skills/validators/go-proverbs ~/.claude/skills/
-ln -sf $CONFIG_REPO/skills/validators/go-effective ~/.claude/skills/
+ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/go-proverbs" ~/.claude/skills/
+ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/go-effective" ~/.claude/skills/
 ```
 
-## Step 6: Copy reference configs (if missing)
+## Step 7: Offer reference configs
 
 For Go projects, if no golangci-lint config exists:
 ```bash
 [[ ! -f .golangci.yml ]] && [[ ! -f .golangci.yaml ]] && echo "no-lint-config"
 ```
 
-If missing, offer to copy the reference config:
-- Source: `$CONFIG_REPO/reference/go/golangci-lint.yml`
-- Destination: `.golangci.yml`
-- Replace `{org}` and `{repo}` with detected values.
+If missing, offer to copy from `$CLAUDE_CONFIG_PATH/reference/go/golangci-lint.yml`, replacing `{org}` and `{repo}`.
 
-## Step 7: Output summary
+## Step 8: Output summary
 
 ```
 ## Setup Complete
 
-**Config repo:** $CONFIG_REPO
-**Project:** {repo}
-**Org:** {org}
-**Languages detected:** Go
+**Project:** {org}/{repo}
 
-**Created:** .claude/CLAUDE.md
-  - Universal rules
-  - Go rules (Effective Go, Go Proverbs)
+**Structure detected:**
+  - Root: [languages or "none"]
+  - backend/: Python
+  - frontend/: TypeScript
+
+**Created:**
+  - .claude/CLAUDE.md (universal + meta-rule)
+  - backend/.claude/CLAUDE.md (Python rules)
+  - frontend/.claude/CLAUDE.md (TypeScript rules)
 
 **Skills linked:**
   - /implement - implement with auto-validation
   - /review - review changes against all validators
   - /validate - run all validators
-  - /validate-go-effective
-  - /validate-go-proverbs
-  - /validate-security
 
 **Usage:**
   /implement <task>    - implement with validation loop
   /review              - validate current changes
-```
 
-Keep it brief. The user should be able to run `/setup-project` and immediately start working.
+**Note:** Add `**/.claude/CLAUDE.md` to .gitignore
+```
