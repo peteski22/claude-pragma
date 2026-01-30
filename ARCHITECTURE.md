@@ -22,6 +22,8 @@ If there's a conflict between what CLAUDE.md says and what a validator checks, t
 
 `/implement` and `/review` **mechanically read** applicable CLAUDE.md files before doing any work. This is Phase 0 / Step 2 - it happens first, explicitly, and is recorded.
 
+> **Critical**: Phase 0 (rule injection) is mandatory. It must complete before any other phase. This is the single most important design decision - it eliminates reliance on LLM memory.
+
 The LLM doesn't need to "remember" rules - they're injected fresh every time.
 
 ### 3. Deterministic before semantic
@@ -41,152 +43,115 @@ This prevents overlap and makes maintenance clear.
 
 ## Monorepo Structure
 
-```
-                         ┌─────────────────────────────┐
-                         │       Root CLAUDE.md        │
-                         │  (Universal rules + meta)   │
-                         └───────────┬─────────────────┘
-                                     │
-               ┌─────────────────────┴─────────────────────┐
-               │                                           │
-    ┌─────────────────────┐                     ┌─────────────────────┐
-    │  Subdir CLAUDE.md   │                     │  Subdir CLAUDE.md   │
-    │  backend/.claude/   │                     │  frontend/.claude/  │
-    │  (Python rules)     │                     │  (TypeScript rules) │
-    └───────────┬─────────┘                     └───────────┬─────────┘
-                │                                           │
-    ┌───────────┴───────────┐                   ┌───────────┴───────────┐
-    │                       │                   │                       │
-┌──────────┐          ┌──────────┐        ┌──────────┐          ┌──────────┐
-│/implement│          │ /review  │        │/implement│          │ /review  │
-├──────────┤          ├──────────┤        ├──────────┤          ├──────────┤
-│ Phase 0: │          │ Step 2:  │        │ Phase 0: │          │ Step 2:  │
-│ Load     │          │ Load     │        │ Load     │          │ Load     │
-│ rules    │          │ rules    │        │ rules    │          │ rules    │
-│ (walk up)│          │ (walk up)│        │ (walk up)│          │ (walk up)│
-└──────────┘          └──────────┘        └──────────┘          └──────────┘
-       │                    │                   │                    │
-       └────────────────────┴───────────────────┴────────────────────┘
-                                     │
-                                     ▼
-                    ┌─────────────────────────────┐
-                    │ Validator Agents (forked)   │
-                    │ - validate-go-effective     │
-                    │ - validate-go-proverbs      │
-                    │ - validate-security         │
-                    └─────────────────────────────┘
+```mermaid
+graph TD
+    Root[".claude/CLAUDE.md<br/>(Universal rules + meta)"]
+
+    Root --> Backend["backend/.claude/CLAUDE.md<br/>(Python rules)"]
+    Root --> Frontend["frontend/.claude/CLAUDE.md<br/>(TypeScript rules)"]
+
+    Backend --> BI["/implement<br/>Phase 0: Load rules"]
+    Backend --> BR["/review<br/>Step 2: Load rules"]
+
+    Frontend --> FI["/implement<br/>Phase 0: Load rules"]
+    Frontend --> FR["/review<br/>Step 2: Load rules"]
+
+    BI --> Validators["Validator Agents<br/>(forked)"]
+    BR --> Validators
+    FI --> Validators
+    FR --> Validators
+
+    Validators --> GoEff["go-effective"]
+    Validators --> GoProv["go-proverbs"]
+    Validators --> Sec["security"]
 ```
 
 ## System Flow
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           /implement <task>                                 │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ PHASE 0: Inject Rules                                                       │
-│                                                                             │
-│   1. Identify target directories                                            │
-│   2. Walk up from each directory to repo root                               │
-│   3. Collect .claude/CLAUDE.md files                                        │
-│   4. Read and apply (most specific first)                                   │
-│   5. Record applied_rules                                                   │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ PHASE 1-2: Understand & Implement                                           │
-│                                                                             │
-│   Work is done following the injected rules                                 │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ PHASE 3: Validate                                                           │
-│                                                                             │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │ Deterministic (linters)                                             │   │
-│   │   • golangci-lint (Go)                                              │   │
-│   │   • pre-commit (Python)                                             │   │
-│   │   • If fail → STOP, fix first                                       │   │
-│   └─────────────────────────────────────────────────────────────────────┘   │
-│                                    │                                        │
-│                                    ▼                                        │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │ Semantic (validators in parallel)                                   │   │
-│   │                                                                     │   │
-│   │   ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                │   │
-│   │   │  security   │  │go-effective │  │ go-proverbs │                │   │
-│   │   │             │  │             │  │             │                │   │
-│   │   │ CRITICAL    │  │ HARD        │  │ SHOULD      │                │   │
-│   │   │ WARNING     │  │ SHOULD      │  │             │                │   │
-│   │   │             │  │ WARN        │  │             │                │   │
-│   │   └─────────────┘  └─────────────┘  └─────────────┘                │   │
-│   │          │                │                │                        │   │
-│   │          └────────────────┴────────────────┘                        │   │
-│   │                           │                                         │   │
-│   │                           ▼                                         │   │
-│   │                    Aggregate Results                                │   │
-│   └─────────────────────────────────────────────────────────────────────┘   │
-│                                    │                                        │
-│                                    ▼                                        │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │ Fix violations                                                      │   │
-│   │   • HARD/CRITICAL: must fix                                         │   │
-│   │   • SHOULD: fix or justify                                          │   │
-│   │   • WARN: note only                                                 │   │
-│   │   • Re-validate if fixes made                                       │   │
-│   └─────────────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ PHASE 4: Complete                                                           │
-│                                                                             │
-│   Output includes:                                                          │
-│     • Rules Applied (audit trail)                                           │
-│     • Files Changed                                                         │
-│     • Validation Results                                                    │
-│     • Warnings                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Phase0["Phase 0: Inject Rules (MANDATORY)"]
+        P0A[Identify target directories]
+        P0B[Walk up to repo root]
+        P0C[Collect .claude/CLAUDE.md files]
+        P0D[Read and apply - most specific first]
+        P0E[Record applied_rules]
+        P0A --> P0B --> P0C --> P0D --> P0E
+    end
+
+    subgraph Phase12["Phase 1-2: Understand & Implement"]
+        P12[Work done following injected rules]
+    end
+
+    subgraph Phase3["Phase 3: Validate"]
+        subgraph Deterministic["Deterministic Checks"]
+            Lint[golangci-lint / pre-commit]
+            LintFail{Pass?}
+            Lint --> LintFail
+        end
+
+        subgraph Semantic["Semantic Validators (parallel)"]
+            V1[security]
+            V2[go-effective]
+            V3[go-proverbs]
+        end
+
+        Agg[Aggregate Results]
+        Fix[Fix violations]
+        ReVal{Re-validate?}
+
+        LintFail -->|No| FixLint[Fix lint errors]
+        FixLint --> Lint
+        LintFail -->|Yes| V1 & V2 & V3
+        V1 & V2 & V3 --> Agg
+        Agg --> Fix
+        Fix --> ReVal
+        ReVal -->|Yes| Lint
+    end
+
+    subgraph Phase4["Phase 4: Complete"]
+        Output[Output: Rules Applied, Files Changed, Validation Results]
+    end
+
+    Start["/implement task"] --> Phase0
+    Phase0 --> Phase12
+    Phase12 --> Phase3
+    ReVal -->|No| Phase4
 ```
 
 ## Rule Injection Detail
 
+```mermaid
+flowchart TD
+    File["Changed file:<br/>backend/app/handlers/user.go"]
+
+    File --> Check1{"backend/app/handlers/<br/>.claude/CLAUDE.md?"}
+    Check1 -->|exists| Rule1["Load (highest precedence)"]
+    Check1 -->|missing| Check2
+
+    Rule1 --> Check2{"backend/app/<br/>.claude/CLAUDE.md?"}
+    Check2 -->|exists| Rule2["Load"]
+    Check2 -->|missing| Check3
+
+    Rule2 --> Check3{"backend/<br/>.claude/CLAUDE.md?"}
+    Check3 -->|exists| Rule3["Load"]
+    Check3 -->|missing| Check4
+
+    Rule3 --> Check4{".claude/CLAUDE.md?<br/>(root)"}
+    Check4 -->|exists| Rule4["Load (lowest precedence)"]
+
+    Rule4 --> Apply["Apply in order<br/>Record as 'Rules Applied'"]
 ```
-Changed file: backend/app/handlers/user.go
 
-Walk up from backend/app/handlers/:
+## Validator Contracts
 
-    backend/app/handlers/.claude/CLAUDE.md  ←─ check (if exists, highest precedence)
-              │
-              ▼
-    backend/app/.claude/CLAUDE.md           ←─ check
-              │
-              ▼
-    backend/.claude/CLAUDE.md               ←─ check
-              │
-              ▼
-    .claude/CLAUDE.md                       ←─ check (root, lowest precedence)
+Each validator has a `contract.json` defining its scope:
 
-Collect all that exist, read them, apply in order.
-Record in output as "Rules Applied".
-```
-
-## Validator Contract
-
-Each validator has a `contract.json`:
-
-```json
-{
-  "name": "go-effective",
-  "scope": ["Naming", "Error handling", "Interface design"],
-  "excludes": ["Security", "Go Proverbs", "Formatting"],
-  "assumes": ["gofmt", "golangci-lint"]
-}
-```
+| Validator | Scope | Excludes | Assumes |
+|-----------|-------|----------|---------|
+| **go-effective** | Naming, Error handling, Interface design, Control flow | Security, Go Proverbs, Formatting | gofmt, golangci-lint |
+| **go-proverbs** | Idiomatic Go philosophy, Concurrency patterns, Abstraction | Security, Effective Go details, Formatting | golangci-lint |
+| **security** | Secrets, Injection, Path traversal, Auth gaps | Code style, Language idioms, Performance | (none) |
 
 This prevents:
 - Validators reporting on the same thing (noise)
@@ -203,6 +168,49 @@ This prevents:
 
 This is intentionally simple. More levels create ambiguity.
 
+## Example Output
+
+```json
+{
+  "validator": "go-effective",
+  "applied_rules": [
+    "backend/.claude/CLAUDE.md",
+    ".claude/CLAUDE.md"
+  ],
+  "files_checked": [
+    "backend/app/handlers/user.go",
+    "backend/app/handlers/user_test.go"
+  ],
+  "pass": false,
+  "hard_violations": [
+    {
+      "rule": "Exported identifiers MUST have doc comments",
+      "location": "user.go:45",
+      "explanation": "Function CreateUser is exported but has no doc comment"
+    }
+  ],
+  "should_violations": [
+    {
+      "rule": "Functions SHOULD do one thing",
+      "location": "user.go:78",
+      "justification_required": true
+    }
+  ],
+  "warnings": [
+    {
+      "rule": "Overly complex functions",
+      "location": "user.go:120",
+      "note": "Consider breaking into smaller functions"
+    }
+  ],
+  "summary": {
+    "hard_count": 1,
+    "should_count": 1,
+    "warning_count": 1
+  }
+}
+```
+
 ## Why This Works
 
 | Failure Mode | How We Prevent It |
@@ -212,6 +220,16 @@ This is intentionally simple. More levels create ambiguity.
 | Validators overlap | Contracts declare scope/excludes |
 | Validation skipped | `/implement` won't complete until validation passes |
 | Silent failures | Validators echo `applied_rules` in JSON output |
+
+## Edge Cases
+
+| Scenario | Handling |
+|----------|----------|
+| First commit / no HEAD~1 | Fall back to staged files, then unstaged |
+| Detached HEAD | Use `--diff-filter=ACMRT` to detect changes |
+| >50 files changed | Process in batches |
+| Conflicting rules | Prefer more specific rule, note conflict |
+| New directories created during implementation | Re-run Phase 0 before validation |
 
 ## Meta-rule (fallback only)
 
@@ -223,3 +241,15 @@ For `/implement` and `/review`, rule injection is mechanical and explicit. The m
 - Edge cases where someone bypasses the workflow
 
 It is **not** on the critical path.
+
+## Future Validators
+
+Placeholder for planned validators:
+
+| Validator | Language | Status |
+|-----------|----------|--------|
+| go-effective | Go | ✅ Done |
+| go-proverbs | Go | ✅ Done |
+| security | All | ✅ Done |
+| python-style | Python | Planned |
+| typescript-style | TypeScript | Planned |
