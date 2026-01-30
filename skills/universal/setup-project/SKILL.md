@@ -150,6 +150,11 @@ ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/validate" ~/.claude/skills/
 ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/security" ~/.claude/skills/
 ```
 
+**Advisory skills (always):**
+```bash
+ln -sf "$CLAUDE_CONFIG_PATH/skills/advisory/star-chamber" ~/.claude/skills/
+```
+
 **Go (if detected anywhere):**
 ```bash
 ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/go-proverbs" ~/.claude/skills/
@@ -168,12 +173,58 @@ ln -sf "$CLAUDE_CONFIG_PATH/skills/validators/typescript-style" ~/.claude/skills
 
 ## Step 7: Offer reference configs
 
+### Go linter config
+
 For Go projects, if no golangci-lint config exists:
 ```bash
 [[ ! -f .golangci.yml ]] && [[ ! -f .golangci.yaml ]] && echo "no-lint-config"
 ```
 
 If missing, offer to copy from `$CLAUDE_CONFIG_PATH/reference/go/golangci-lint.yml`, replacing `{org}` and `{repo}`.
+
+### Star-Chamber provider config
+
+Check if star-chamber config exists:
+```bash
+[[ ! -f ~/.config/star-chamber/providers.json ]] && echo "no-star-chamber-config"
+```
+
+If missing, offer to set it up:
+
+```
+/star-chamber requires provider configuration for multi-LLM reviews.
+
+Would you like to set up the default configuration?
+
+This will configure OpenAI, Anthropic, and Gemini providers.
+API keys are read from environment variables.
+
+[Yes, set it up] / [No, skip for now]
+```
+
+**If user accepts:**
+```bash
+mkdir -p ~/.config/star-chamber
+cp "$CLAUDE_CONFIG_PATH/reference/star-chamber/providers.json" ~/.config/star-chamber/providers.json
+```
+
+Then include in the summary:
+```
+**Star-Chamber configured:**
+  Config: ~/.config/star-chamber/providers.json
+
+  Required environment variables:
+    - OPENAI_API_KEY
+    - ANTHROPIC_API_KEY
+    - GEMINI_API_KEY
+
+  Edit the config to remove providers you don't have keys for.
+```
+
+**If user declines**, note in summary:
+```
+**Star-Chamber:** Not configured (run /star-chamber to set up later)
+```
 
 ## Step 8: Output summary
 
@@ -196,10 +247,12 @@ If missing, offer to copy from `$CLAUDE_CONFIG_PATH/reference/go/golangci-lint.y
   - /implement - implement with auto-validation
   - /review - review changes against all validators
   - /validate - run all validators
+  - /star-chamber - multi-LLM advisory council
 
 **Usage:**
   /implement <task>    - implement with validation loop
   /review              - validate current changes
+  /star-chamber        - get advisory feedback from multiple LLMs
 
 **Note:** Add `**/.claude/CLAUDE.md` to .gitignore
 ```

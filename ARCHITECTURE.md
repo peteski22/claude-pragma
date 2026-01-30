@@ -601,3 +601,52 @@ It is **not** on the critical path.
 | python-style | Python | ✅ Done |
 | typescript-style | TypeScript | ✅ Done |
 | security | All | ✅ Done |
+
+---
+
+## Advisory Skills
+
+Advisory skills provide optional, non-blocking feedback. Unlike validators, they don't gate commits or deployments - they offer additional perspectives and insights.
+
+### Star-Chamber: Multi-LLM Craftsmanship Council
+
+The `/star-chamber` skill fans out code reviews to multiple LLM providers (Claude, OpenAI, Gemini, etc.) and aggregates their feedback into consensus recommendations.
+
+**Key characteristics:**
+- Advisory only (doesn't block like validators)
+- Uses `any-llm-sdk` via `uvx` (no global Python install needed)
+- Supports parallel and sequential review modes
+
+**Execution modes:**
+| Mode | Flag | Description |
+|------|------|-------------|
+| Parallel | (default) | Independent calls to all providers simultaneously |
+| Deliberate | `--deliberate N` | Sequential chaining - each LLM responds to the previous (debate mode) |
+| Interject | `--interject N` | Multiple parallel interjections per provider (rubber-ducking mode) |
+
+**Integration:**
+```mermaid
+flowchart LR
+    subgraph Validators["Blocking Validators"]
+        V1[security]
+        V2[python-style]
+        V3[go-proverbs]
+    end
+
+    subgraph Advisory["Advisory Skills"]
+        A1[star-chamber]
+    end
+
+    Impl["/implement"] --> Validators
+    Validators -->|"must pass"| Complete[Complete]
+
+    Complete -.->|"optional"| Advisory
+    Advisory -.->|"feedback"| Developer
+```
+
+**Output:**
+- Markdown report with consensus/majority/individual issues
+- JSON for tooling integration
+- Quality ratings per provider
+
+**Cost consideration:** Each invocation calls all configured providers (~$0.02-0.10 per run). Use intentionally, not automatically.

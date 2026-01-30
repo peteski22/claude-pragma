@@ -1,0 +1,94 @@
+{
+  "name": "star-chamber",
+  "description": "Advisory multi-LLM craftsmanship council for code and architecture review.",
+  "version": "1.0",
+  "type": "advisory",
+  "inputs": {
+    "files": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "List of files or targets to review",
+      "required": false
+    },
+    "providers": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "LLM providers to use (e.g., openai, claude, gemini)",
+      "required": false
+    },
+    "deliberate": {
+      "type": "integer",
+      "description": "Sequential chaining rounds of LLM responses (manual only)",
+      "required": false,
+      "manualOnly": true
+    },
+    "interject": {
+      "type": "integer",
+      "description": "Number of interjections allowed per LLM (manual only)",
+      "required": false,
+      "manualOnly": true
+    }
+  },
+  "outputs": {
+    "markdown": {
+      "type": "string",
+      "description": "Human-readable report"
+    },
+    "json": {
+      "type": "object",
+      "description": "Machine-readable structured output",
+      "schema": {
+        "files_reviewed": {"type": "array", "items": {"type": "string"}},
+        "providers_used": {"type": "array", "items": {"type": "string"}},
+        "consensus_issues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "severity": {"type": "string", "enum": ["high", "medium", "low"]},
+              "location": {"type": "string"},
+              "category": {"type": "string"},
+              "description": {"type": "string"},
+              "suggestion": {"type": "string"}
+            }
+          }
+        },
+        "majority_issues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "severity": {"type": "string"},
+              "location": {"type": "string"},
+              "category": {"type": "string"},
+              "description": {"type": "string"},
+              "suggestion": {"type": "string"},
+              "provider_count": {"type": "integer"}
+            }
+          }
+        },
+        "individual_issues": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {"type": "object"}
+          }
+        },
+        "quality_ratings": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        },
+        "summary": {
+          "type": "object",
+          "properties": {
+            "total_issues": {"type": "integer"},
+            "consensus_count": {"type": "integer"},
+            "majority_count": {"type": "integer"}
+          }
+        }
+      }
+    }
+  },
+  "manualOnlyFlags": ["deliberate", "interject"],
+  "defaultProvidersConfigPath": "~/.config/star-chamber/providers.json"
+}

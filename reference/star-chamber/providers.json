@@ -1,0 +1,21 @@
+{
+  "providers": [
+    {
+      "provider": "openai",
+      "model": "gpt-4o",
+      "api_key": "${OPENAI_API_KEY}"
+    },
+    {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "api_key": "${ANTHROPIC_API_KEY}"
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-2.0-flash",
+      "api_key": "${GEMINI_API_KEY}"
+    }
+  ],
+  "consensus_threshold": 2,
+  "timeout_seconds": 60
+}
