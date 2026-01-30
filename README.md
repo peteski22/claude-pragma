@@ -1,21 +1,19 @@
 # Claude Pragma
 
-Composable configuration for Claude Code: rules, skills, and validators.
+Pragma directives for Claude Code - rules that stick.
 
 ## Quick Start
 
 ```bash
-# 1. Clone this repo
-git clone git@github.com:peteski22/claude-pragma.git ~/src/claude-pragma
+# Clone and install
+git clone git@github.com:peteski22/claude-pragma.git
+cd claude-pragma
+make install
 
-# 2. Set environment variable (add to ~/.zshrc or ~/.bashrc)
-export CLAUDE_PRAGMA_PATH="$HOME/src/claude-pragma"
+# Add to your shell profile (~/.zshrc or ~/.bashrc)
+export CLAUDE_PRAGMA_PATH="/path/to/claude-pragma"  # use actual path from make install output
 
-# 3. Create skills directory and link the setup skill
-mkdir -p ~/.claude/skills
-ln -sf "$CLAUDE_PRAGMA_PATH/skills/universal/setup-project" ~/.claude/skills/
-
-# 4. In any project, run:
+# In any project, run:
 /setup-project
 ```
 
