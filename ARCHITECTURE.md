@@ -153,6 +153,14 @@ Each validator has a `contract.json` defining its scope:
 | **go-proverbs** | Idiomatic Go philosophy, Concurrency patterns, Abstraction | Security, Effective Go details, Formatting | golangci-lint |
 | **security** | Secrets, Injection, Path traversal, Auth gaps | Code style, Language idioms, Performance | (none) |
 
+**HARD vs SHOULD by validator:**
+
+| Validator | HARD Rules | SHOULD Rules |
+|-----------|------------|--------------|
+| **go-effective** | Doc comments, Error return position, No pointer-to-interface | Interface size, Early returns, Parameter count |
+| **go-proverbs** | Share memory by communicating, Errors are values, Handle errors gracefully | Interface size, Zero value, Clear vs clever |
+| **security** | Secrets, Injection, Path traversal, Auth gaps | Insecure configurations |
+
 This prevents:
 - Validators reporting on the same thing (noise)
 - Validators assuming work that didn't happen
@@ -160,9 +168,11 @@ This prevents:
 
 ## Severity Model
 
+All validators use the same unified schema:
+
 | Level | Meaning | Action |
 |-------|---------|--------|
-| **HARD** / **CRITICAL** | Must fix | Blocks completion |
+| **HARD** | Must fix | Blocks completion |
 | **SHOULD** | Fix or justify | Requires explicit justification |
 | **WARN** | Advisory | Note in output, don't block |
 
