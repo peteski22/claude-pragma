@@ -13,20 +13,33 @@ Automatically configure Claude Code for the current project.
 
 Use: `~/src/peteski/claude-config`
 
-## Step 1: Detect project languages
+## Step 1: Detect project metadata
+
+Get org and repo name:
+```bash
+# From git remote
+git remote get-url origin 2>/dev/null | sed -E 's|.*[:/]([^/]+)/([^/]+)(\.git)?$|\1/\2|' | tr -d '\n'
+
+# Or from go.mod
+grep -m1 "^module" go.mod 2>/dev/null | awk '{print $2}' | sed 's|.*/||'
+```
+
+Store these for templating configs later.
+
+## Step 2: Detect project languages
 
 Run these checks and collect which languages are present:
 
 ```bash
 # Check for each language
-[[ -f go.mod ]] || ls *.go 2>/dev/null | head -1 && echo "go"
-[[ -f pyproject.toml ]] || [[ -f setup.py ]] || ls *.py 2>/dev/null | head -1 && echo "python"
+[[ -f go.mod ]] && echo "go"
+[[ -f pyproject.toml ]] || [[ -f setup.py ]] && echo "python"
 [[ -f package.json ]] && echo "javascript"
-[[ -f tsconfig.json ]] || ls *.ts 2>/dev/null | head -1 && echo "typescript"
+[[ -f tsconfig.json ]] && echo "typescript"
 [[ -f Cargo.toml ]] && echo "rust"
 ```
 
-## Step 2: Check for existing config
+## Step 3: Check for existing config
 
 ```bash
 [[ -f .claude/CLAUDE.md ]] && echo "exists"
@@ -34,7 +47,7 @@ Run these checks and collect which languages are present:
 
 If exists, read it and check if it was assembled by us (has the "Assembled from claude-config" comment). If user-created, ASK before overwriting.
 
-## Step 3: Assemble and write CLAUDE.md
+## Step 4: Assemble and write CLAUDE.md
 
 Create the directory:
 ```bash
@@ -49,49 +62,68 @@ Add a header comment:
 ```markdown
 <!-- Assembled by /setup-project from claude-config -->
 <!-- Languages: go, python -->
+<!-- Org/Repo: {org}/{repo} -->
 <!-- Re-run /setup-project to regenerate -->
 ```
 
-## Step 4: Link validator skills
+## Step 5: Link skills
 
-Check what's already linked:
-```bash
-ls -la ~/.claude/skills/ 2>/dev/null | grep validate
-```
+Create symlinks for skills that aren't already linked:
 
-Create symlinks for validators that aren't already linked:
 ```bash
 mkdir -p ~/.claude/skills
+```
+
+**Universal skills (always):**
+```bash
+ln -sf ~/src/peteski/claude-config/skills/universal/implement ~/.claude/skills/
+ln -sf ~/src/peteski/claude-config/skills/universal/review ~/.claude/skills/
 ln -sf ~/src/peteski/claude-config/skills/validators/validate ~/.claude/skills/
 ln -sf ~/src/peteski/claude-config/skills/validators/security ~/.claude/skills/
 ```
 
-For Go projects, also link:
+**Go projects:**
 ```bash
 ln -sf ~/src/peteski/claude-config/skills/validators/go-proverbs ~/.claude/skills/
+ln -sf ~/src/peteski/claude-config/skills/validators/go-effective ~/.claude/skills/
 ```
 
-## Step 5: Output summary
+## Step 6: Copy reference configs (if missing)
+
+For Go projects, if no golangci-lint config exists:
+```bash
+[[ ! -f .golangci.yml ]] && [[ ! -f .golangci.yaml ]] && echo "no-lint-config"
+```
+
+If missing, offer to copy the reference config:
+- Source: `~/src/peteski/claude-config/reference/go/golangci-lint.yml`
+- Destination: `.golangci.yml`
+- Replace `{org}` and `{repo}` with detected values.
+
+## Step 7: Output summary
 
 ```
 ## Setup Complete
 
-**Project:** {current directory name}
-**Languages detected:** Go, Python
+**Project:** {repo}
+**Org:** {org}
+**Languages detected:** Go
 
 **Created:** .claude/CLAUDE.md
   - Universal rules
-  - Go rules (Go Proverbs, error handling, testing)
-  - Python rules (PEP 8, pytest)
+  - Go rules (Effective Go, Go Proverbs)
 
-**Validators linked:**
-  - /validate (orchestrator)
-  - /validate-security
+**Skills linked:**
+  - /implement - implement with auto-validation
+  - /review - review changes against all validators
+  - /validate - run all validators
+  - /validate-go-effective
   - /validate-go-proverbs
+  - /validate-security
 
 **Usage:**
-  - Rules are now active for this project
-  - Run `/validate` after making changes to verify compliance
+  /implement <task>    - implement with validation loop
+  /review              - validate current changes
 ```
 
 Keep it brief. The user should be able to run `/setup-project` and immediately start working.
