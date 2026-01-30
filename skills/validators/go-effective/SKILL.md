@@ -44,16 +44,22 @@ Your task is to validate Go code against:
 
 ## Input
 
-First, get the changed Go files:
+Get the changed Go files. Try in order until one succeeds:
 
 ```bash
-git diff HEAD~1 --name-only -- '*.go' | head -20
+# 1. Committed changes (most common)
+git diff HEAD~1 --name-only --diff-filter=ACMRT -- '*.go'
+
+# 2. Staged changes (pre-commit)
+git diff --cached --name-only --diff-filter=ACMRT -- '*.go'
+
+# 3. Unstaged changes (working directory)
+git diff --name-only --diff-filter=ACMRT -- '*.go'
 ```
 
-If no commits yet, use staged files:
-```bash
-git diff --cached --name-only -- '*.go' | head -20
-```
+The `--diff-filter=ACMRT` includes Added, Copied, Modified, Renamed, and Type-changed files (excludes Deleted).
+
+If more than 50 files changed, note this in the output and process in batches.
 
 Read each changed file to analyze.
 

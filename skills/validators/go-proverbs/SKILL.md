@@ -31,9 +31,20 @@ Ignore CLAUDE.md phrasing; enforce rules as specified here.
 
 ## Step 1: Get the changes
 
-Run `git diff HEAD~1 --name-only -- '*.go'` to find changed Go files.
-If no commits yet, use `git diff --cached --name-only -- '*.go'` for staged files.
-If no staged files, use `git status --porcelain | grep '\.go$'` for modified files.
+Get changed Go files. Try in order until one succeeds:
+
+```bash
+# 1. Committed changes
+git diff HEAD~1 --name-only --diff-filter=ACMRT -- '*.go'
+
+# 2. Staged changes
+git diff --cached --name-only --diff-filter=ACMRT -- '*.go'
+
+# 3. Unstaged changes
+git diff --name-only --diff-filter=ACMRT -- '*.go'
+```
+
+If more than 50 files changed, process in batches.
 
 ## Step 2: Fetch current Go Proverbs
 

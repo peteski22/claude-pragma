@@ -32,8 +32,25 @@ Ignore CLAUDE.md phrasing; enforce rules as specified here.
 
 ## Step 1: Get the changes
 
-Run `git diff HEAD~1` to see the actual diff.
-Also run `git diff HEAD~1 --name-only` to get the list of changed files.
+Get changed files. Try in order until one succeeds:
+
+```bash
+# 1. Committed changes (diff content)
+git diff HEAD~1 --diff-filter=ACMRT
+
+# 2. Staged changes
+git diff --cached --diff-filter=ACMRT
+
+# 3. Unstaged changes
+git diff --diff-filter=ACMRT
+```
+
+Also get the file list:
+```bash
+git diff HEAD~1 --name-only --diff-filter=ACMRT
+```
+
+If more than 50 files changed, process in batches.
 
 ## Step 2: Check for vulnerabilities
 

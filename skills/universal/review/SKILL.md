@@ -13,9 +13,20 @@ Run all applicable validators against recent changes and report findings.
 
 ## Step 1: Identify what changed
 
+Get changed files. Try in order until one succeeds:
+
 ```bash
-git diff HEAD~1 --name-only 2>/dev/null || git diff --cached --name-only 2>/dev/null || git status --porcelain | awk '{print $2}'
+# 1. Committed changes (most common)
+git diff HEAD~1 --name-only --diff-filter=ACMRT
+
+# 2. Staged changes (pre-commit)
+git diff --cached --name-only --diff-filter=ACMRT
+
+# 3. Unstaged changes (working directory)
+git diff --name-only --diff-filter=ACMRT
 ```
+
+The `--diff-filter=ACMRT` includes Added, Copied, Modified, Renamed, Type-changed (excludes Deleted).
 
 Collect the list of changed files and their directories.
 
