@@ -132,8 +132,12 @@ Only after validation passes:
 
 **Validation:**
 - Linting: ✓ passed
-- Security: ✓ passed
-- Go Effective: ✓ passed (1 warning noted)
+- Security: ✓ passed (no HARD, no unexplained SHOULD)
+- Go Effective: ✓ passed (no HARD, 1 SHOULD justified, 1 WARN noted)
+
+**Justified SHOULD items:**
+- security:42 - Deferred input sanitization (handled by upstream middleware)
+- go-effective:78 - 6-parameter function (options pattern would over-complicate here)
 
 **Warnings:**
 - [any WARN items to be aware of]

@@ -2,6 +2,7 @@
 name: star-chamber
 description: Advisory multi-LLM craftsmanship council for code and architecture review
 user-invocable: true
+model-invocable: true
 allowed-tools: Bash, Read, Glob, Grep
 ---
 
@@ -299,4 +300,18 @@ Override config path with `STAR_CHAMBER_CONFIG` environment variable.
 
 Each invocation calls all configured providers. With 3 providers reviewing ~2000 tokens:
 - ~$0.02-0.10 per invocation depending on models
-- This skill is advisory and opt-in, never runs automatically
+- This skill is advisory. Claude may invoke it for design decisions (without --deliberate/--interject).
+
+## When Claude May Self-Invoke
+
+Claude may invoke this skill (basic mode only, no --deliberate/--interject) when:
+- Facing significant architectural decisions with multiple valid approaches
+- Uncertain about design trade-offs that would benefit from diverse perspectives
+- The user has asked for a "second opinion" or "what do others think"
+
+Do NOT self-invoke for:
+- Routine code changes
+- Well-established patterns
+- When time/cost is a concern (ask user first)
+
+The --deliberate and --interject flags are manual-only and ignored in automated/self-invoked workflows.

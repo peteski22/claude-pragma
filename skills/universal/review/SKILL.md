@@ -110,10 +110,10 @@ Collect all results.
 ✓ golangci-lint passed
 
 ### Security Validation
-✓ No issues found
+✓ passed (no HARD, no unexplained SHOULD)
 
 ### Go Effective Validation
-✗ FAILED
+✗ FAILED (1 HARD, 1 SHOULD unexplained)
 
 **HARD violations (must fix):**
 1. handler.go:45 - Exported function `ProcessRequest` missing doc comment
@@ -127,7 +127,7 @@ Collect all results.
 ### Summary
 - Rules applied: 2
 - Hard violations: 1
-- Should violations: 1
+- Should violations: 1 (0 justified)
 - Warnings: 1
 
 ### Recommended Actions
