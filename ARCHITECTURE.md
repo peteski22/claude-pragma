@@ -240,6 +240,38 @@ Each validator has a `contract.json` defining its scope:
 | **typescript-style** | TypeScript | Strict mode, React patterns, Hooks usage, State management | Security, Performance | biome, pre-commit |
 | **security** | All | Secrets, Injection, Path traversal, Auth gaps | Code style, Language idioms, Performance | (none) |
 
+### Validator Dependency Chain
+
+Semantic validators assume deterministic linters have passed. This is enforced by Phase 3 ordering.
+
+```mermaid
+flowchart LR
+    subgraph Det["Deterministic (must pass first)"]
+        ruff["ruff"]
+        ty["ty/mypy"]
+        biome["biome"]
+        tsc["tsc"]
+        golangci["golangci-lint"]
+    end
+
+    subgraph Sem["Semantic (run after deterministic)"]
+        pystyle["python-style"]
+        tsstyle["typescript-style"]
+        goeff["go-effective"]
+        goprov["go-proverbs"]
+        sec["security"]
+    end
+
+    ruff --> pystyle
+    ty --> pystyle
+    biome --> tsstyle
+    tsc --> tsstyle
+    golangci --> goeff
+    golangci --> goprov
+
+    sec -.->|"no dependencies"| Det
+```
+
 **HARD vs SHOULD by validator:**
 
 | Validator | HARD Rules | SHOULD Rules |
@@ -269,44 +301,89 @@ This is intentionally simple. More levels create ambiguity.
 
 ## Example Output
 
+### Single Validator Output
+
+Each validator produces JSON in this schema:
+
 ```json
 {
-  "validator": "go-effective",
+  "validator": "python-style",
   "applied_rules": [
     "backend/.claude/CLAUDE.md",
     ".claude/CLAUDE.md"
   ],
-  "files_checked": [
-    "backend/app/handlers/user.go",
-    "backend/app/handlers/user_test.go"
-  ],
+  "files_checked": ["backend/app/services/users.py"],
   "pass": false,
   "hard_violations": [
     {
-      "rule": "Exported identifiers MUST have doc comments",
-      "location": "user.go:45",
-      "explanation": "Function CreateUser is exported but has no doc comment"
+      "rule": "Exception chaining required",
+      "location": "users.py:45",
+      "explanation": "raise UserNotFoundError() should use 'from e'"
     }
   ],
-  "should_violations": [
+  "should_violations": [],
+  "warnings": [],
+  "summary": { "hard_count": 1, "should_count": 0, "warning_count": 0 }
+}
+```
+
+### Aggregated Output (Phase 4)
+
+Phase 4 combines all validator results into a single output:
+
+```json
+{
+  "task": "implement user authentication",
+  "applied_rules": [
+    "backend/.claude/CLAUDE.md",
+    "frontend/.claude/CLAUDE.md",
+    ".claude/CLAUDE.md"
+  ],
+  "rule_conflicts": [],
+  "files_changed": [
+    "backend/app/services/auth.py",
+    "backend/app/api/routes/auth.py",
+    "frontend/src/hooks/useAuth.ts"
+  ],
+  "validation": {
+    "pass": false,
+    "validators": [
+      {
+        "name": "security",
+        "pass": true,
+        "hard_count": 0,
+        "should_count": 0,
+        "warning_count": 1
+      },
+      {
+        "name": "python-style",
+        "pass": false,
+        "hard_count": 1,
+        "should_count": 0,
+        "warning_count": 0
+      },
+      {
+        "name": "typescript-style",
+        "pass": true,
+        "hard_count": 0,
+        "should_count": 0,
+        "warning_count": 0
+      }
+    ],
+    "total": {
+      "hard_count": 1,
+      "should_count": 0,
+      "warning_count": 1
+    }
+  },
+  "blocking_violations": [
     {
-      "rule": "Functions SHOULD do one thing",
-      "location": "user.go:78",
-      "justification_required": true
+      "validator": "python-style",
+      "rule": "Exception chaining required",
+      "location": "auth.py:67",
+      "explanation": "raise AuthenticationError() should use 'from e'"
     }
-  ],
-  "warnings": [
-    {
-      "rule": "Overly complex functions",
-      "location": "user.go:120",
-      "note": "Consider breaking into smaller functions"
-    }
-  ],
-  "summary": {
-    "hard_count": 1,
-    "should_count": 1,
-    "warning_count": 1
-  }
+  ]
 }
 ```
 
@@ -326,9 +403,29 @@ This is intentionally simple. More levels create ambiguity.
 |----------|----------|
 | First commit / no HEAD~1 | Fall back to staged files, then unstaged |
 | Detached HEAD | Use `--diff-filter=ACMRT` to detect changes |
-| >50 files changed | Process in batches |
-| Conflicting rules | Prefer more specific rule, note conflict |
+| >50 files changed | Process in batches of 50, note batch number |
+| Conflicting rules | Prefer more specific rule, log in `rule_conflicts` array |
 | New directories created during implementation | Re-run Phase 0 before validation |
+
+### Rule Conflict Logging
+
+When rules conflict (e.g., subdirectory rule contradicts root rule), the conflict is logged for auditability:
+
+```json
+{
+  "rule_conflicts": [
+    {
+      "rule": "line-length",
+      "root_value": 80,
+      "override_value": 120,
+      "source": "backend/.claude/CLAUDE.md",
+      "resolution": "Used override (more specific)"
+    }
+  ]
+}
+```
+
+The more specific rule always wins, but the conflict is recorded so it can be reviewed.
 
 ## Meta-rule (fallback only)
 
