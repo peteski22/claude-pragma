@@ -15,26 +15,25 @@ Find the claude-config repo. Check in order:
 
 1. Environment variable: `$CLAUDE_CONFIG_PATH`
 2. Common locations:
-   - `~/src/peteski/claude-config`
    - `~/src/claude-config`
    - `~/claude-config`
    - `~/.claude-config`
 
 ```bash
-for dir in "${CLAUDE_CONFIG_PATH:-}" "$HOME/src/peteski/claude-config" "$HOME/src/claude-config" "$HOME/claude-config" "$HOME/.claude-config"; do
+for dir in "${CLAUDE_CONFIG_PATH:-}" "$HOME/src/claude-config" "$HOME/claude-config" "$HOME/.claude-config"; do
   [[ -n "$dir" ]] && [[ -d "$dir" ]] && [[ -f "$dir/claude-md/universal/base.md" ]] && echo "$dir" && break
 done
 ```
 
 If not found anywhere, clone it:
 ```bash
-git clone git@github.com:peteski22/claude-config.git ~/src/claude-config
-# Or HTTPS: https://github.com/peteski22/claude-config.git
+git clone git@github.com:{org}/claude-config.git ~/src/claude-config
+# Or HTTPS: https://github.com/{org}/claude-config.git
 ```
 
-**Store the found path as `$CONFIG_REPO` for all subsequent steps.**
+Replace `{org}` with the appropriate GitHub org/user.
 
-GitHub repo: https://github.com/peteski22/claude-config
+**Store the found path as `$CONFIG_REPO` for all subsequent steps.**
 
 ## Step 1: Detect project metadata
 
