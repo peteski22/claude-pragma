@@ -2,6 +2,160 @@
 
 This document explains the design decisions behind claude-config.
 
+## User Flow: End-to-End
+
+This diagram shows the complete workflow from project setup through implementation and review.
+
+```mermaid
+flowchart TB
+    subgraph Setup["One-Time Setup"]
+        S1["Clone claude-config repo"]
+        S2["Set $CLAUDE_CONFIG_PATH"]
+        S3["Run /setup-project"]
+        S1 --> S2 --> S3
+        S3 --> S3a["Detects: backend/ (Python)<br/>frontend/ (TypeScript)<br/>services/go/ (Go)"]
+        S3a --> S3b["Creates .claude/CLAUDE.md files"]
+        S3b --> S3c["Links validator skills"]
+    end
+
+    subgraph Implement["Developer runs: /implement 'Add user authentication'"]
+        direction TB
+
+        subgraph P0["Phase 0: Rule Injection"]
+            P0a["Identify target dirs:<br/>backend/, frontend/"]
+            P0b["Walk up, collect rules"]
+            P0c["Read & apply:<br/>• backend/.claude/CLAUDE.md<br/>• frontend/.claude/CLAUDE.md<br/>• .claude/CLAUDE.md"]
+            P0a --> P0b --> P0c
+        end
+
+        subgraph P12["Phase 1-2: Understand & Implement"]
+            P12a["Clarify requirements"]
+            P12b["Write code following<br/>injected rules"]
+            P12c["Files created:<br/>• backend/app/services/auth.py<br/>• backend/app/api/routes/auth.py<br/>• frontend/src/hooks/useAuth.ts"]
+            P12a --> P12b --> P12c
+        end
+
+        subgraph P3["Phase 3: Validate"]
+            P3a["Run linters:<br/>ruff + ty | biome + tsc"]
+            P3b{Linters pass?}
+            P3c["Fix lint errors"]
+            P3d["Spawn semantic validators"]
+
+            P3a --> P3b
+            P3b -->|No| P3c --> P3a
+            P3b -->|Yes| P3d
+
+            subgraph Validators["Parallel Validators"]
+                V1["security"]
+                V2["python-style"]
+                V3["typescript-style"]
+            end
+
+            P3d --> Validators
+            Validators --> P3e["Aggregate results"]
+            P3e --> P3f{All pass?}
+            P3f -->|No| P3g["Fix violations"]
+            P3g --> P3a
+        end
+
+        subgraph P4["Phase 4: Complete"]
+            P4a["Generate report"]
+        end
+
+        P0 --> P12 --> P3
+        P3f -->|Yes| P4
+    end
+
+    subgraph Review["Developer runs: /review"]
+        R1["Get changed files"]
+        R2["Inject rules (Step 2)"]
+        R3["Run linters"]
+        R4["Run validators"]
+        R5["Generate report"]
+        R1 --> R2 --> R3 --> R4 --> R5
+    end
+
+    subgraph Output["Final Output"]
+        O1["JSON (machine-readable)"]
+        O2["Report (human-readable)"]
+    end
+
+    Setup --> Implement
+    Implement --> Review
+    Review --> Output
+```
+
+## Output Examples
+
+After `/implement` or `/review`, you get both formats:
+
+### Human-Readable Report
+
+```
+## Implementation Complete
+
+**Task:** Add user authentication
+
+**Rules Applied:**
+- backend/.claude/CLAUDE.md (Python)
+- frontend/.claude/CLAUDE.md (TypeScript)
+- .claude/CLAUDE.md (Universal)
+
+**Files Changed:**
+- backend/app/services/auth.py: AuthService with login/logout
+- backend/app/api/routes/auth.py: POST /login, POST /logout endpoints
+- frontend/src/hooks/useAuth.ts: useAuth hook with TanStack Query
+
+**Validation:**
+| Validator        | Status | Hard | Should | Warn |
+|------------------|--------|------|--------|------|
+| security         | ✓ Pass | 0    | 0      | 1    |
+| python-style     | ✓ Pass | 0    | 0      | 0    |
+| typescript-style | ✓ Pass | 0    | 0      | 0    |
+
+**Warnings:**
+- security: auth.py:45 - Consider adding rate limiting (advisory)
+
+Ready for /review or commit.
+```
+
+### JSON Output (for tooling)
+
+```json
+{
+  "task": "Add user authentication",
+  "applied_rules": [
+    "backend/.claude/CLAUDE.md",
+    "frontend/.claude/CLAUDE.md",
+    ".claude/CLAUDE.md"
+  ],
+  "rule_conflicts": [],
+  "files_changed": [
+    "backend/app/services/auth.py",
+    "backend/app/api/routes/auth.py",
+    "frontend/src/hooks/useAuth.ts"
+  ],
+  "validation": {
+    "pass": true,
+    "validators": [
+      {"name": "security", "pass": true, "hard": 0, "should": 0, "warn": 1},
+      {"name": "python-style", "pass": true, "hard": 0, "should": 0, "warn": 0},
+      {"name": "typescript-style", "pass": true, "hard": 0, "should": 0, "warn": 0}
+    ],
+    "total": {"hard": 0, "should": 0, "warn": 1}
+  },
+  "warnings": [
+    {
+      "validator": "security",
+      "location": "auth.py:45",
+      "note": "Consider adding rate limiting"
+    }
+  ]
+}
+```
+
+---
+
 ## The Problem
 
 CLAUDE.md rules are **guidance** - they can be ignored or forgotten by the LLM. We needed:
