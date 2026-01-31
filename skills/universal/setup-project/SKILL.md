@@ -157,6 +157,13 @@ ln -sf "$CLAUDE_PRAGMA_PATH/skills/validators/security" ~/.claude/skills/
 ln -sf "$CLAUDE_PRAGMA_PATH/skills/advisory/star-chamber" ~/.claude/skills/
 ```
 
+**Check star-chamber prerequisites:**
+```bash
+command -v uvx >/dev/null 2>&1 && echo "uvx:ok" || echo "uvx:missing"
+```
+
+Store the result - if `uvx:missing`, include a warning in Step 8 output.
+
 **Go (if detected anywhere):**
 ```bash
 ln -sf "$CLAUDE_PRAGMA_PATH/skills/validators/go-proverbs" ~/.claude/skills/
@@ -296,7 +303,20 @@ Then include in the summary:
   /star-chamber --file <file> --provider openai --provider gemini  - target specific files and providers
   /star-chamber --debate                                        - enable debate mode (2 rounds, each sees others' responses)
   /star-chamber --debate --rounds 3                             - debate mode with 3 rounds of deliberation
+```
 
+**If uvx is missing**, include this warning:
+```
+⚠️  **Warning:** uvx is not installed. /star-chamber requires uvx to run.
+
+Install uvx:
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+
+Or see: https://docs.astral.sh/uv/getting-started/installation/
+```
+
+Then continue with:
+```
 **Important:** Start a new Claude Code session for newly linked skills to be available.
 
 **Note:** Add `**/.claude/CLAUDE.md` to .gitignore

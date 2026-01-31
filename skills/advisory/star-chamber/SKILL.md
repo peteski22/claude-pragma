@@ -16,6 +16,7 @@ Advisory skill that fans out code reviews to multiple LLM providers (Claude, Ope
 - Supports parallel and sequential review modes
 
 **Requirements:**
+- `uvx` command (part of [uv](https://docs.astral.sh/uv/) Python toolchain)
 - Configuration file at `~/.config/star-chamber/providers.json`
 - API keys: either individual keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`) or single `ANY_LLM_KEY` from any-llm.ai platform
 
@@ -42,14 +43,27 @@ SKILL_BASE="<base directory from header>"
 # e.g., SKILL_BASE="$HOME/.claude/skills/star-chamber"
 ```
 
-## Step 0: Check Configuration
+## Step 0: Check Prerequisites
 
-Before running, verify the provider configuration exists:
+Before running, verify uvx is available and configuration exists:
 
 ```bash
+command -v uvx >/dev/null 2>&1 && echo "uvx:ok" || echo "uvx:missing"
 CONFIG_PATH="${STAR_CHAMBER_CONFIG:-$HOME/.config/star-chamber/providers.json}"
 [[ -f "$CONFIG_PATH" ]] && echo "config:exists" || echo "config:missing"
 ```
+
+**If uvx is missing**, stop and show:
+```
+uvx is required but not installed.
+
+Install uv (includes uvx):
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+
+See: https://docs.astral.sh/uv/getting-started/installation/
+```
+
+**STOP if uvx is missing. Do not proceed.**
 
 **If config is missing**, ask how to manage API keys:
 
