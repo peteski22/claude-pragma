@@ -28,11 +28,10 @@ Advisory skill that fans out code reviews to multiple LLM providers (Claude, Ope
 | `--file <path>` | Specify file to review (repeatable). Defaults to recent git changes. | No |
 | `--timeout <seconds>` | Timeout per provider request (overrides config `timeout_seconds`). | No |
 | `--list-sdks` | Show configured providers, which have API keys set, and required SDK packages. Diagnostic only. | No |
-| `--debate` | Enable debate mode: multiple rounds where each provider sees others' responses | **Yes** |
+| `--debate` | Enable debate mode: multiple rounds with summarization between rounds | **Yes** |
 | `--rounds N` | Number of debate rounds (default: 2, requires --debate) | **Yes** |
-| `--max-rounds N` | Maximum debate rounds as safety limit (default: 5) | **Yes** |
 
-**Manual-only flags** are ignored in automated workflows.
+**Manual-only flags** are ignored in automated workflows. Debate mode is orchestrated by Claude Code (see Step 4).
 
 ## Skill Base Directory
 
@@ -232,85 +231,82 @@ uvx --from any-llm-sdk python "$SKILL_BASE/llm_council.py" --list-sdks
 
 This outputs JSON with `required_sdks` array listing needed packages (e.g., `["anthropic", "google-genai"]`).
 
-Then execute the review, adding a `--with` flag for **each** SDK:
+**Execution modes:**
+
+| Mode | Flags | Flow | Use Case |
+|------|-------|------|----------|
+| Parallel | (default) | All providers review independently at once | Fast consensus gathering |
+| Debate | `--debate --rounds N` | Multiple rounds with summarization between | Deep deliberation, refining ideas |
+
+### Parallel Mode (default)
+
+Execute a single parallel review:
 
 ```bash
 echo "$PROMPT" | uvx --from any-llm-sdk \
   --with anthropic --with google-genai \
   python "$SKILL_BASE/llm_council.py" \
   [--provider <name>...] \
-  [--file <path>...] \
-  [--debate] \
-  [--rounds N]
+  [--file <path>...]
 ```
+
+```
+Prompt → [Provider A] ──→ Response A
+      → [Provider B] ──→ Response B    (all at once, independent)
+      → [Provider C] ──→ Response C
+```
+
+### Debate Mode (`--debate --rounds N`)
+
+You (Claude Code) orchestrate the debate loop. The Python script handles parallel fan-out/fan-in for each round; you handle summarization between rounds.
+
+**Debate flow:**
+
+```
+Round 1: Fan out original prompt to all providers
+         ↓
+         Collect responses: R1_A, R1_B, R1_C, ...
+         ↓
+For each subsequent round (2 to N):
+         ↓
+    For each provider X:
+         - Summarize/compact responses from OTHER providers (not X)
+         - Build prompt: original + "Other council members said: {summaries}"
+         ↓
+    Fan out round prompts to all providers
+         ↓
+    Collect responses: RN_A, RN_B, RN_C, ...
+         ↓
+Final: Use last round responses for consensus building
+```
+
+**Round 1:** Call llm_council.py with the original prompt.
+
+**Round 2+:** For each provider, build a new prompt that includes:
+1. The original review prompt
+2. A **summarized/compacted** version of what the OTHER providers said
+
+**Summarization:** Before each round after the first, summarize the other providers' responses for each provider. This keeps context manageable and focuses on key points. Example:
+
+```
+For Provider A's round 2 prompt, summarize B and C's responses:
+
+"## Other council members' responses (round 1):
+
+**Provider B** raised:
+- [Key point 1 from B's response]
+- [Key point 2 from B's response]
+
+**Provider C** raised:
+- [Key point 1 from C's response]
+- [Key point 2 from C's response]
+
+Please provide your perspective, responding to these points. Note areas of agreement and disagreement."
+```
+
+**Convergence check:** If responses in round N are substantively the same as round N-1 (providers are just agreeing), you may stop early.
 
 **Important:** Each `--with` must be a separate argument. Do NOT quote multiple `--with` flags together.
-
-The SDK mapping is built into llm_council.py and supports all any-llm providers.
-
-**Execution modes:**
-
-| Mode | Flags | Flow | Use Case |
-|------|-------|------|----------|
-| Parallel | (default) | All providers review independently at once | Fast consensus gathering |
-| Debate | `--debate --rounds N` | Multiple rounds, each provider sees others' responses | Deep deliberation, refining ideas |
-
-**Parallel (default):**
-```
-Prompt → [OpenAI] ──→ Response A
-      → [Claude] ──→ Response B    (all at once, independent)
-      → [Gemini] ──→ Response C
-```
-
-**Debate (--debate --rounds 3):**
-```
-Round 1 (parallel, all get original prompt):
-  [OpenAI] ──→ "X looks problematic..."
-  [Claude] ──→ "I'd focus on Y..."
-  [Gemini] ──→ "Consider Z as well..."
-
-Round 2 (parallel, each sees what OTHERS said):
-  [OpenAI] sees Claude + Gemini responses ──→ "Agree with Claude on Y, but..."
-  [Claude] sees OpenAI + Gemini responses ──→ "Good point about X, however..."
-  [Gemini] sees OpenAI + Claude responses ──→ "Building on both points..."
-
-Round 3 (parallel, each sees round 2 responses):
-  [OpenAI] sees others' round 2 ──→ final thoughts
-  [Claude] sees others' round 2 ──→ final thoughts
-  [Gemini] sees others' round 2 ──→ final thoughts
-```
-
-In debate mode, the final round responses are used for consensus building.
-
-**Example debate evolution:**
-
-```
-Round 1 - OpenAI:
-  "The config loader silently ignores missing env vars. This could cause
-   runtime errors when OAuth credentials are empty strings."
-
-Round 1 - Claude:
-  "Good separation of concerns. However, the linear search in
-   get_resource_definition could be slow for large configs."
-
-Round 1 - Gemini:
-  "Type hints look solid. Consider adding a strict mode for env var
-   validation in production environments."
-
-Round 2 - OpenAI (after seeing Claude + Gemini):
-  "Agree with Gemini on strict mode - that would address my env var concern.
-   Claude's point about linear search is valid but likely premature optimization
-   for typical config sizes (<100 resources)."
-
-Round 2 - Claude (after seeing OpenAI + Gemini):
-  "OpenAI and Gemini both flagged the silent env var handling - this is now
-   a consensus issue. I'll upgrade my assessment. The strict mode suggestion
-   elegantly solves it."
-
-Round 2 - Gemini (after seeing OpenAI + Claude):
-  "Strong agreement forming around env var validation. Claude's performance
-   concern is noted but I agree with OpenAI it's not critical for v1."
-```
 
 ## Step 5: Parse and Aggregate Results
 

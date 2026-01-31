@@ -3,14 +3,17 @@
 Multi-LLM council for star-chamber skill.
 
 Features:
+- Fan out prompts to multiple LLM providers in parallel
+- Fan in responses for aggregation
 - Target specific files or recent changes
 - Select providers or use default config
-- Debate mode: multiple rounds where each provider sees others' responses
+
+Note: Debate mode (multi-round deliberation) is orchestrated by Claude Code
+in SKILL.md, not by this script. This script handles single-round parallel calls.
 """
 
 import argparse
 import asyncio
-import hashlib
 import json
 import os
 import re
@@ -47,7 +50,6 @@ class ReviewResult(TypedDict, total=False):
     content: str
     parsed_json: dict[str, Any] | list[Any] | None
     error: str
-    round: int
 
 
 def extract_json(content: str) -> dict[str, Any] | list[Any] | None:
@@ -309,128 +311,25 @@ def get_changed_files() -> list[str]:
             return []
 
 
-def _compute_responses_hash(responses: dict[str, str]) -> str:
-    """Compute a hash of all responses for convergence detection."""
-    # Sort by provider for deterministic ordering.
-    sorted_content = "||".join(
-        f"{k}:{v}" for k, v in sorted(responses.items())
-    )
-    return hashlib.sha256(sorted_content.encode()).hexdigest()[:16]
-
-
 async def run_council(
     prompt: str,
     providers: list[ProviderConfig],
-    debate: bool = False,
-    rounds: int = 2,
-    max_rounds: int = 5,
     timeout: float | None = None,
 ) -> dict[str, Any]:
     """Run multi-LLM council review.
 
-    Default mode: All providers review in parallel independently.
-
-    Debate mode: Multiple rounds where each provider sees others' responses.
-      Round 1: All providers get original prompt (parallel)
-      Round 2+: Each provider sees what the others said and responds (parallel)
-
-    Convergence: In debate mode, exits early if responses stabilize
-      (same content hash for 2 consecutive rounds).
+    Fans out the prompt to all providers in parallel and returns their responses.
+    Debate mode (multi-round deliberation) is handled by Claude Code in SKILL.md.
     """
-    all_results: list[ReviewResult] = []
-
-    if debate:
-        # Debate mode: parallel rounds with cross-pollination.
-        # Track responses by provider for each round.
-        previous_responses: dict[str, str] = {}
-        previous_hash: str | None = None
-        actual_rounds = max(1, min(rounds, max_rounds))
-        converged = False
-
-        for round_num in range(1, actual_rounds + 1):
-            round_results: list[ReviewResult] = []
-
-            # Build tasks for this round.
-            tasks: list[tuple[str, Any]] = []
-            for p in providers:
-                provider_name = p["provider"]
-
-                if round_num == 1:
-                    # First round: everyone gets the original prompt.
-                    round_prompt = prompt
-                else:
-                    # Subsequent rounds: include other providers' responses.
-                    other_responses = []
-                    for other_provider, response in previous_responses.items():
-                        if other_provider != provider_name:
-                            other_responses.append(
-                                f"**{other_provider}** said:\n{response}"
-                            )
-
-                    round_prompt = (
-                        f"{prompt}\n\n"
-                        f"---\n"
-                        f"## Other council members' responses (round {round_num - 1}):\n\n"
-                        f"{chr(10).join(other_responses)}\n\n"
-                        f"---\n"
-                        f"Please provide your perspective, responding to the other members' points. "
-                        f"Note areas of agreement and disagreement."
-                    )
-
-                tasks.append(
-                    (provider_name, get_review(
-                        p["provider"], p["model"], round_prompt, p.get("api_key", ""),
-                        timeout=timeout,
-                    ))
-                )
-
-            # Execute round in parallel.
-            results = await asyncio.gather(*[t[1] for t in tasks])
-
-            # Process results and update previous_responses for next round.
-            previous_responses = {}
-            for i, res in enumerate(results):
-                provider_name = tasks[i][0]
-                res["round"] = round_num
-                round_results.append(res)
-                if res.get("success"):
-                    previous_responses[provider_name] = res.get("content", "")
-
-            all_results.extend(round_results)
-
-            # Check for convergence (same responses hash as previous round).
-            if round_num > 1 and previous_responses:
-                current_hash = _compute_responses_hash(previous_responses)
-                if current_hash == previous_hash:
-                    converged = True
-                    print(
-                        f"[star-chamber] Debate converged after round {round_num}",
-                        file=sys.stderr,
-                    )
-                    break
-                previous_hash = current_hash
-            elif previous_responses:
-                previous_hash = _compute_responses_hash(previous_responses)
-            else:
-                # All providers failed this round; reset hash to avoid false convergence.
-                previous_hash = None
-
-        return {
-            "reviews": all_results,
-            "rounds": round_num,
-            "converged": converged,
-        }
-    else:
-        # Default: parallel independent reviews.
-        tasks = [
-            get_review(
-                p["provider"], p["model"], prompt, p.get("api_key", ""),
-                timeout=timeout,
-            )
-            for p in providers
-        ]
-        results = list(await asyncio.gather(*tasks))
-        return {"reviews": results, "rounds": 1}
+    tasks = [
+        get_review(
+            p["provider"], p["model"], prompt, p.get("api_key", ""),
+            timeout=timeout,
+        )
+        for p in providers
+    ]
+    results = list(await asyncio.gather(*tasks))
+    return {"reviews": results}
 
 
 def main() -> None:
@@ -441,23 +340,6 @@ def main() -> None:
     )
     parser.add_argument(
         "--provider", "-p", action="append", help="LLM providers to use"
-    )
-    parser.add_argument(
-        "--debate",
-        action="store_true",
-        help="Enable debate mode: multiple rounds where each provider sees others' responses",
-    )
-    parser.add_argument(
-        "--rounds",
-        type=int,
-        default=2,
-        help="Number of debate rounds (default: 2, requires --debate)",
-    )
-    parser.add_argument(
-        "--max-rounds",
-        type=int,
-        default=5,
-        help="Maximum debate rounds as safety limit (default: 5)",
     )
     parser.add_argument(
         "--timeout",
@@ -605,14 +487,11 @@ def main() -> None:
                 )
                 sys.exit(1)
 
-    # Run the council.
+    # Run the council (single parallel round).
     result = asyncio.run(
         run_council(
             combined_prompt,
             providers,
-            debate=args.debate,
-            rounds=args.rounds,
-            max_rounds=args.max_rounds,
             timeout=timeout,
         )
     )
@@ -627,12 +506,7 @@ def main() -> None:
         "reviews": successful,
         "files_reviewed": files_to_review,
         "providers_used": [p["provider"] for p in providers],
-        "mode": "debate" if args.debate else "parallel",
-        "rounds": result.get("rounds", 1),
     }
-
-    if result.get("converged"):
-        output["converged"] = True
 
     if failed:
         output["failed_reviews"] = failed
