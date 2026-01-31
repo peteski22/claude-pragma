@@ -22,7 +22,7 @@ from typing import Any, TypedDict
 
 # API key patterns to redact from error messages.
 API_KEY_PATTERNS = [
-    r"sk-[a-zA-Z0-9]{20,}",  # OpenAI keys.
+    r"sk-(?:proj-)?[a-zA-Z0-9]{20,}",  # OpenAI keys (classic and project-scoped).
     r"sk-ant-[a-zA-Z0-9-]{20,}",  # Anthropic keys.
     r"ANY\.v1\.[a-zA-Z0-9]+",  # any-llm.ai platform keys.
     r"AIza[a-zA-Z0-9_-]{35}",  # Google API keys.
@@ -371,6 +371,9 @@ async def run_council(
                 previous_hash = current_hash
             elif previous_responses:
                 previous_hash = _compute_responses_hash(previous_responses)
+            else:
+                # All providers failed this round; reset hash to avoid false convergence.
+                previous_hash = None
 
         return {
             "reviews": all_results,
