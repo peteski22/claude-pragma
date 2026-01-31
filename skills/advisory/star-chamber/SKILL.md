@@ -487,7 +487,7 @@ Note: `api_key` fields are omitted - the library fetches them from the platform 
 - Add appropriate `--with` flags to the uvx command
 
 **Provider not in sdk_map:**
-```
+```text
 [star-chamber] Provider custom-llm not in sdk_map, assuming OpenAI-compatible
 ```
 - This is a warning, not an error. Unknown providers are assumed to use the OpenAI-compatible API.
@@ -514,11 +514,11 @@ The review continues with available providers. Check `failed_reviews` for detail
 ### Debate Convergence
 
 In debate mode, the council may exit early if responses stabilize:
-```
+```text
 [star-chamber] Debate converged after round 3
 ```
 
-This means all providers gave the same responses in consecutive rounds. The output will include `"converged": true`.
+This means all successful providers gave the same responses in consecutive rounds. Providers that failed or timed out are excluded from convergence detection and listed under `failed_reviews`. The output will include `"converged": true`.
 
 ## Cost Warning
 
