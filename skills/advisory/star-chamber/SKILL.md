@@ -233,10 +233,10 @@ This outputs JSON with `required_sdks` array listing needed packages (e.g., `["a
 
 **Execution modes:**
 
-| Mode | Flags | Flow | Use Case |
-|------|-------|------|----------|
-| Parallel | (default) | All providers review independently at once | Fast consensus gathering |
-| Debate | `--debate --rounds N` | Multiple rounds with summarization between | Deep deliberation, refining ideas |
+| Mode     | Flags                 | Flow                                        | Use Case                          |
+|----------|-----------------------|---------------------------------------------|-----------------------------------|
+| Parallel | (default)             | All providers review independently at once  | Fast consensus gathering          |
+| Debate   | `--debate --rounds N` | Multiple rounds with summarization between  | Deep deliberation, refining ideas |
 
 ### Parallel Mode (default)
 
@@ -250,7 +250,7 @@ echo "$PROMPT" | uvx --from any-llm-sdk \
   [--file <path>...]
 ```
 
-```
+```text
 Prompt → [Provider A] ──→ Response A
       → [Provider B] ──→ Response B    (all at once, independent)
       → [Provider C] ──→ Response C
@@ -262,8 +262,8 @@ You (Claude Code) orchestrate the debate loop. The Python script handles paralle
 
 **Debate flow:**
 
-```
-Round 1: Fan out original prompt to all providers
+```text
+Round 1: Fan out original prompt to all providers (parallel)
          ↓
          Collect responses: R1_A, R1_B, R1_C, ...
          ↓
@@ -271,9 +271,9 @@ For each subsequent round (2 to N):
          ↓
     For each provider X:
          - Summarize/compact responses from OTHER providers (not X)
-         - Build prompt: original + "Other council members said: {summaries}"
+         - Build custom prompt: original + "Other council members said: {summaries}"
          ↓
-    Fan out round prompts to all providers
+    Fan out round prompts to all providers (parallel - each with its custom prompt)
          ↓
     Collect responses: RN_A, RN_B, RN_C, ...
          ↓
@@ -288,7 +288,7 @@ Final: Use last round responses for consensus building
 
 **Summarization (Chatham House rules):** When summarizing for the next round, do NOT attribute points to specific providers. Just present the collective feedback anonymously. This encourages providers to engage with ideas rather than sources. Example:
 
-```
+```text
 "## Other council members' feedback (round 1):
 
 **Issues raised:**
@@ -303,7 +303,7 @@ Final: Use last round responses for consensus building
 Please provide your perspective on these points. Note where you agree, disagree, or have additional insights."
 ```
 
-**Convergence check:** If responses in round N are substantively the same as round N-1 (providers are just agreeing), you may stop early.
+**Convergence check:** If responses in round N are substantively the same as round N-1 (providers just agree), you may stop early.
 
 **Important:** Each `--with` must be a separate argument. Do NOT quote multiple `--with` flags together.
 
