@@ -312,72 +312,73 @@ Round 2 - Gemini (after seeing OpenAI + Claude):
    concern is noted but I agree with OpenAI it's not critical for v1."
 ```
 
-## Step 5: Aggregate Results
+## Step 5: Parse and Aggregate Results
 
-Parse JSON responses from each provider and build consensus:
+For each successful provider response:
 
-**Consensus issues** (all providers agree):
-- Flag with "CONSENSUS" marker
-- Highest confidence for action
+1. **Extract JSON** from the response. Providers often wrap JSON in markdown code blocks:
+   ```
+   ```json
+   {"provider": "...", "issues": [...]}
+   ```
+   ```
+   Extract the JSON object. If parsing fails, note the provider as having a malformed response.
 
-**Majority issues** (2+ providers agree):
-- Flag with provider count
-- High confidence
+2. **Normalize issues** by location and category to enable grouping.
 
-**Individual observations** (single provider):
-- List under provider name
-- Lower confidence, but may be valid specialized insight
+3. **Group issues by similarity**:
+   - Same file + same line range + same category = likely same issue
+   - Similar descriptions across providers = same underlying concern
 
-## Step 6: Output Report
+4. **Classify by agreement**:
+   - **Consensus** (all providers flagged it): Highest confidence
+   - **Majority** (2+ providers): High confidence
+   - **Individual** (1 provider): Note but lower confidence
 
-Generate both human-readable and machine-readable output:
+## Step 6: Present Results to User
 
-### Markdown Report
-
-The output combines two dimensions:
-- **Agreement** (section headers): How many providers flagged the issue (consensus = all, majority = 2+, individual = 1)
-- **Severity** (issue labels): How serious - HIGH (security/correctness), MEDIUM (potential bugs), LOW (style/optimization)
+Present the aggregated results using this format. Always show consensus issues first.
 
 ```markdown
 ## Star-Chamber Review
 
-**Files:** {list of reviewed files}
+**Files:** {list of files reviewed}
 **Providers:** {list of providers used}
 
 ### Consensus Issues (All Providers Agree)
-1. `{location}` [{SEVERITY}] - {description}
 
-### Majority Issues (N/M Providers)
-1. `{location}` [{SEVERITY}, {N}/{M}] - {description}
+These issues were flagged by every council member. Address these first.
+
+1. `{file}:{line}` **[{SEVERITY}]** - {description}
+   - **Suggestion:** {how to fix}
+
+### Majority Issues ({N}/{M} Providers)
+
+These issues were flagged by most council members.
+
+1. `{file}:{line}` **[{SEVERITY}]** ({which providers}) - {description}
+   - **Suggestion:** {how to fix}
 
 ### Individual Observations
-- **{Provider}**: `{location}` - {observation}
+
+Issues raised by a single provider. May be valid specialized insights.
+
+- **{Provider}:** `{location}` - {observation}
 
 ### Summary
-| Provider | Quality | Issues |
-|----------|---------|--------|
-| GPT-4o   | Good    | 3      |
-| Claude   | Good    | 4      |
-| Gemini   | Fair    | 2      |
+
+| Provider | Quality Rating | Issues Found |
+|----------|---------------|--------------|
+| {name}   | {rating}      | {count}      |
+
+**Overall:** {1-2 sentence synthesis of the review}
 ```
 
-### JSON Output
-
-```json
-{
-  "files_reviewed": ["path/to/file.py"],
-  "providers_used": ["openai", "anthropic", "gemini"],
-  "consensus_issues": [],
-  "majority_issues": [],
-  "individual_issues": {},
-  "quality_ratings": {},
-  "summary": {
-    "total_issues": 0,
-    "consensus_count": 0,
-    "majority_count": 0
-  }
-}
-```
+**Important:**
+- Always lead with consensus issues - these are the most actionable
+- Include the suggestion/fix from providers when available
+- Note which providers flagged majority issues for context
+- Keep the summary concise - users want to know what to fix
 
 ## Usage Examples
 
