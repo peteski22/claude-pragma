@@ -286,6 +286,8 @@ Final: Use last round responses for consensus building
 1. The original review prompt
 2. A **summarized/compacted** version of what the OTHER providers said
 
+**Parallel execution:** Call llm_council.py once per provider with `--provider X`, but invoke all providers in parallel using concurrent Bash tool calls in a single message. Example for 3 providers: send one message with 3 Bash tool invocations, each calling `llm_council.py --provider <name>` with that provider's custom prompt.
+
 **Summarization (Chatham House rules):** When summarizing for the next round, do NOT attribute points to specific providers. Just present the collective feedback anonymously. This encourages providers to engage with ideas rather than sources. Example:
 
 ```text
