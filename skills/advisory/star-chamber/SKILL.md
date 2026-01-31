@@ -286,22 +286,21 @@ Final: Use last round responses for consensus building
 1. The original review prompt
 2. A **summarized/compacted** version of what the OTHER providers said
 
-**Summarization:** Before each round after the first, summarize the other providers' responses for each provider. This keeps context manageable and focuses on key points. Example:
+**Summarization (Chatham House rules):** When summarizing for the next round, do NOT attribute points to specific providers. Just present the collective feedback anonymously. This encourages providers to engage with ideas rather than sources. Example:
 
 ```
-For Provider A's round 2 prompt, summarize B and C's responses:
+"## Other council members' feedback (round 1):
 
-"## Other council members' responses (round 1):
+**Issues raised:**
+- The config loader silently ignores missing env vars, risking runtime errors
+- Linear search in get_resource_definition may be slow for large configs
+- Consider adding a strict mode for env var validation
 
-**Provider B** raised:
-- [Key point 1 from B's response]
-- [Key point 2 from B's response]
+**Points of agreement:**
+- Type hints are solid
+- Overall code structure is clean
 
-**Provider C** raised:
-- [Key point 1 from C's response]
-- [Key point 2 from C's response]
-
-Please provide your perspective, responding to these points. Note areas of agreement and disagreement."
+Please provide your perspective on these points. Note where you agree, disagree, or have additional insights."
 ```
 
 **Convergence check:** If responses in round N are substantively the same as round N-1 (providers are just agreeing), you may stop early.
