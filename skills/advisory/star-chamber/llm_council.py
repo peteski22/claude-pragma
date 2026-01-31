@@ -10,12 +10,51 @@ Features:
 
 import argparse
 import asyncio
+import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
+
+
+# API key patterns to redact from error messages.
+API_KEY_PATTERNS = [
+    r"sk-(?:proj-)?[a-zA-Z0-9]{20,}",  # OpenAI keys (classic and project-scoped).
+    r"sk-ant-[a-zA-Z0-9-]{20,}",  # Anthropic keys.
+    r"ANY\.v1\.[a-zA-Z0-9]+",  # any-llm.ai platform keys.
+    r"AIza[a-zA-Z0-9_-]{35}",  # Google API keys.
+    r"gsk_[a-zA-Z0-9]{20,}",  # Groq keys.
+]
+
+
+class ProviderConfig(TypedDict, total=False):
+    """Configuration for a single LLM provider."""
+
+    provider: str
+    model: str
+    api_key: str
+
+
+class ReviewResult(TypedDict, total=False):
+    """Result from a single provider review."""
+
+    provider: str
+    model: str
+    success: bool
+    content: str
+    error: str
+    round: int
+
+
+def sanitize_error(message: str) -> str:
+    """Redact API keys and sensitive patterns from error messages."""
+    result = message
+    for pattern in API_KEY_PATTERNS:
+        result = re.sub(pattern, "[REDACTED]", result)
+    return result
 
 
 def load_sdk_map() -> dict[str, str | None]:
@@ -29,10 +68,32 @@ def load_sdk_map() -> dict[str, str | None]:
             }),
         )
         sys.exit(1)
-    with open(sdk_map_path) as f:
-        data: dict[str, str | None] = json.load(f)
-        data.pop("_comment", None)
-        return data
+
+    try:
+        with open(sdk_map_path) as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        print(
+            json.dumps({
+                "error": f"Invalid JSON in SDK map: {sdk_map_path}",
+                "details": str(e),
+                "hint": "Check the file for syntax errors.",
+            }),
+        )
+        sys.exit(1)
+
+    # Validate structure: should be dict with string keys and string/None values.
+    if not isinstance(data, dict):
+        print(
+            json.dumps({
+                "error": "SDK map must be a JSON object",
+                "got": type(data).__name__,
+            }),
+        )
+        sys.exit(1)
+
+    data.pop("_comment", None)
+    return data
 
 
 def get_required_sdks(provider_names: list[str]) -> list[str]:
@@ -43,12 +104,18 @@ def get_required_sdks(provider_names: list[str]) -> list[str]:
         sdk = sdk_map.get(name.lower())
         if sdk:
             sdks.append(sdk)
+        else:
+            # Warn if provider not found in sdk_map (may be using OpenAI-compatible API).
+            print(
+                f"[star-chamber] Provider {name} not in sdk_map, assuming OpenAI-compatible",
+                file=sys.stderr,
+            )
     return sorted(set(sdks))
 
 
-async def get_review(
+async def _get_review_internal(
     provider: str, model: str, prompt: str, api_key: str
-) -> dict[str, Any]:
+) -> ReviewResult:
     """Send prompt to a single provider and return structured response.
 
     If api_key is empty and ANY_LLM_KEY is set, the SDK auto-detects platform mode.
@@ -57,7 +124,7 @@ async def get_review(
         # Import here to allow uvx to install the dependency.
         from any_llm import acompletion
 
-        kwargs = {
+        kwargs: dict[str, Any] = {
             "model": model,
             "provider": provider,
             "messages": [{"role": "user", "content": prompt}],
@@ -68,12 +135,19 @@ async def get_review(
         # If no api_key, SDK checks ANY_LLM_KEY and auto-routes through platform.
 
         response = await acompletion(**kwargs)
-        return {
-            "provider": provider,
-            "model": model,
-            "success": True,
-            "content": response.choices[0].message.content,
-        }
+        if not response.choices:
+            return ReviewResult(
+                provider=provider,
+                model=model,
+                success=False,
+                error="No response choices returned from provider",
+            )
+        return ReviewResult(
+            provider=provider,
+            model=model,
+            success=True,
+            content=response.choices[0].message.content,
+        )
     except ImportError:
         sdk_map = load_sdk_map()
         sdk = sdk_map.get(provider.lower())
@@ -81,12 +155,12 @@ async def get_review(
             hint = f"Install with: pip install {sdk} (or add '--with {sdk}' to uvx)"
         else:
             hint = "This provider may use the OpenAI-compatible API (no extra SDK needed)"
-        return {
-            "provider": provider,
-            "model": model,
-            "success": False,
-            "error": f"Missing SDK for {provider}. {hint}",
-        }
+        return ReviewResult(
+            provider=provider,
+            model=model,
+            success=False,
+            error=f"Missing SDK for {provider}. {hint}",
+        )
     except Exception as e:
         error_msg = str(e).lower()
         # Map providers to their env var names for helpful errors.
@@ -103,20 +177,49 @@ async def get_review(
 
         # Detect common API key issues.
         if "api_key" in error_msg or "unauthorized" in error_msg or "401" in error_msg:
-            return {
-                "provider": provider,
-                "model": model,
-                "success": False,
-                "error": f"Authentication failed for {provider}. Check {env_var} is set and valid.",
-            }
+            return ReviewResult(
+                provider=provider,
+                model=model,
+                success=False,
+                error=f"Authentication failed for {provider}. Check {env_var} is set and valid.",
+            )
         if "api key" in error_msg or "apikey" in error_msg:
-            return {
-                "provider": provider,
-                "model": model,
-                "success": False,
-                "error": f"Missing API key for {provider}. Set {env_var} in your environment.",
-            }
-        return {"provider": provider, "model": model, "success": False, "error": str(e)}
+            return ReviewResult(
+                provider=provider,
+                model=model,
+                success=False,
+                error=f"Missing API key for {provider}. Set {env_var} in your environment.",
+            )
+        return ReviewResult(
+            provider=provider,
+            model=model,
+            success=False,
+            error=sanitize_error(str(e)),
+        )
+
+
+async def get_review(
+    provider: str, model: str, prompt: str, api_key: str, timeout: float | None = None
+) -> ReviewResult:
+    """Get review with optional timeout.
+
+    Wraps _get_review_internal with asyncio.wait_for for timeout handling.
+    """
+    if timeout is None:
+        return await _get_review_internal(provider, model, prompt, api_key)
+
+    try:
+        return await asyncio.wait_for(
+            _get_review_internal(provider, model, prompt, api_key),
+            timeout=timeout,
+        )
+    except asyncio.TimeoutError:
+        return ReviewResult(
+            provider=provider,
+            model=model,
+            success=False,
+            error=f"Request timed out after {timeout}s",
+        )
 
 
 def resolve_api_keys(
@@ -166,11 +269,22 @@ def get_changed_files() -> list[str]:
             return []
 
 
+def _compute_responses_hash(responses: dict[str, str]) -> str:
+    """Compute a hash of all responses for convergence detection."""
+    # Sort by provider for deterministic ordering.
+    sorted_content = "||".join(
+        f"{k}:{v}" for k, v in sorted(responses.items())
+    )
+    return hashlib.sha256(sorted_content.encode()).hexdigest()[:16]
+
+
 async def run_council(
     prompt: str,
-    providers: list[dict[str, Any]],
+    providers: list[ProviderConfig],
     debate: bool = False,
     rounds: int = 2,
+    max_rounds: int = 5,
+    timeout: float | None = None,
 ) -> dict[str, Any]:
     """Run multi-LLM council review.
 
@@ -179,19 +293,25 @@ async def run_council(
     Debate mode: Multiple rounds where each provider sees others' responses.
       Round 1: All providers get original prompt (parallel)
       Round 2+: Each provider sees what the others said and responds (parallel)
+
+    Convergence: In debate mode, exits early if responses stabilize
+      (same content hash for 2 consecutive rounds).
     """
-    all_results: list[dict[str, Any]] = []
+    all_results: list[ReviewResult] = []
 
     if debate:
         # Debate mode: parallel rounds with cross-pollination.
         # Track responses by provider for each round.
         previous_responses: dict[str, str] = {}
+        previous_hash: str | None = None
+        actual_rounds = max(1, min(rounds, max_rounds))
+        converged = False
 
-        for round_num in range(1, rounds + 1):
-            round_results: list[dict[str, Any]] = []
+        for round_num in range(1, actual_rounds + 1):
+            round_results: list[ReviewResult] = []
 
             # Build tasks for this round.
-            tasks = []
+            tasks: list[tuple[str, Any]] = []
             for p in providers:
                 provider_name = p["provider"]
 
@@ -219,7 +339,8 @@ async def run_council(
 
                 tasks.append(
                     (provider_name, get_review(
-                        p["provider"], p["model"], round_prompt, p["api_key"]
+                        p["provider"], p["model"], round_prompt, p.get("api_key", ""),
+                        timeout=timeout,
                     ))
                 )
 
@@ -233,15 +354,39 @@ async def run_council(
                 res["round"] = round_num
                 round_results.append(res)
                 if res.get("success"):
-                    previous_responses[provider_name] = res["content"]
+                    previous_responses[provider_name] = res.get("content", "")
 
             all_results.extend(round_results)
 
-        return {"reviews": all_results, "rounds": rounds}
+            # Check for convergence (same responses hash as previous round).
+            if round_num > 1 and previous_responses:
+                current_hash = _compute_responses_hash(previous_responses)
+                if current_hash == previous_hash:
+                    converged = True
+                    print(
+                        f"[star-chamber] Debate converged after round {round_num}",
+                        file=sys.stderr,
+                    )
+                    break
+                previous_hash = current_hash
+            elif previous_responses:
+                previous_hash = _compute_responses_hash(previous_responses)
+            else:
+                # All providers failed this round; reset hash to avoid false convergence.
+                previous_hash = None
+
+        return {
+            "reviews": all_results,
+            "rounds": round_num,
+            "converged": converged,
+        }
     else:
         # Default: parallel independent reviews.
         tasks = [
-            get_review(p["provider"], p["model"], prompt, p["api_key"])
+            get_review(
+                p["provider"], p["model"], prompt, p.get("api_key", ""),
+                timeout=timeout,
+            )
             for p in providers
         ]
         results = list(await asyncio.gather(*tasks))
@@ -267,6 +412,17 @@ def main() -> None:
         type=int,
         default=2,
         help="Number of debate rounds (default: 2, requires --debate)",
+    )
+    parser.add_argument(
+        "--max-rounds",
+        type=int,
+        default=5,
+        help="Maximum debate rounds as safety limit (default: 5)",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        help="Timeout in seconds for each provider request (overrides config)",
     )
     parser.add_argument(
         "--list-sdks",
@@ -390,9 +546,35 @@ def main() -> None:
             f"- {f}" for f in files_to_review
         )
 
+    # Determine timeout: CLI flag > config > None.
+    timeout: float | None = args.timeout
+    if timeout is None:
+        raw_timeout = config.get("timeout_seconds")
+        if raw_timeout is not None:
+            try:
+                timeout = float(raw_timeout)
+                if timeout <= 0:
+                    raise ValueError("must be positive")
+            except (TypeError, ValueError):
+                print(
+                    json.dumps({
+                        "error": "Invalid timeout_seconds in config",
+                        "value": raw_timeout,
+                        "hint": "timeout_seconds must be a positive number",
+                    }),
+                )
+                sys.exit(1)
+
     # Run the council.
     result = asyncio.run(
-        run_council(combined_prompt, providers, args.debate, args.rounds)
+        run_council(
+            combined_prompt,
+            providers,
+            debate=args.debate,
+            rounds=args.rounds,
+            max_rounds=args.max_rounds,
+            timeout=timeout,
+        )
     )
 
     # Separate successful and failed reviews.
@@ -401,13 +583,16 @@ def main() -> None:
     failed = [r for r in all_reviews if not r.get("success")]
 
     # Build final output.
-    output = {
+    output: dict[str, Any] = {
         "reviews": successful,
         "files_reviewed": files_to_review,
         "providers_used": [p["provider"] for p in providers],
         "mode": "debate" if args.debate else "parallel",
         "rounds": result.get("rounds", 1),
     }
+
+    if result.get("converged"):
+        output["converged"] = True
 
     if failed:
         output["failed_reviews"] = failed

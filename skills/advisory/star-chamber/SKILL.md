@@ -25,9 +25,11 @@ Advisory skill that fans out code reviews to multiple LLM providers (Claude, Ope
 |------|-------------|-------------|
 | `--provider <name>` | LLM provider to use (repeatable, e.g., `--provider openai --provider gemini`). Defaults to all in config. | No |
 | `--file <path>` | Specify file to review (repeatable). Defaults to recent git changes. | No |
+| `--timeout <seconds>` | Timeout per provider request (overrides config `timeout_seconds`). | No |
 | `--list-sdks` | Show configured providers, which have API keys set, and required SDK packages. Diagnostic only. | No |
 | `--debate` | Enable debate mode: multiple rounds where each provider sees others' responses | **Yes** |
 | `--rounds N` | Number of debate rounds (default: 2, requires --debate) | **Yes** |
+| `--max-rounds N` | Maximum debate rounds as safety limit (default: 5) | **Yes** |
 
 **Manual-only flags** are ignored in automated workflows.
 
@@ -445,6 +447,78 @@ The platform tracks **metadata only** (never prompts/responses):
 ```
 
 Note: `api_key` fields are omitted - the library fetches them from the platform automatically.
+
+## Security Considerations
+
+**API Key Storage:**
+- **Prefer environment variables** over hardcoding keys in the config file
+- Use `${ENV_VAR}` syntax in config to reference environment variables
+- Never commit `providers.json` with actual API keys to version control
+- The any-llm.ai platform mode is recommended for team environments
+
+**Error Output:**
+- API keys are automatically redacted from error messages (patterns: `sk-*`, `ANY.v1.*`, etc.)
+- The `--list-sdks` command shows whether keys are set, not their values
+
+## Troubleshooting
+
+### Common Errors
+
+**Authentication failed for {provider}:**
+```json
+{"provider": "openai", "success": false, "error": "Authentication failed for openai. Check OPENAI_API_KEY is set and valid."}
+```
+- Verify the environment variable is set: `echo $OPENAI_API_KEY`
+- Check if the key is valid (not expired or revoked)
+- For platform mode, verify `ANY_LLM_KEY` is set and the provider is configured in your any-llm.ai project
+
+**Request timed out:**
+```json
+{"provider": "gemini", "success": false, "error": "Request timed out after 60s"}
+```
+- Increase timeout via `--timeout 120` or in config `timeout_seconds`
+- Check network connectivity to the provider
+
+**Missing SDK:**
+```json
+{"provider": "anthropic", "success": false, "error": "Missing SDK for anthropic. Install with: pip install anthropic (or add '--with anthropic' to uvx)"}
+```
+- Run `--list-sdks` to see required packages
+- Add appropriate `--with` flags to the uvx command
+
+**Provider not in sdk_map:**
+```text
+[star-chamber] Provider custom-llm not in sdk_map, assuming OpenAI-compatible
+```
+- This is a warning, not an error. Unknown providers are assumed to use the OpenAI-compatible API.
+- If your provider needs a specific SDK, add it to `sdk_map.json`
+
+### Partial Failures
+
+When some providers succeed and others fail, the output includes both:
+
+```json
+{
+  "reviews": [
+    {"provider": "openai", "model": "gpt-4o", "success": true, "content": "..."}
+  ],
+  "failed_reviews": [
+    {"provider": "anthropic", "model": "claude-sonnet-4-20250514", "success": false, "error": "Request timed out after 60s"}
+  ],
+  "providers_used": ["openai", "anthropic"]
+}
+```
+
+The review continues with available providers. Check `failed_reviews` for details on failures.
+
+### Debate Convergence
+
+In debate mode, the council may exit early if responses stabilize:
+```text
+[star-chamber] Debate converged after round 3
+```
+
+This means all successful providers gave the same responses in consecutive rounds. Providers that failed or timed out are excluded from convergence detection and listed under `failed_reviews`. The output will include `"converged": true`.
 
 ## Cost Warning
 
