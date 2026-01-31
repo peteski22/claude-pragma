@@ -45,12 +45,12 @@ class ReviewResult(TypedDict, total=False):
     model: str
     success: bool
     content: str
-    parsed_json: dict[str, Any] | None
+    parsed_json: dict[str, Any] | list[Any] | None
     error: str
     round: int
 
 
-def extract_json(content: str) -> dict[str, Any] | None:
+def extract_json(content: str) -> dict[str, Any] | list[Any] | None:
     """Extract JSON from LLM response, handling markdown code blocks.
 
     LLMs often wrap JSON responses in markdown code blocks like:
@@ -71,10 +71,10 @@ def extract_json(content: str) -> dict[str, Any] | None:
         pass
 
     # Try extracting from ```json ... ``` or ``` ... ``` blocks.
-    # Match the first code block that looks like JSON.
+    # Patterns use \s* to handle optional whitespace/newlines.
     patterns = [
-        r"```json\s*\n(.*?)\n```",  # ```json ... ```
-        r"```\s*\n(\{.*?\})\n```",  # ``` { ... } ```
+        r"```json\s*(.*?)\s*```",  # ```json ... ```
+        r"```\s*([\{\[].*?[\}\]])\s*```",  # ``` {/[ ... ]/} ```
     ]
     for pattern in patterns:
         match = re.search(pattern, content, re.DOTALL)
@@ -84,6 +84,7 @@ def extract_json(content: str) -> dict[str, Any] | None:
             except json.JSONDecodeError:
                 continue
 
+    print("[star-chamber] Could not extract JSON from response", file=sys.stderr)
     return None
 
 
