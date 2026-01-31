@@ -316,13 +316,7 @@ Round 2 - Gemini (after seeing OpenAI + Claude):
 
 For each successful provider response:
 
-1. **Extract JSON** from the response. Providers often wrap JSON in markdown code blocks:
-   ```
-   ```json
-   {"provider": "...", "issues": [...]}
-   ```
-   ```
-   Extract the JSON object. If parsing fails, note the provider as having a malformed response.
+1. **Extract JSON** from the response. Providers often wrap JSON in markdown code blocks like ` ```json {...} ``` `. Extract the JSON object. If parsing fails, note the provider as having a malformed response.
 
 2. **Normalize issues** by location and category to enable grouping.
 
@@ -330,10 +324,10 @@ For each successful provider response:
    - Same file + same line range + same category = likely same issue
    - Similar descriptions across providers = same underlying concern
 
-4. **Classify by agreement**:
+4. **Classify by agreement** (mutually exclusive buckets):
    - **Consensus** (all providers flagged it): Highest confidence
-   - **Majority** (2+ providers): High confidence
-   - **Individual** (1 provider): Note but lower confidence
+   - **Majority** (2+ providers, but not all): High confidence
+   - **Individual** (1 provider only): Note but lower confidence
 
 ## Step 6: Present Results to User
 
@@ -379,6 +373,49 @@ Issues raised by a single provider. May be valid specialized insights.
 - Include the suggestion/fix from providers when available
 - Note which providers flagged majority issues for context
 - Keep the summary concise - users want to know what to fix
+
+### JSON Output
+
+Also produce machine-readable JSON output matching the contract schema:
+
+```json
+{
+  "files_reviewed": ["path/to/file.py"],
+  "providers_used": ["openai", "anthropic", "gemini"],
+  "consensus_issues": [
+    {
+      "severity": "high",
+      "location": "file.py:42",
+      "category": "correctness",
+      "description": "Issue description",
+      "suggestion": "How to fix"
+    }
+  ],
+  "majority_issues": [
+    {
+      "severity": "medium",
+      "location": "file.py:100",
+      "category": "maintainability",
+      "description": "Issue description",
+      "suggestion": "How to fix",
+      "provider_count": 2
+    }
+  ],
+  "individual_issues": {
+    "openai": [{"severity": "low", "location": "...", "description": "..."}]
+  },
+  "quality_ratings": {
+    "openai": "good",
+    "anthropic": "good",
+    "gemini": "fair"
+  },
+  "summary": {
+    "total_issues": 5,
+    "consensus_count": 1,
+    "majority_count": 2
+  }
+}
+```
 
 ## Usage Examples
 
