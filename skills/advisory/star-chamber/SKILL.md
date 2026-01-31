@@ -16,6 +16,7 @@ Advisory skill that fans out code reviews to multiple LLM providers (Claude, Ope
 - Supports parallel and sequential review modes
 
 **Requirements:**
+- `uvx` command (part of [uv](https://docs.astral.sh/uv/) Python toolchain)
 - Configuration file at `~/.config/star-chamber/providers.json`
 - API keys: either individual keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`) or single `ANY_LLM_KEY` from any-llm.ai platform
 
