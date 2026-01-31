@@ -135,6 +135,13 @@ async def _get_review_internal(
         # If no api_key, SDK checks ANY_LLM_KEY and auto-routes through platform.
 
         response = await acompletion(**kwargs)
+        if not response.choices:
+            return ReviewResult(
+                provider=provider,
+                model=model,
+                success=False,
+                error="No response choices returned from provider",
+            )
         return ReviewResult(
             provider=provider,
             model=model,
