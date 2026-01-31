@@ -162,4 +162,4 @@ Generated CLAUDE.md files should be gitignored since each developer generates th
 
 ## License
 
-MIT - See [LICENSE](LICENSE) for details.
+Apache 2.0 - See [LICENSE](LICENSE) for details.
