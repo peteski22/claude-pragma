@@ -45,8 +45,46 @@ class ReviewResult(TypedDict, total=False):
     model: str
     success: bool
     content: str
+    parsed_json: dict[str, Any] | None
     error: str
     round: int
+
+
+def extract_json(content: str) -> dict[str, Any] | None:
+    """Extract JSON from LLM response, handling markdown code blocks.
+
+    LLMs often wrap JSON responses in markdown code blocks like:
+        ```json
+        {"key": "value"}
+        ```
+
+    This function tries to parse JSON directly first, then falls back to
+    extracting from code blocks.
+    """
+    if not content:
+        return None
+
+    # Try direct parse first.
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        pass
+
+    # Try extracting from ```json ... ``` or ``` ... ``` blocks.
+    # Match the first code block that looks like JSON.
+    patterns = [
+        r"```json\s*\n(.*?)\n```",  # ```json ... ```
+        r"```\s*\n(\{.*?\})\n```",  # ``` { ... } ```
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, content, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group(1))
+            except json.JSONDecodeError:
+                continue
+
+    return None
 
 
 def sanitize_error(message: str) -> str:
@@ -141,11 +179,13 @@ async def _get_review_internal(
                 success=False,
                 error="No response choices returned from provider",
             )
+        content = response.choices[0].message.content
         return ReviewResult(
             provider=provider,
             model=model,
             success=True,
-            content=response.choices[0].message.content,
+            content=content,
+            parsed_json=extract_json(content),
         )
     except ImportError:
         sdk_map = load_sdk_map()
