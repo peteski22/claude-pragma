@@ -104,8 +104,7 @@ def get_required_sdks(provider_names: list[str]) -> list[str]:
         sdk = sdk_map.get(name.lower())
         if sdk:
             sdks.append(sdk)
-        else:
-            # Warn if provider not found in sdk_map (may be using OpenAI-compatible API).
+        elif name.lower() != "openai":  # openai is the base case, no SDK needed
             print(
                 f"[star-chamber] Provider {name} not in sdk_map, assuming OpenAI-compatible",
                 file=sys.stderr,
