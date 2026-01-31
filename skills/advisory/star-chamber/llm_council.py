@@ -546,7 +546,21 @@ def main() -> None:
     # Determine timeout: CLI flag > config > None.
     timeout: float | None = args.timeout
     if timeout is None:
-        timeout = config.get("timeout_seconds")
+        raw_timeout = config.get("timeout_seconds")
+        if raw_timeout is not None:
+            try:
+                timeout = float(raw_timeout)
+                if timeout <= 0:
+                    raise ValueError("must be positive")
+            except (TypeError, ValueError):
+                print(
+                    json.dumps({
+                        "error": "Invalid timeout_seconds in config",
+                        "value": raw_timeout,
+                        "hint": "timeout_seconds must be a positive number",
+                    }),
+                )
+                sys.exit(1)
 
     # Run the council.
     result = asyncio.run(
