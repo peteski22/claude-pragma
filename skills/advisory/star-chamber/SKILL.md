@@ -31,7 +31,7 @@ Advisory skill that fans out code reviews to multiple LLM providers (Claude, Ope
 | `--debate` | Enable debate mode: multiple rounds with summarization between rounds | **Yes** |
 | `--rounds N` | Number of debate rounds (default: 2, requires --debate) | **Yes** |
 
-**Manual-only flags** are ignored in automated workflows. Debate mode is orchestrated by Claude Code (see Step 4).
+**Manual-only flags** are skill invocation parameters interpreted by Claude Code, NOT flags passed to `llm_council.py`. Debate mode is orchestrated by Claude Code (see Step 4).
 
 ## Skill Base Directory
 
@@ -212,11 +212,11 @@ Provide your review as structured JSON:
       "severity": "high|medium|low",
       "location": "file:line",
       "category": "craftsmanship|architecture|correctness|maintainability",
-      "description": "What's wrong",
+      "description": "What is wrong",
       "suggestion": "How to fix it"
     }
   ],
-  "praise": ["What's done well"],
+  "praise": ["What is done well"],
   "summary": "One paragraph overall assessment"
 }
 ```
@@ -233,12 +233,14 @@ This outputs JSON with `required_sdks` array listing needed packages (e.g., `["a
 
 **Execution modes:**
 
-| Mode     | Flags                 | Flow                                        | Use Case                          |
+| Mode     | Invocation            | Flow                                        | Use Case                          |
 |----------|-----------------------|---------------------------------------------|-----------------------------------|
 | Parallel | (default)             | All providers review independently at once  | Fast consensus gathering          |
-| Debate   | `--debate --rounds N` | Multiple rounds with summarization between  | Deep deliberation, refining ideas |
+| Debate   | `/star-chamber --debate --rounds N` | Multiple rounds with summarization between  | Deep deliberation, refining ideas |
 
 ### Parallel Mode (default)
+
+The simplest approach: all providers review independently in a single round.
 
 Execute a single parallel review:
 
@@ -256,9 +258,13 @@ Prompt → [Provider A] ──→ Response A
       → [Provider C] ──→ Response C
 ```
 
-### Debate Mode (`--debate --rounds N`)
+### Debate Mode
+
+For deeper deliberation, debate mode runs multiple rounds where providers respond to each other's feedback.
 
 You (Claude Code) orchestrate the debate loop. The Python script handles parallel fan-out/fan-in for each round; you handle summarization between rounds.
+
+**Note:** Debate mode involves multiple rounds of LLM calls, increasing both cost and response time compared to parallel mode.
 
 **Debate flow:**
 
@@ -269,26 +275,22 @@ Round 1: Fan out original prompt to all providers (parallel)
          ↓
 For each subsequent round (2 to N):
          ↓
-    For each provider X:
-         - Summarize/compact responses from OTHER providers (not X)
-         - Build custom prompt: original + "Other council members said: {summaries}"
+    Create ONE anonymous summary of ALL responses from the previous round
          ↓
-    Fan out round prompts to all providers (parallel - each with its custom prompt)
+    Build new prompt: original + "Other council members said: {summary}"
+         ↓
+    Fan out to all providers in parallel (single llm_council.py call)
          ↓
     Collect responses: RN_A, RN_B, RN_C, ...
          ↓
 Final: Use last round responses for consensus building
 ```
 
-**Round 1:** Call llm_council.py with the original prompt.
+**Round 1:** Call llm_council.py with the original prompt (all providers, parallel).
 
-**Round 2+:** For each provider, build a new prompt that includes:
-1. The original review prompt
-2. A **summarized/compacted** version of what the OTHER providers said
+**Round 2+:** Create ONE anonymous summary of all responses from the previous round, then call llm_council.py again with the augmented prompt. All providers receive the same summary - this maintains parallel execution and aligns with the anonymous synthesis approach.
 
-**Parallel execution:** Call llm_council.py once per provider with `--provider X`, but invoke all providers in parallel using concurrent Bash tool calls in a single message. Example for 3 providers: send one message with 3 Bash tool invocations, each calling `llm_council.py --provider <name>` with that provider's custom prompt.
-
-**Summarization (Chatham House rules):** When summarizing for the next round, do NOT attribute points to specific providers. Just present the collective feedback anonymously. This encourages providers to engage with ideas rather than sources. Example:
+**Summarization (anonymous synthesis):** When summarizing for the next round, synthesize feedback by content themes WITHOUT attributing specific points to individual providers. Present the collective feedback anonymously, focusing on consolidating similar concerns and highlighting areas of agreement or disagreement. This encourages providers to engage with ideas rather than sources. Example:
 
 ```text
 "## Other council members' feedback (round 1):
@@ -305,7 +307,11 @@ Final: Use last round responses for consensus building
 Please provide your perspective on these points. Note where you agree, disagree, or have additional insights."
 ```
 
-**Convergence check:** If responses in round N are substantively the same as round N-1 (providers just agree), you may stop early.
+**Error handling:** If a provider fails during a round, continue with the remaining providers. Note failed providers in the final output but do not block the debate.
+
+**Convergence check:** If responses in round N are substantively the same as round N-1 (providers just agree with no new points), you may stop early. This is optional - completing all requested rounds is also acceptable.
+
+**Prompt construction:** When building prompts for shell execution, use heredoc syntax (`cat << 'EOF'`) to avoid quoting issues with apostrophes and special characters in the review content.
 
 **Important:** Each `--with` must be a separate argument. Do NOT quote multiple `--with` flags together.
 
@@ -370,49 +376,7 @@ Issues raised by a single provider. May be valid specialized insights.
 - Include the suggestion/fix from providers when available
 - Note which providers flagged majority issues for context
 - Keep the summary concise - users want to know what to fix
-
-### JSON Output
-
-Also produce machine-readable JSON output matching the contract schema:
-
-```json
-{
-  "files_reviewed": ["path/to/file.py"],
-  "providers_used": ["openai", "anthropic", "gemini"],
-  "consensus_issues": [
-    {
-      "severity": "high",
-      "location": "file.py:42",
-      "category": "correctness",
-      "description": "Issue description",
-      "suggestion": "How to fix"
-    }
-  ],
-  "majority_issues": [
-    {
-      "severity": "medium",
-      "location": "file.py:100",
-      "category": "maintainability",
-      "description": "Issue description",
-      "suggestion": "How to fix",
-      "provider_count": 2
-    }
-  ],
-  "individual_issues": {
-    "openai": [{"severity": "low", "location": "...", "description": "..."}]
-  },
-  "quality_ratings": {
-    "openai": "good",
-    "anthropic": "good",
-    "gemini": "fair"
-  },
-  "summary": {
-    "total_issues": 5,
-    "consensus_count": 1,
-    "majority_count": 2
-  }
-}
-```
+- Do NOT include raw JSON output in the terminal summary - the markdown format above is for human consumption
 
 ## Usage Examples
 
