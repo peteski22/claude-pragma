@@ -297,5 +297,7 @@ Then include in the summary:
   /star-chamber --debate                                        - enable debate mode (2 rounds, each sees others' responses)
   /star-chamber --debate --rounds 3                             - debate mode with 3 rounds of deliberation
 
+**Important:** Start a new Claude Code session for newly linked skills to be available.
+
 **Note:** Add `**/.claude/CLAUDE.md` to .gitignore
 ```
