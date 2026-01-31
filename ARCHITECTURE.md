@@ -618,10 +618,12 @@ The `/star-chamber` skill fans out code reviews to multiple LLM providers (Claud
 - Supports parallel and sequential review modes
 
 **Execution modes:**
-| Mode | Flags | Description |
-|------|-------|-------------|
+| Mode | Invocation | Description |
+|------|------------|-------------|
 | Parallel | (default) | Independent calls to all providers simultaneously |
-| Debate | `--debate --rounds N` | Multiple rounds where each provider sees others' responses |
+| Debate | `/star-chamber --debate --rounds N` | Multiple rounds with anonymous synthesis between rounds |
+
+**Debate mode** uses [Chatham House rules](https://www.chathamhouse.org/about-us/chatham-house-rule) for inter-round summarization: feedback from each round is synthesized by content themes without attributing points to specific providers. This encourages engagement with ideas rather than sources, and reduces bias from provider reputation.
 
 **Integration:**
 ```mermaid

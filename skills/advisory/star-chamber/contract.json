@@ -18,7 +18,7 @@
     },
     "debate": {
       "type": "boolean",
-      "description": "Enable debate mode: multiple rounds where each provider sees others' responses (manual only)",
+      "description": "Enable debate mode: multiple rounds with summarization between rounds, orchestrated by Claude Code (manual only)",
       "required": false,
       "manualOnly": true
     },
@@ -40,8 +40,6 @@
       "schema": {
         "files_reviewed": {"type": "array", "items": {"type": "string"}},
         "providers_used": {"type": "array", "items": {"type": "string"}},
-        "mode": {"type": "string", "enum": ["parallel", "debate"]},
-        "rounds": {"type": "integer"},
         "consensus_issues": {
           "type": "array",
           "items": {

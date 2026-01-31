@@ -28,11 +28,10 @@ Advisory skill that fans out code reviews to multiple LLM providers (Claude, Ope
 | `--file <path>` | Specify file to review (repeatable). Defaults to recent git changes. | No |
 | `--timeout <seconds>` | Timeout per provider request (overrides config `timeout_seconds`). | No |
 | `--list-sdks` | Show configured providers, which have API keys set, and required SDK packages. Diagnostic only. | No |
-| `--debate` | Enable debate mode: multiple rounds where each provider sees others' responses | **Yes** |
+| `--debate` | Enable debate mode: multiple rounds with summarization between rounds | **Yes** |
 | `--rounds N` | Number of debate rounds (default: 2, requires --debate) | **Yes** |
-| `--max-rounds N` | Maximum debate rounds as safety limit (default: 5) | **Yes** |
 
-**Manual-only flags** are ignored in automated workflows.
+**Manual-only flags** are skill invocation parameters interpreted by Claude Code, NOT flags passed to `llm_council.py`. Debate mode is orchestrated by Claude Code (see Step 4).
 
 ## Skill Base Directory
 
@@ -213,11 +212,11 @@ Provide your review as structured JSON:
       "severity": "high|medium|low",
       "location": "file:line",
       "category": "craftsmanship|architecture|correctness|maintainability",
-      "description": "What's wrong",
+      "description": "What is wrong",
       "suggestion": "How to fix it"
     }
   ],
-  "praise": ["What's done well"],
+  "praise": ["What is done well"],
   "summary": "One paragraph overall assessment"
 }
 ```
@@ -232,85 +231,89 @@ uvx --from any-llm-sdk python "$SKILL_BASE/llm_council.py" --list-sdks
 
 This outputs JSON with `required_sdks` array listing needed packages (e.g., `["anthropic", "google-genai"]`).
 
-Then execute the review, adding a `--with` flag for **each** SDK:
+**Execution modes:**
+
+| Mode     | Invocation            | Flow                                        | Use Case                          |
+|----------|-----------------------|---------------------------------------------|-----------------------------------|
+| Parallel | (default)             | All providers review independently at once  | Fast consensus gathering          |
+| Debate   | `/star-chamber --debate --rounds N` | Multiple rounds with summarization between  | Deep deliberation, refining ideas |
+
+### Parallel Mode (default)
+
+The simplest approach: all providers review independently in a single round.
+
+Execute a single parallel review:
 
 ```bash
 echo "$PROMPT" | uvx --from any-llm-sdk \
   --with anthropic --with google-genai \
   python "$SKILL_BASE/llm_council.py" \
   [--provider <name>...] \
-  [--file <path>...] \
-  [--debate] \
-  [--rounds N]
+  [--file <path>...]
 ```
+
+```text
+Prompt → [Provider A] ──→ Response A
+      → [Provider B] ──→ Response B    (all at once, independent)
+      → [Provider C] ──→ Response C
+```
+
+### Debate Mode
+
+For deeper deliberation, debate mode runs multiple rounds where providers respond to each other's feedback.
+
+You (Claude Code) orchestrate the debate loop. The Python script handles parallel fan-out/fan-in for each round; you handle summarization between rounds.
+
+**Note:** Debate mode involves multiple rounds of LLM calls, increasing both cost and response time compared to parallel mode.
+
+**Debate flow:**
+
+```text
+Round 1: Fan out original prompt to all providers (parallel)
+         ↓
+         Collect responses: R1_A, R1_B, R1_C, ...
+         ↓
+For each subsequent round (2 to N):
+         ↓
+    Create ONE anonymous summary of ALL responses from the previous round
+         ↓
+    Build new prompt: original + "Other council members said: {summary}"
+         ↓
+    Fan out to all providers in parallel (single llm_council.py call)
+         ↓
+    Collect responses: RN_A, RN_B, RN_C, ...
+         ↓
+Final: Use last round responses for consensus building
+```
+
+**Round 1:** Call llm_council.py with the original prompt (all providers, parallel).
+
+**Round 2+:** Create ONE anonymous summary of all responses from the previous round, then call llm_council.py again with the augmented prompt. All providers receive the same summary - this maintains parallel execution and aligns with the anonymous synthesis approach.
+
+**Summarization (anonymous synthesis):** When summarizing for the next round, synthesize feedback by content themes WITHOUT attributing specific points to individual providers. Present the collective feedback anonymously, focusing on consolidating similar concerns and highlighting areas of agreement or disagreement. This encourages providers to engage with ideas rather than sources. Example:
+
+```text
+"## Other council members' feedback (round 1):
+
+**Issues raised:**
+- The config loader silently ignores missing env vars, risking runtime errors
+- Linear search in get_resource_definition may be slow for large configs
+- Consider adding a strict mode for env var validation
+
+**Points of agreement:**
+- Type hints are solid
+- Overall code structure is clean
+
+Please provide your perspective on these points. Note where you agree, disagree, or have additional insights."
+```
+
+**Error handling:** If a provider fails during a round, continue with the remaining providers. Note failed providers in the final output but do not block the debate.
+
+**Convergence check:** If responses in round N are substantively the same as round N-1 (providers just agree with no new points), you may stop early. This is optional - completing all requested rounds is also acceptable.
+
+**Prompt construction:** When building prompts for shell execution, use heredoc syntax (`cat << 'EOF'`) to avoid quoting issues with apostrophes and special characters in the review content.
 
 **Important:** Each `--with` must be a separate argument. Do NOT quote multiple `--with` flags together.
-
-The SDK mapping is built into llm_council.py and supports all any-llm providers.
-
-**Execution modes:**
-
-| Mode | Flags | Flow | Use Case |
-|------|-------|------|----------|
-| Parallel | (default) | All providers review independently at once | Fast consensus gathering |
-| Debate | `--debate --rounds N` | Multiple rounds, each provider sees others' responses | Deep deliberation, refining ideas |
-
-**Parallel (default):**
-```
-Prompt → [OpenAI] ──→ Response A
-      → [Claude] ──→ Response B    (all at once, independent)
-      → [Gemini] ──→ Response C
-```
-
-**Debate (--debate --rounds 3):**
-```
-Round 1 (parallel, all get original prompt):
-  [OpenAI] ──→ "X looks problematic..."
-  [Claude] ──→ "I'd focus on Y..."
-  [Gemini] ──→ "Consider Z as well..."
-
-Round 2 (parallel, each sees what OTHERS said):
-  [OpenAI] sees Claude + Gemini responses ──→ "Agree with Claude on Y, but..."
-  [Claude] sees OpenAI + Gemini responses ──→ "Good point about X, however..."
-  [Gemini] sees OpenAI + Claude responses ──→ "Building on both points..."
-
-Round 3 (parallel, each sees round 2 responses):
-  [OpenAI] sees others' round 2 ──→ final thoughts
-  [Claude] sees others' round 2 ──→ final thoughts
-  [Gemini] sees others' round 2 ──→ final thoughts
-```
-
-In debate mode, the final round responses are used for consensus building.
-
-**Example debate evolution:**
-
-```
-Round 1 - OpenAI:
-  "The config loader silently ignores missing env vars. This could cause
-   runtime errors when OAuth credentials are empty strings."
-
-Round 1 - Claude:
-  "Good separation of concerns. However, the linear search in
-   get_resource_definition could be slow for large configs."
-
-Round 1 - Gemini:
-  "Type hints look solid. Consider adding a strict mode for env var
-   validation in production environments."
-
-Round 2 - OpenAI (after seeing Claude + Gemini):
-  "Agree with Gemini on strict mode - that would address my env var concern.
-   Claude's point about linear search is valid but likely premature optimization
-   for typical config sizes (<100 resources)."
-
-Round 2 - Claude (after seeing OpenAI + Gemini):
-  "OpenAI and Gemini both flagged the silent env var handling - this is now
-   a consensus issue. I'll upgrade my assessment. The strict mode suggestion
-   elegantly solves it."
-
-Round 2 - Gemini (after seeing OpenAI + Claude):
-  "Strong agreement forming around env var validation. Claude's performance
-   concern is noted but I agree with OpenAI it's not critical for v1."
-```
 
 ## Step 5: Parse and Aggregate Results
 
@@ -373,49 +376,7 @@ Issues raised by a single provider. May be valid specialized insights.
 - Include the suggestion/fix from providers when available
 - Note which providers flagged majority issues for context
 - Keep the summary concise - users want to know what to fix
-
-### JSON Output
-
-Also produce machine-readable JSON output matching the contract schema:
-
-```json
-{
-  "files_reviewed": ["path/to/file.py"],
-  "providers_used": ["openai", "anthropic", "gemini"],
-  "consensus_issues": [
-    {
-      "severity": "high",
-      "location": "file.py:42",
-      "category": "correctness",
-      "description": "Issue description",
-      "suggestion": "How to fix"
-    }
-  ],
-  "majority_issues": [
-    {
-      "severity": "medium",
-      "location": "file.py:100",
-      "category": "maintainability",
-      "description": "Issue description",
-      "suggestion": "How to fix",
-      "provider_count": 2
-    }
-  ],
-  "individual_issues": {
-    "openai": [{"severity": "low", "location": "...", "description": "..."}]
-  },
-  "quality_ratings": {
-    "openai": "good",
-    "anthropic": "good",
-    "gemini": "fair"
-  },
-  "summary": {
-    "total_issues": 5,
-    "consensus_count": 1,
-    "majority_count": 2
-  }
-}
-```
+- Do NOT include raw JSON output in the terminal summary - the markdown format above is for human consumption
 
 ## Usage Examples
 
