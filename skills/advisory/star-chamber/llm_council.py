@@ -304,7 +304,7 @@ async def run_council(
         # Track responses by provider for each round.
         previous_responses: dict[str, str] = {}
         previous_hash: str | None = None
-        actual_rounds = min(rounds, max_rounds)
+        actual_rounds = max(1, min(rounds, max_rounds))
         converged = False
 
         for round_num in range(1, actual_rounds + 1):
