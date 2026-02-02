@@ -122,7 +122,10 @@ Advisory skills provide feedback but don't block completion.
 
 ```
 myproject/
-├── .claude/CLAUDE.md           # Universal rules (git workflow, code quality)
+├── .claude/
+│   ├── CLAUDE.md               # Universal rules (commit this)
+│   └── local/
+│       └── CLAUDE.md           # Personal supplements (gitignore this)
 ├── backend/
 │   ├── .claude/CLAUDE.md       # Python-specific rules
 │   └── pyproject.toml
@@ -131,7 +134,7 @@ myproject/
     └── package.json
 ```
 
-When you edit `backend/app/main.py`, both the Python rules and universal rules are injected.
+When you edit `backend/app/main.py`, both the Python rules and universal rules are injected. If `.claude/local/CLAUDE.md` exists, those rules are also applied as supplements.
 
 ## Directory Structure
 
@@ -147,12 +150,14 @@ claude-pragma/
 └── reference/              # Template configs (golangci-lint, providers.json)
 ```
 
-## Gitignore
+## Version Control
 
-Generated CLAUDE.md files should be gitignored since each developer generates their own:
+**Commit** the generated `.claude/CLAUDE.md` files so other developers get the same rules without re-running `/setup-project`.
+
+**Gitignore** the `.claude/local/` directory for personal supplements:
 
 ```gitignore
-**/.claude/CLAUDE.md
+.claude/local/
 ```
 
 ## More Information
