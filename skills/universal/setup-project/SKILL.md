@@ -87,9 +87,10 @@ If any exist, read them. If they have `<!-- Assembled by /setup-project -->` com
 
 ## Step 4: Create root .claude/CLAUDE.md
 
-Create the directory:
+Create the directories:
 ```bash
 mkdir -p .claude
+mkdir -p .claude/local
 ```
 
 Assemble root CLAUDE.md with:
@@ -116,6 +117,19 @@ For example:
 - Editing `frontend/src/App.tsx` → also read `frontend/.claude/CLAUDE.md`
 
 Always apply the most specific rules available for the code you're working on.
+
+## Local Supplements
+
+If `.claude/local/CLAUDE.md` exists, read it and apply those rules in addition to the generated rules. Use this for project-specific additions like custom test commands or local environment notes.
+
+Local supplements are additive only. If a local rule conflicts with a generated rule, the generated rule takes precedence. Use local supplements for additions, not for overriding core behavior.
+
+Add `.claude/local/` to your `.gitignore` to keep personal rules out of version control.
+```
+
+**Create empty local CLAUDE.md (only if it doesn't exist):**
+```bash
+[[ ! -f .claude/local/CLAUDE.md ]] && touch .claude/local/CLAUDE.md
 ```
 
 ## Step 5: Create subdirectory .claude/CLAUDE.md files
@@ -319,5 +333,7 @@ Then continue with:
 ```
 **Important:** Start a new Claude Code session for newly linked skills to be available.
 
-**Note:** Add `**/.claude/CLAUDE.md` to .gitignore
+**Recommended:**
+  - Commit the generated `.claude/CLAUDE.md` files so other developers get the same rules.
+  - Add `.claude/local/` to .gitignore for personal supplements.
 ```
