@@ -118,6 +118,9 @@ For example:
 
 Always apply the most specific rules available for the code you're working on.
 
+<!-- NOTE: This section intentionally mirrors claude-md/universal/context-aware.md.
+     Generated files must be standalone (users' repos can't reference claude-pragma).
+     Update both files together if this guidance changes. -->
 ## Local Supplements
 
 If `.claude/local/CLAUDE.md` exists, read it and apply those rules in addition to the generated rules. Use this for project-specific additions like custom test commands or local environment notes.
