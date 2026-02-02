@@ -58,13 +58,25 @@ Before coding:
 - If the task involves breaking changes to public APIs, confirm impact with the user.
 - If the task scope seems larger than requested, verify intent before expanding.
 
+### Pattern Discovery
+
+Before proposing a solution, understand how the codebase already works.
+
+**Core principle:** Ask "how does Y access X?" not "does X exist in Y?"
+
+Checking if a directory exists tells you nothing about how code flows. Instead, trace the actual connections: grep for imports, check dependency files, examine how components are wired together.
+
+**If the task involves sharing code between components**, find existing shared packages first and follow established patterns before proposing new ones.
+
+**If a GitHub issue lists multiple approaches**, investigate each sufficiently to make an informed decision.
+
 ### Research
 
 - Where possible, use WebSearch or WebFetch to lookup current documentation rather than relying on training data, especially for:
-  - Library/framework APIs that change frequently
-  - Cloud provider documentation (AWS, GCP, Azure)
-  - Language features added recently
-  - Version-specific behavior
+  - Library/framework APIs that change frequently.
+  - Cloud provider documentation (AWS, GCP, Azure).
+  - Language features added recently.
+  - Version-specific behavior.
 
 ---
 

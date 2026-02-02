@@ -88,8 +88,14 @@ The "Pre-Implementation Setup" section of the loaded rules contains **actions to
 ## Phase 1: Understand
 
 1. Clarify requirements if ambiguous.
-2. Identify files that need changes.
-3. Understand existing patterns in the codebase.
+2. **Discover existing patterns before proposing solutions:**
+   - Ask "how does Y access X?" not "does X exist in Y?" - directory existence alone doesn't reveal how code flows.
+   - Check dependency files (pyproject.toml, package.json, go.mod) for workspace/monorepo patterns.
+   - Grep for imports to understand how code flows between components.
+   - Look for build artifacts (.egg-info, .venv, dist/, node_modules/, target/) indicating local packages.
+   - If the task involves sharing code, find existing shared packages first.
+   - If the GitHub issue lists multiple approaches, investigate each sufficiently to make an informed decision.
+3. Identify files that need changes based on discovered patterns.
 
 ---
 
