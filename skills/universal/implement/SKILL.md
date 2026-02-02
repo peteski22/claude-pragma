@@ -58,6 +58,29 @@ If two rules conflict and precedence is unclear, prefer the more specific rule a
 
 Track which rule files were loaded for the final report.
 
+### Step 5: Execute pre-implementation setup
+
+The "Pre-Implementation Setup" section of the loaded rules contains **actions to execute**, not just guidance to follow. The rules file is the single source of truth; this step is the executor.
+
+**How to execute:**
+
+1. **Locate the section:** Find the "Pre-Implementation Setup" section in the loaded rules.
+
+2. **Identify actionable items:** Look for:
+   - Bash code blocks (` ```bash `) - these are commands to run
+   - Imperative instructions ("Check...", "Create...", "Verify...")
+   - Conditional actions ("**If...**" statements)
+
+3. **Execute in order:** For each actionable item:
+   - Run bash code blocks using the Bash tool
+   - Evaluate conditionals and take the action specified in the rules
+   - When a conditional requires a decision, ask the user
+   - Record outcomes for the final report
+
+4. **Handle failures:** If any command fails or a situation isn't covered by the rules, ask the user for guidance before proceeding.
+
+5. **Record for report:** Track what was executed and outcomes (e.g., branch created, steps skipped, user decisions).
+
 ---
 
 ## Phase 1: Understand
@@ -121,6 +144,8 @@ Only after validation passes:
 ## Implementation Complete
 
 **Task:** [what was requested]
+
+**Branch:** <branch-name> (created | existing | skipped)
 
 **Rules Applied:**
 - backend/.claude/CLAUDE.md
