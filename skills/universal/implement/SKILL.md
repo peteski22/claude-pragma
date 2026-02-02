@@ -62,6 +62,8 @@ Track which rule files were loaded for the final report.
 
 The "Pre-Implementation Setup" section of the loaded rules contains **actions to execute**, not just guidance to follow. The rules file is the single source of truth; this step is the executor.
 
+**If no "Pre-Implementation Setup" section exists** in any loaded rules, skip this step and note in the final report that no pre-implementation setup was defined.
+
 **How to execute:**
 
 1. **Locate the section:** Find the "Pre-Implementation Setup" section in the loaded rules.
@@ -145,7 +147,7 @@ Only after validation passes:
 
 **Task:** [what was requested]
 
-**Branch:** <branch-name> (created | existing | skipped)
+**Branch:** `branch-name` (created | existing | continued | skipped)
 
 **Rules Applied:**
 - backend/.claude/CLAUDE.md
