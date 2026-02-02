@@ -39,6 +39,16 @@ For a file in backend/app/handlers/:
 
 Use the Read tool to check each path. Collect those that exist.
 
+### Step 2a: Check for local supplements
+
+Also check for local supplements at the repo root:
+
+```bash
+[[ -f .claude/local/CLAUDE.md ]] && echo "local-supplements:exists"
+```
+
+If `.claude/local/CLAUDE.md` exists, read it. Local supplements contain project-specific additions (custom test commands, local environment notes, etc.) that apply in addition to generated rules.
+
 ### Step 3: Read and apply rules
 
 Read each discovered CLAUDE.md file.
@@ -56,7 +66,7 @@ If two rules conflict and precedence is unclear, prefer the more specific rule a
 
 ### Step 4: Record applied rules
 
-Track which rule files were loaded for the final report.
+Track which rule files were loaded for the final report, including local supplements if present.
 
 ### Step 5: Execute pre-implementation setup
 
@@ -158,6 +168,7 @@ Only after validation passes:
 **Rules Applied:**
 - backend/.claude/CLAUDE.md
 - .claude/CLAUDE.md
+- .claude/local/CLAUDE.md (local supplements)
 
 **Changes:**
 - file.go: [what changed]
