@@ -2,22 +2,45 @@
 
 These rules apply to all projects regardless of language or framework.
 
-## Research Practices
+Rules are organized by timing: when they should be applied during the workflow.
 
-- Where possible, use WebSearch or WebFetch to lookup current documentation rather than relying on training data, especially for:
-  - Library/framework APIs that change frequently
-  - Cloud provider documentation (AWS, GCP, Azure)
-  - Language features added recently
-  - Version-specific behavior
+**Contents:**
+- [Pre-Implementation Setup](#pre-implementation-setup) - Actions to execute before coding
+- [Implementation Guidelines](#implementation-guidelines) - Guidance to follow while coding
+- [Pre-Completion Guidelines](#pre-completion-guidelines) - Verify before marking done
 
-## Git Workflow
+---
 
-We use feature branch workflow (GitHub Flow):
+## Pre-Implementation Setup
 
-### Branching
+Execute these actions before writing any code.
 
-- Never commit directly to `main`. Create a feature branch for each piece of work.
-- Use descriptive branch names with prefixes:
+### Git Workflow
+
+Check current branch:
+
+```bash
+git branch --show-current
+```
+
+**If on `main` or `master`**, create a feature branch:
+
+```bash
+# Replace <prefix> and <short-description> with actual values
+git checkout -b <prefix>/<short-description>
+```
+
+**If not in a git repository**, skip git steps and note in report.
+
+**If there are uncommitted changes**, ask the user: stash, commit, or continue?
+
+**If in detached HEAD state**, ask user whether to create a branch from current commit.
+
+**If the proposed branch already exists**, ask user: switch to existing branch, or use a different name?
+
+**If already on a feature branch**, confirm with user whether to continue on this branch or create a new one.
+
+Use descriptive branch names with these prefixes:
 
 | Prefix | Use Case | Example |
 |--------|----------|---------|
@@ -26,6 +49,47 @@ We use feature branch workflow (GitHub Flow):
 | `refactor/` | Code improvements | `refactor/api-client-types` |
 | `docs/` | Documentation only | `docs/update-readme` |
 | `chore/` | Maintenance tasks | `chore/upgrade-dependencies` |
+
+### Scope Verification
+
+Before coding:
+
+- If the task is ambiguous, clarify requirements with the user.
+- If the task involves breaking changes to public APIs, confirm impact with the user.
+- If the task scope seems larger than requested, verify intent before expanding.
+
+### Research
+
+- Where possible, use WebSearch or WebFetch to lookup current documentation rather than relying on training data, especially for:
+  - Library/framework APIs that change frequently
+  - Cloud provider documentation (AWS, GCP, Azure)
+  - Language features added recently
+  - Version-specific behavior
+
+---
+
+## Implementation Guidelines
+
+Follow these while writing code.
+
+### Code Quality
+
+- Never introduce security vulnerabilities (OWASP top 10).
+- Avoid over-engineering. Only make changes that are directly requested or necessary.
+- Do not add features, refactor code, or make "improvements" beyond what was asked.
+- Keep solutions simple and focused.
+
+### Communication
+
+- Be direct and objective. Avoid sycophantic responses.
+- If you made a mistake, acknowledge it specifically rather than generic agreement.
+- When uncertain, investigate first and/or ask the user, rather than guessing.
+
+---
+
+## Pre-Completion Guidelines
+
+Verify these before marking work as done.
 
 ### Commits
 
@@ -44,18 +108,7 @@ We use feature branch workflow (GitHub Flow):
 - Rebase feature branches onto `main` before merging to keep history linear.
 - Squash commits if the PR contains fixup commits; preserve meaningful commit history otherwise.
 
-## Code Quality
-
-- Never introduce security vulnerabilities (OWASP top 10).
-- Avoid over-engineering. Only make changes that are directly requested or necessary.
-- Do not add features, refactor code, or make "improvements" beyond what was asked.
-- Keep solutions simple and focused.
-
-## Communication
-
-- Be direct and objective. Avoid sycophantic responses.
-- If you made a mistake, acknowledge it specifically rather than generic agreement.
-- When uncertain, investigate first and/or ask the user, rather than guessing.
+---
 
 ## Rule Authority
 
