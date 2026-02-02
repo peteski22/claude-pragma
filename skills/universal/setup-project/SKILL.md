@@ -335,5 +335,5 @@ Then continue with:
 
 **Recommended:**
   - Commit the generated `.claude/CLAUDE.md` files so other developers get the same rules.
-  - Add `.claude/local/` to .gitignore for personal supplements.
+  - Add `.claude/local/` to `.gitignore` for personal supplements.
 ```
