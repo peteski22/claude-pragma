@@ -102,7 +102,7 @@ If you see new code copying an anti-pattern from existing code:
 - Exported identifiers MUST have doc comments.
 - Doc comments MUST start with the identifier name.
 - No GetX() accessors; use X() for getters (e.g., user.GetName() → user.Name()). SetX() is acceptable for setters.
-- MixedCaps for exported identifiers; lowerCamelCase for unexported identifiers; no snake_case.
+- PascalCase for exported identifiers; camelCase for unexported identifiers; no snake_case.
 - Function names MUST NOT include the package name as a prefix (e.g., http.HTTPServer is wrong).
 
 ### Errors
