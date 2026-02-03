@@ -27,7 +27,7 @@
 
 ## Function Design
 
-- Functions should have 4 parameters maximum. Use options pattern or config struct for more.
+- Prefer 4 parameters or fewer. More than 4 requires justification; use options pattern or config struct.
 - Never group similar types in signatures: use `(urlStr string, registryName string)` not `(urlStr, registryName string)`.
 - Use pointer types (*string, *bool) for optional configuration fields.
 - Use value types for required fields.

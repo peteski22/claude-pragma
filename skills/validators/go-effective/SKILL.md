@@ -97,7 +97,8 @@ If you see new code copying an anti-pattern from existing code:
 - File names must be lowercase, underscore-separated only if needed.
 - File sections in order: package → imports → constants → variables → interfaces → types → functions.
 - Within each section, top-level declarations SHOULD be in lexicographical order.
-- Struct fields SHOULD be grouped logically (related fields together). Consider memory alignment for performance-critical structs.
+- Struct fields SHOULD be grouped logically (related fields together).
+- For performance-critical structs, consider memory alignment when ordering fields.
 
 ### Naming & Exporting
 - Exported identifiers MUST have doc comments.
