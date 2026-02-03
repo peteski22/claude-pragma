@@ -77,6 +77,15 @@ Do not invent rules.
 Do not relax rules.
 Do not apply personal preference.
 
+**CRITICAL: Anti-Pattern Propagation**
+
+Consistency with existing bad code is NOT a defense. If new code matches an existing pattern in the file, you MUST still evaluate whether that pattern violates Go idioms. Existing violations do not justify new violations.
+
+If you see new code copying an anti-pattern from existing code:
+1. Flag the new code as a violation
+2. Note in the explanation that the existing code also has this issue
+3. Do NOT skip the violation because "it matches existing code"
+
 ---
 
 ## HARD RULES (MUST PASS)
@@ -86,12 +95,17 @@ Do not apply personal preference.
 - No unused variables, imports, or dead code.
 - Package names must be lowercase, no underscores.
 - File names must be lowercase, underscore-separated only if needed.
+- File sections in order: package → imports → constants → variables → interfaces → types → functions.
+- Within each section, top-level declarations SHOULD be in lexicographical order.
+- Struct fields SHOULD be grouped logically (related fields together). Consider memory alignment for performance-critical structs.
 
 ### Naming & Exporting
 - Exported identifiers MUST have doc comments.
 - Doc comments MUST start with the identifier name.
-- No GetX() accessors; use X().
+- No GetX() accessors; use X() for getters. SetX() is acceptable for setters.
 - MixedCaps for identifiers; no snake_case.
+- Function names should not repeat context from package name or receiver type.
+- Avoid verbose prefixes when the operation is obvious from context. `New` is idiomatic for constructors.
 
 ### Errors
 - Errors MUST be returned as the final return value.
@@ -103,6 +117,7 @@ Do not apply personal preference.
 - No pointer-to-interface types.
 - Interfaces define behavior, not data.
 - Types implement interfaces implicitly only.
+- Unexported structs SHOULD have unexported fields (unless required by encoding/json or similar).
 
 ---
 
@@ -120,7 +135,7 @@ Do not apply personal preference.
 ### Functions
 - Avoid naked returns unless function ≤ 10 lines.
 - Functions SHOULD do one thing.
-- Long parameter lists (>5) require justification.
+- Functions with >4 parameters require justification. Use options pattern or config struct instead.
 
 ### Data Structures
 - Prefer slices over arrays unless fixed-size is required.
@@ -135,6 +150,7 @@ Do not apply personal preference.
 - Low package cohesion.
 - Excessive concurrency primitives.
 - Clever or non-obvious implementations without comments.
+- Verbose function/method names that could be simplified (e.g., GenerateWorktreePathWithTemplate → WorktreePath).
 
 ---
 

@@ -19,15 +19,25 @@
 
 ## Code Organization
 
-- Organize files in lexicographical order: package → imports → constants → variables → interfaces → types → functions/methods.
+- Organize files in order: package → imports → constants → variables → interfaces → types → functions/methods.
+- Within each section, top-level declarations should be in lexicographical order.
+- Struct fields should be grouped logically (related fields together).
 - Always start with unexported types, functions, fields. Only export when necessary.
+- Unexported structs should have unexported fields (unless required by encoding/json or similar).
 
 ## Function Design
 
-- Favor Go's options pattern for flexible configuration.
+- Functions should have 4 parameters maximum. Use options pattern or config struct for more.
 - Never group similar types in signatures: use `(urlStr string, registryName string)` not `(urlStr, registryName string)`.
 - Use pointer types (*string, *bool) for optional configuration fields.
 - Use value types for required fields.
+
+## Naming
+
+- No GetX() accessors; use X() for getters. SetX() is acceptable for setters.
+- Function names should not repeat context from package name or receiver type.
+- Avoid verbose prefixes when the operation is obvious from context. `New` is idiomatic for constructors.
+- Prefer concise names: `WorktreePath` over `GenerateWorktreePathWithTemplate`.
 
 ## Error Handling
 
