@@ -20,10 +20,10 @@
 ## Code Organization
 
 - Organize files in order: package → imports → constants → variables → interfaces → types → functions/methods.
-- Within each section, top-level declarations should be in lexicographical order.
-- Struct fields should be grouped logically (related fields together).
+- Within each section, top-level declarations should be in alphabetical order, except that constructors (NewX) may precede methods on the returned type.
+- Struct fields should be grouped logically (e.g., configuration fields together, state fields together, embedded types first).
 - Always start with unexported types, functions, fields. Only export when necessary.
-- Unexported structs should have unexported fields (unless required by encoding/json or similar).
+- Unexported structs should have unexported fields (unless required for serialization, reflection, or code generation).
 
 ## Function Design
 
@@ -37,7 +37,7 @@
 - No GetX() accessors; use X() for getters. SetX() is acceptable for setters.
 - Function names should not repeat context from package name or receiver type.
 - Avoid verbose prefixes when the operation is obvious from context. `New` is idiomatic for constructors.
-- Prefer concise names: `WorktreePath` over `GenerateWorktreePathWithTemplate`.
+- Prefer concise names: `User` over `GetUserByID`, `Hash` over `ComputeHashValue`.
 
 ## Error Handling
 

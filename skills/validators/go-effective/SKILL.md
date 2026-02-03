@@ -96,9 +96,6 @@ If you see new code copying an anti-pattern from existing code:
 - Package names must be lowercase, no underscores.
 - File names must be lowercase, underscore-separated only if needed.
 - File sections in order: package → imports → constants → variables → interfaces → types → functions.
-- Within each section, top-level declarations SHOULD be in lexicographical order.
-- Struct fields SHOULD be grouped logically (related fields together).
-- For performance-critical structs, consider memory alignment when ordering fields.
 
 ### Naming & Exporting
 - Exported identifiers MUST have doc comments.
@@ -118,11 +115,15 @@ If you see new code copying an anti-pattern from existing code:
 - No pointer-to-interface types.
 - Interfaces define behavior, not data.
 - Types implement interfaces implicitly only.
-- Unexported structs SHOULD have unexported fields (unless required by encoding/json or similar).
+- Unexported structs SHOULD have unexported fields (unless required for serialization, reflection, or code generation).
 
 ---
 
 ## STRONG CONVENTIONS (FAIL UNLESS JUSTIFIED)
+
+### Code Organization
+- Within each section, top-level declarations SHOULD be in alphabetical order, except that constructors (NewX) may precede methods on the returned type.
+- Struct fields SHOULD be grouped logically (e.g., configuration fields together, state fields together, embedded types first). For performance-critical hot paths, memory alignment may take precedence with a comment explaining the choice.
 
 ### Interfaces
 - Interfaces SHOULD have ≤ 3 methods.
@@ -151,7 +152,7 @@ If you see new code copying an anti-pattern from existing code:
 - Low package cohesion.
 - Excessive concurrency primitives.
 - Clever or non-obvious implementations without comments.
-- Verbose function/method names that could be simplified (e.g., GenerateWorktreePathWithTemplate → WorktreePath).
+- Verbose function/method names that could be simplified (e.g., GetUserByID → User, ComputeHashValue → Hash).
 
 ---
 
