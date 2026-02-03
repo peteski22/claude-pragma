@@ -95,15 +95,15 @@ If you see new code copying an anti-pattern from existing code:
 - No unused variables, imports, or dead code.
 - Package names must be lowercase, no underscores.
 - File names must be lowercase, underscore-separated only if needed.
-- File sections in order: package → imports → constants → variables → interfaces → types → functions.
+- Top-level declarations in section order: package → imports → constants → variables → interfaces → types → functions.
+- init() functions appear after imports and before other declarations.
 
 ### Naming & Exporting
 - Exported identifiers MUST have doc comments.
 - Doc comments MUST start with the identifier name.
-- No GetX() accessors; use X() for getters. SetX() is acceptable for setters.
-- MixedCaps for identifiers; no snake_case.
-- Function names should not repeat context from package name or receiver type.
-- Avoid verbose prefixes when the operation is obvious from context. `New` is idiomatic for constructors.
+- No GetX() accessors; use X() for getters (e.g., user.GetName() → user.Name()). SetX() is acceptable for setters.
+- MixedCaps for exported identifiers; lowerCamelCase for unexported identifiers; no snake_case.
+- Function names MUST NOT include the package name as a prefix (e.g., http.HTTPServer is wrong).
 
 ### Errors
 - Errors MUST be returned as the final return value.
@@ -115,7 +115,6 @@ If you see new code copying an anti-pattern from existing code:
 - No pointer-to-interface types.
 - Interfaces define behavior, not data.
 - Types implement interfaces implicitly only.
-- Unexported structs SHOULD have unexported fields (unless required for serialization, reflection, or code generation).
 
 ---
 
@@ -124,6 +123,11 @@ If you see new code copying an anti-pattern from existing code:
 ### Code Organization
 - Within each section, top-level declarations SHOULD be in alphabetical order, except that constructors (NewX) may precede methods on the returned type.
 - Struct fields SHOULD be grouped logically (e.g., configuration fields together, state fields together, embedded types first). For performance-critical hot paths, memory alignment may take precedence with a comment explaining the choice.
+- Unexported structs SHOULD have unexported fields (unless required for serialization, reflection, or code generation).
+
+### Naming
+- Function names SHOULD NOT repeat context from receiver type (e.g., userRepo.GetUser() → userRepo.User()).
+- Avoid verbose prefixes when receiver provides context (e.g., hash.ComputeHashValue() → hash.Compute()). `New` is idiomatic for constructors.
 
 ### Interfaces
 - Interfaces SHOULD have ≤ 3 methods.
@@ -152,7 +156,7 @@ If you see new code copying an anti-pattern from existing code:
 - Low package cohesion.
 - Excessive concurrency primitives.
 - Clever or non-obvious implementations without comments.
-- Verbose function/method names that could be simplified (e.g., GetUserByID → User, ComputeHashValue → Hash).
+- Verbose function/method names that could be simplified when receiver provides context (e.g., repo.GetUserByID() → repo.UserByID(), hash.ComputeValue() → hash.Compute()).
 
 ---
 

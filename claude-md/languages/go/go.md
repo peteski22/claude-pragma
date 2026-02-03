@@ -19,7 +19,8 @@
 
 ## Code Organization
 
-- Organize files in order: package → imports → constants → variables → interfaces → types → functions/methods.
+- Top-level declarations in section order: package → imports → constants → variables → interfaces → types → functions/methods.
+- init() functions appear after imports and before other declarations.
 - Within each section, top-level declarations should be in alphabetical order, except that constructors (NewX) may precede methods on the returned type.
 - Struct fields should be grouped logically (e.g., configuration fields together, state fields together, embedded types first).
 - Always start with unexported types, functions, fields. Only export when necessary.
@@ -34,10 +35,11 @@
 
 ## Naming
 
-- No GetX() accessors; use X() for getters. SetX() is acceptable for setters.
-- Function names should not repeat context from package name or receiver type.
-- Avoid verbose prefixes when the operation is obvious from context. `New` is idiomatic for constructors.
-- Prefer concise names: `User` over `GetUserByID`, `Hash` over `ComputeHashValue`.
+- No GetX() accessors; use X() for getters (e.g., user.GetName() → user.Name()). SetX() is acceptable for setters.
+- Function names should not include package name as prefix (e.g., http.HTTPServer is wrong).
+- Function names should not repeat receiver type context (e.g., userRepo.GetUser() → userRepo.User()).
+- Prefer concise names when receiver provides context: repo.UserByID() over repo.GetUserByID(), hash.Compute() over hash.ComputeHashValue().
+- `New` is idiomatic for constructors.
 
 ## Error Handling
 
