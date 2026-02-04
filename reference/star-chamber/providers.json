@@ -2,7 +2,7 @@
   "providers": [
     {
       "provider": "openai",
-      "model": "gpt-4o",
+      "model": "gpt-5.2",
       "api_key": "${OPENAI_API_KEY}"
     },
     {
@@ -12,7 +12,7 @@
     },
     {
       "provider": "gemini",
-      "model": "gemini-2.0-flash",
+      "model": "gemini-2.5-flash",
       "api_key": "${GEMINI_API_KEY}"
     }
   ],
