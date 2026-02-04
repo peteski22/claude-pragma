@@ -66,6 +66,8 @@ Before proposing a solution, understand how the codebase already works.
 
 Checking if a directory exists tells you nothing about how code flows. Instead, trace the actual connections: grep for imports, check dependency files, examine how components are wired together.
 
+**When implementing a new instance of something, find existing instances first.** Adding a new API endpoint? Study existing endpoints. New CLI command? Look at similar commands. New provider/adapter? Find existing providers. Copy their patterns unless there's a specific reason to deviate.
+
 **Concrete checks before implementing:**
 - **File paths/config locations:** Search for similar paths to find existing constants or variables instead of hardcoding strings.
 - **Error messages:** Check how errors are formatted elsewhere (wrapping patterns, message style).
