@@ -42,6 +42,8 @@
 - Use mypy with strict mode if already configured in the project.
 - Configure ruff with pyupgrade rules.
 
-## Before Committing
+## Validation Commands
 
-- Run: `uv run pre-commit run --all-files`
+These commands are used by `/implement` during the validation phase. Override in `.claude/local/CLAUDE.md` if your project uses different scripts.
+
+- **Lint:** `uv run pre-commit run --all-files`

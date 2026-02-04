@@ -59,6 +59,8 @@
 - Use require from testify (not assert).
 - Use testdata/ directories for static test fixtures.
 
-## Before Committing
+## Validation Commands
 
-- Run: `golangci-lint run --fix -v`
+These commands are used by `/implement` during the validation phase. Override in `.claude/local/CLAUDE.md` if your project uses different scripts.
+
+- **Lint:** `golangci-lint run --fix -v`
