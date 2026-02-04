@@ -22,28 +22,23 @@ Subdirectory rules override root rules because more specific contexts (e.g., `ba
 
 ## How to Override
 
-Add a "Validation Commands" section to any CLAUDE.md file in the hierarchy:
+Validation commands are configured at the repository root by the setup-project skill. Override them at two levels:
 
-**Local supplements** (`.claude/local/CLAUDE.md`) - personal overrides:
+**Subdirectory overrides** (`backend/.claude/CLAUDE.md`) - component-specific rules:
 ```markdown
 ## Validation Commands
-- **Lint:** `./scripts/backend-lint.sh`
-- **Test:** `./scripts/backend-test.sh`
+- **Lint:** `uv run ruff check . && uv run mypy --strict .`
+- **Test:** `uv run pytest -x`
 ```
 
-**Subdirectory rules** (`backend/.claude/CLAUDE.md`) - component-specific:
+**Local overrides** (`.claude/local/CLAUDE.md`) - machine-specific, not committed:
 ```markdown
 ## Validation Commands
-- **Lint:** `uv run ruff check . && uv run mypy .`
-- **Test:** `uv run pytest -v`
+- **Lint:** `./scripts/my-lint.sh`
+- **Test:** `./scripts/my-test.sh`
 ```
 
-**Root rules** (`.claude/CLAUDE.md`) - repo-wide defaults:
-```markdown
-## Validation Commands
-- **Lint:** `make lint`
-- **Test:** `make test`
-```
+> **Note:** Root-level commands are set automatically by the setup-project skill based on detected language and tooling.
 
 ## Common Override Scenarios
 
