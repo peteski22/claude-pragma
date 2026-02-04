@@ -47,3 +47,16 @@ Validation commands are configured at the repository root by the setup-project s
 - **Monorepo isolation:** Different validation per subdirectory
 - **Tool versioning:** Use a specific linter version not in default environment
 - **Security scanning:** Add custom vulnerability checks before commits
+
+## Personal CLAUDE.md (`~/.claude/CLAUDE.md`)
+
+Your personal global CLAUDE.md (`~/.claude/CLAUDE.md`) is **separate from this precedence order**. It applies to all Claude Code conversations but has these characteristics:
+
+- **It is NOT merged into generated project rules.** When `/setup-project` creates `.claude/CLAUDE.md` files, it uses only the claude-pragma templates.
+- **It IS visible to validators** because they use `context: fork` and inherit the conversation context.
+- **It MAY cause confusion** if it contains language-specific rules (e.g., Go rules appearing in Python context).
+
+**Recommendations:**
+- Keep personal CLAUDE.md language-agnostic (workflow preferences, communication style)
+- Put language-specific personal preferences in `.claude/local/CLAUDE.md` within each project
+- Validators have explicit Language Scope sections to prevent cross-language contamination
