@@ -58,6 +58,12 @@
 - When validation depends on framework state (e.g., Cobra's `ArgsLenAtDash()`), create a wrapper that calls a testable pure function.
 - Prefer dependency injection over global state.
 
+## Comments
+
+- When slice/array operations depend on prior validation, add a brief comment referencing the guarantee.
+  - Example: `// args[1:] is safe: validateArgs guarantees len(args) >= 2`
+- This documents safety invariants for readers and protects against refactoring mistakes.
+
 ## Testing
 
 - Name test case variable 'tc' not 'tt'.
