@@ -28,11 +28,18 @@
 - Always chain exceptions with `raise ... from e`.
 - Don't use bare `except:` clauses.
 
+## Testability
+
+- Extract logic that depends on framework/external state into pure functions.
+- When validation depends on framework state (e.g., FastAPI request objects), create a wrapper that calls a testable pure function.
+- Prefer dependency injection over global state.
+
 ## Testing
 
 - Use pytest as the test framework.
-- Name test case variables `tc` not `tt`.
-- Use `t.Parallel()` equivalent: run independent tests in parallel.
+- Use descriptive test names: `test_user_creation_fails_with_duplicate_email`.
+- Consider pytest-xdist for parallel execution when test runtime becomes a bottleneck.
+- Ensure tests are isolated (no shared mutable state) before enabling parallel execution.
 - Use fixtures with proper scope (module/function) and cleanup.
 - Mirror app structure in tests directory.
 

@@ -52,6 +52,12 @@
 - Prefer type assertion over expanding interfaces.
 - Keep interfaces small and focused.
 
+## Testability
+
+- Extract logic that depends on framework/external state into pure functions.
+- When validation depends on framework state (e.g., Cobra's `ArgsLenAtDash()`), create a wrapper that calls a testable pure function.
+- Prefer dependency injection over global state.
+
 ## Testing
 
 - Name test case variable 'tc' not 'tt'.
