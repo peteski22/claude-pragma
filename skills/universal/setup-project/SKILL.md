@@ -18,6 +18,7 @@ echo "$CLAUDE_PRAGMA_PATH"
 [[ -z "$CLAUDE_PRAGMA_PATH" ]] && echo "ERROR: CLAUDE_PRAGMA_PATH not set"
 [[ ! -d "$CLAUDE_PRAGMA_PATH" ]] && echo "ERROR: CLAUDE_PRAGMA_PATH does not exist"
 [[ ! -f "$CLAUDE_PRAGMA_PATH/claude-md/universal/base.md" ]] && echo "ERROR: Invalid claude-pragma repo"
+true  # Ensure exit 0; Claude Code reads ERROR output and stops (see below).
 ```
 
 If not set, tell the user:
