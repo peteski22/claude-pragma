@@ -87,6 +87,15 @@ Do not invent rules.
 Do not relax rules.
 Do not apply personal preference.
 
+**CRITICAL: Anti-Pattern Propagation**
+
+Consistency with existing bad code is NOT a defense. If new code matches an existing pattern in the file, you MUST still evaluate whether that pattern violates Python idioms. Existing violations do not justify new violations.
+
+If you see new code copying an anti-pattern from existing code:
+1. Flag the new code as a violation
+2. Note in the explanation that the existing code also has this issue
+3. Do NOT skip the violation because "it matches existing code"
+
 ---
 
 ## HARD RULES (MUST PASS)
