@@ -52,6 +52,9 @@
 - Avoid global state libraries unless necessary.
 - Invalidate queries after mutations.
 
-## Before Committing
+## Validation Commands
 
-- Run: `pnpm lint && pnpm test`
+These commands are used by `/implement` and `/review` during validation. Override in `.claude/local/CLAUDE.md` if your project uses different scripts.
+
+- **Lint:** `pnpm run lint`
+- **Test:** `pnpm run test`

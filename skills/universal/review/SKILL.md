@@ -51,9 +51,24 @@ If two rules conflict and precedence is unclear, prefer the more specific rule a
 
 Record which rule files were loaded.
 
+## Step 2a: Check for local supplements
+
+Also check for local supplements at the repo root:
+
+```bash
+[[ -f .claude/local/CLAUDE.md ]] && echo "local-supplements:exists"
+```
+
+If `.claude/local/CLAUDE.md` exists, read it. Local supplements may contain custom validation commands that override the defaults.
+
 ## Step 3: Run deterministic checks
 
-Based on detected file types, run linters:
+**Check rules for custom validation commands first:**
+Look for a "Validation Commands" section in the loaded rules (from Step 2 and Step 2a). This section contains project-specific lint/test commands that override the defaults below.
+
+**Priority order:** See `claude-md/universal/validation-precedence.md` for the canonical precedence rules. In short: local supplements > subdirectory rules > root rules > built-in defaults. Local supplements have the highest priority to allow per-machine customization without modifying version-controlled rules.
+
+If no custom commands found, use these defaults based on file types:
 
 **Go:**
 ```bash

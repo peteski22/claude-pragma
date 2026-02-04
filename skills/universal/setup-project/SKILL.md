@@ -123,9 +123,35 @@ Always apply the most specific rules available for the code you're working on.
      Update both files together if this guidance changes. -->
 ## Local Supplements
 
-If `.claude/local/CLAUDE.md` exists, read it and apply those rules in addition to the generated rules. Use this for project-specific additions like custom test commands or local environment notes.
+If `.claude/local/CLAUDE.md` exists, read it and apply those rules in addition to the generated rules.
 
-Local supplements are additive only. If a local rule conflicts with a generated rule, the generated rule takes precedence. Use local supplements for additions, not for overriding core behavior.
+### Validation Command Overrides
+
+Local supplements are generally additive, but can override validation commands. Add a "Validation Commands" section to specify custom lint/test scripts:
+
+```markdown
+## Validation Commands
+
+- **Lint:** `./scripts/backend-lint.sh`
+- **Test:** `./scripts/backend-test.sh`
+```
+
+These override the defaults in the language rules. Precedence (highest → lowest): local supplements > subdirectory rules > root rules > built-in defaults.
+
+**Common scenarios for overriding validation commands:**
+
+- **Wrapper scripts:** Your project has `./scripts/lint.sh` that runs multiple tools (ruff + mypy + security scans) in sequence
+- **Tool versioning:** Use a specific linter version not available in the default environment
+- **Integration tests:** Run integration tests as part of the validation process before commits
+- **Security scanning:** Add custom vulnerability checks (e.g., `bandit`, `semgrep`) before commits
+- **CI/CD parity:** Match the exact validation commands used in your CI pipeline
+- **Monorepo isolation:** Different validation commands for different subdirectories
+
+### Other Uses
+
+- Custom environment setup notes.
+- Personal workflow preferences.
+- Machine-specific paths or configurations.
 
 Add `.claude/local/` to your `.gitignore` to keep personal rules out of version control.
 ```

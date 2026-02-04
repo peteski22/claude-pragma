@@ -124,10 +124,18 @@ After implementation is complete, run validation.
 **Before running validators:** Re-check whether any new directories were introduced during implementation. If so, repeat Phase 0 for those directories and include any newly discovered rules.
 
 1. **Run linters first** (deterministic checks):
+
+   **Check rules for custom validation commands:**
+   Look for a "Validation Commands" section in the loaded rules (from Phase 0). This section contains project-specific lint/test commands that override the defaults below.
+
+   If custom commands exist, use them. Otherwise, fall back to these defaults:
    - Go: `golangci-lint run --fix -v`
    - Python: `uv run pre-commit run --all-files`
    - TypeScript: `pnpm run lint` or `npx biome check .`
-   - Fix any issues before proceeding.
+
+   **Priority order:** See `claude-md/universal/validation-precedence.md` for the canonical precedence rules. In short: local supplements > subdirectory rules > root rules > built-in defaults. Local supplements have the highest priority to allow per-machine customization without modifying version-controlled rules.
+
+   Fix any issues before proceeding.
 
 2. **Run semantic validators** (LLM checks):
    - Use the Task tool to spawn validators in parallel:
