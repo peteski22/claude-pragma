@@ -58,7 +58,16 @@ Apply rules in order of precedence (most specific first):
 1. backend/app/.claude/CLAUDE.md (if exists) - highest precedence
 2. backend/.claude/CLAUDE.md (if exists)
 3. .claude/CLAUDE.md (root) - lowest precedence
+4. $CLAUDE_PRAGMA_PATH/claude-md/universal/base.md (fallback baseline)
 ```
+
+**Fallback baseline:** If no `.claude/CLAUDE.md` files exist anywhere in the project, check if `$CLAUDE_PRAGMA_PATH` is set:
+
+```bash
+echo "${CLAUDE_PRAGMA_PATH:-not-set}"
+```
+
+If set and valid, read `$CLAUDE_PRAGMA_PATH/claude-md/universal/base.md` as a baseline. This ensures projects without `/setup-project` still get essential rules (branch creation, scope verification, etc.).
 
 Earlier rules override later rules where they conflict.
 
@@ -72,7 +81,7 @@ Track which rule files were loaded for the final report, including local supplem
 
 The "Pre-Implementation Setup" section of the loaded rules contains **actions to execute**, not just guidance to follow. The rules file is the single source of truth; this step is the executor.
 
-**If no "Pre-Implementation Setup" section exists** in any loaded rules, skip this step and note in the final report that no pre-implementation setup was defined.
+**If no "Pre-Implementation Setup" section exists** in any loaded rules (including the fallback baseline), skip this step and note in the final report that no pre-implementation setup was defined. This should be rare—the fallback baseline (`$CLAUDE_PRAGMA_PATH/claude-md/universal/base.md`) contains a Pre-Implementation Setup section.
 
 **How to execute:**
 
