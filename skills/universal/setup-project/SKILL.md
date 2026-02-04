@@ -127,7 +127,7 @@ If `.claude/local/CLAUDE.md` exists, read it and apply those rules in addition t
 
 ### Validation Command Overrides
 
-Local supplements can override validation commands. This is the **one exception** to the additive-only rule. Add a "Validation Commands" section to specify custom lint/test scripts:
+Local supplements are generally additive, but can override validation commands. Add a "Validation Commands" section to specify custom lint/test scripts:
 
 ```markdown
 ## Validation Commands
@@ -136,7 +136,7 @@ Local supplements can override validation commands. This is the **one exception*
 - **Test:** `./scripts/backend-test.sh`
 ```
 
-These override the defaults in the language rules. See `claude-md/universal/validation-precedence.md` for the full precedence rules and rationale.
+These override the defaults in the language rules. Precedence (highest → lowest): local supplements > subdirectory rules > root rules > built-in defaults.
 
 **Common scenarios for overriding validation commands:**
 

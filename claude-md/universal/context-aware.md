@@ -11,8 +11,8 @@ Always apply the most specific rules available for the code you're working on.
 
 ## Local Supplements
 
-If `.claude/local/CLAUDE.md` exists, read it and apply those rules in addition to the generated rules. Use this for project-specific additions like custom test commands or local environment notes.
+If `.claude/local/CLAUDE.md` exists, read it and apply those rules in addition to the generated rules.
 
-Local supplements are additive only. If a local rule conflicts with a generated rule, the generated rule takes precedence. Use local supplements for additions, not for overriding core behavior.
+Local supplements are generally additive. The one exception: a "Validation Commands" section in local supplements overrides the default lint/test commands. This allows per-machine customization of validation scripts without modifying version-controlled rules.
 
 Add `.claude/local/` to your `.gitignore` to keep personal rules out of version control.

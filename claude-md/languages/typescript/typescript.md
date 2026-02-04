@@ -54,6 +54,7 @@
 
 ## Validation Commands
 
-These commands are used by `/implement` during the validation phase. Override in `.claude/local/CLAUDE.md` if your project uses different scripts.
+These commands are used by `/implement` and `/review` during validation. Override in `.claude/local/CLAUDE.md` if your project uses different scripts.
 
-- **Lint:** `pnpm lint && pnpm test`
+- **Lint:** `pnpm run lint`
+- **Test:** `pnpm run test`

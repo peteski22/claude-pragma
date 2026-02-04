@@ -11,7 +11,7 @@ This document defines the priority order for validation commands used by `/imple
 
 ## Rationale
 
-Local supplements have highest priority because they allow per-machine customization without modifying version-controlled project rules. This supports scenarios like:
+Local supplements have the highest priority because they allow per-machine customization without modifying version-controlled project rules. This supports scenarios like:
 
 - Different paths to tools on different developer machines
 - Local wrapper scripts that add extra checks (mypy, security scans)
@@ -22,13 +22,27 @@ Subdirectory rules override root rules because more specific contexts (e.g., `ba
 
 ## How to Override
 
-Add a "Validation Commands" section to your local supplements (`.claude/local/CLAUDE.md`):
+Add a "Validation Commands" section to any CLAUDE.md file in the hierarchy:
 
+**Local supplements** (`.claude/local/CLAUDE.md`) - personal overrides:
 ```markdown
 ## Validation Commands
-
 - **Lint:** `./scripts/backend-lint.sh`
 - **Test:** `./scripts/backend-test.sh`
+```
+
+**Subdirectory rules** (`backend/.claude/CLAUDE.md`) - component-specific:
+```markdown
+## Validation Commands
+- **Lint:** `uv run ruff check . && uv run mypy .`
+- **Test:** `uv run pytest -v`
+```
+
+**Root rules** (`.claude/CLAUDE.md`) - repo-wide defaults:
+```markdown
+## Validation Commands
+- **Lint:** `make lint`
+- **Test:** `make test`
 ```
 
 ## Common Override Scenarios
