@@ -67,7 +67,7 @@ Before proposing a solution, understand how the codebase already works.
 Checking if a directory exists tells you nothing about how code flows. Instead, trace the actual connections: grep for imports, check dependency files, examine how components are wired together.
 
 **Concrete checks before implementing:**
-- **File paths/config locations:** Grep for similar paths to find existing constants or variables instead of hardcoding strings.
+- **File paths/config locations:** Search for similar paths to find existing constants or variables instead of hardcoding strings.
 - **Error messages:** Check how errors are formatted elsewhere (wrapping patterns, message style).
 - **API responses:** Find existing response structures before creating new ones.
 - **Logging:** Match existing log levels, formats, and context fields.
