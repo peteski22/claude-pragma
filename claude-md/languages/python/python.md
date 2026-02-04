@@ -28,6 +28,12 @@
 - Always chain exceptions with `raise ... from e`.
 - Don't use bare `except:` clauses.
 
+## Testability
+
+- Extract logic that depends on framework/external state into pure functions.
+- When validation depends on framework state (e.g., FastAPI request objects), create a wrapper that calls a testable pure function.
+- Prefer dependency injection over global state.
+
 ## Testing
 
 - Use pytest as the test framework.

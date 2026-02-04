@@ -38,6 +38,12 @@
 - Use error boundaries for component-level errors.
 - Provide meaningful error messages to users.
 
+## Testability
+
+- Extract logic that depends on framework/external state into pure functions.
+- When business logic depends on hooks or context, create a pure function that the hook calls.
+- Prefer dependency injection over global state.
+
 ## Testing
 
 - Use Vitest as the test framework.
