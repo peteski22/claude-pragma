@@ -2,7 +2,7 @@
   "providers": [
     {
       "provider": "openai",
-      "model": "gpt-4o",
+      "model": "gpt-5.2",
       "api_key": "${OPENAI_API_KEY}"
     },
     {
