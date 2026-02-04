@@ -31,8 +31,9 @@
 ## Testing
 
 - Use pytest as the test framework.
-- Name test case variables `tc` not `tt`.
-- Use `t.Parallel()` equivalent: run independent tests in parallel.
+- Use descriptive test names: `test_user_creation_fails_with_duplicate_email`.
+- Consider pytest-xdist for parallel execution when test runtime becomes a bottleneck.
+- Ensure tests are isolated (no shared mutable state) before enabling parallel execution.
 - Use fixtures with proper scope (module/function) and cleanup.
 - Mirror app structure in tests directory.
 
