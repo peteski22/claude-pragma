@@ -37,7 +37,7 @@ For a file in backend/app/handlers/:
   Check: .claude/CLAUDE.md (root)
 ```
 
-Use the Read tool to check each path. Collect those that exist.
+Use the Read tool to check each path. Collect those that exist and are readable. A file is considered "found" only if it exists and can be successfully read.
 
 ### Step 2a: Check for local supplements
 
@@ -64,9 +64,31 @@ Earlier rules override later rules where they conflict.
 
 If two rules conflict and precedence is unclear, prefer the more specific rule and note the conflict in the final report.
 
+### Step 3a: Fallback baseline (conditional)
+
+**This step only applies if NO `.claude/CLAUDE.md` files were found in Step 2.**
+
+If project-specific rules were found and loaded, skip this step entirely and note in report: "Fallback baseline: not needed (project rules loaded)"
+
+If no project-specific rules were found, attempt to load the universal baseline:
+
+1. **Check environment variable:** Is `$CLAUDE_PRAGMA_PATH` set and non-empty?
+   - If unset or empty → skip fallback, note in report: "Fallback baseline: skipped (CLAUDE_PRAGMA_PATH not set)"
+
+2. **Validate file exists:** Does `$CLAUDE_PRAGMA_PATH/claude-md/universal/base.md` exist and is it readable?
+   - If file missing or unreadable → skip fallback, note in report: "Fallback baseline: failed (file not found at $CLAUDE_PRAGMA_PATH/claude-md/universal/base.md)"
+
+3. **Load baseline:** If both checks pass, read `$CLAUDE_PRAGMA_PATH/claude-md/universal/base.md` as the baseline rules.
+   - Note in report: "Fallback baseline: loaded from $CLAUDE_PRAGMA_PATH"
+
+This fallback ensures projects without `/setup-project` still get essential rules (branch creation, scope verification, etc.).
+
 ### Step 4: Record applied rules
 
-Track which rule files were loaded for the final report, including local supplements if present.
+Track which rule files were loaded for the final report, including:
+- Which project-specific CLAUDE.md files were loaded (if any)
+- Fallback baseline status: not needed, loaded, skipped, or failed (with reason)
+- Local supplements if present
 
 ### Step 5: Execute pre-implementation setup
 
