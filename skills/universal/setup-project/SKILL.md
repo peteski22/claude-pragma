@@ -243,7 +243,7 @@ Check if star-chamber config exists:
 [[ ! -f ~/.config/star-chamber/providers.json ]] && echo "no-star-chamber-config"
 ```
 
-If missing, offer to set it up:
+If missing **and `uv` is available** (from the Step 6 check), offer to set it up. If `uv` is missing, skip this offer entirely — the Step 8 warning already tells the user to install `uv`.
 
 ```
 /star-chamber requires provider configuration for multi-LLM reviews.
