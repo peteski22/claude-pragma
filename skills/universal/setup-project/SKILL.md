@@ -264,19 +264,7 @@ How would you like to manage API keys?
 
 **If user chooses "any-llm.ai platform":**
 ```bash
-mkdir -p ~/.config/star-chamber
-cat > ~/.config/star-chamber/providers.json << 'EOF'
-{
-  "platform": "any-llm",
-  "providers": [
-    {"provider": "openai", "model": "gpt-4o"},
-    {"provider": "anthropic", "model": "claude-sonnet-4-20250514"},
-    {"provider": "gemini", "model": "gemini-2.0-flash"}
-  ],
-  "consensus_threshold": 2,
-  "timeout_seconds": 60
-}
-EOF
+uv run python "$CLAUDE_PRAGMA_PATH/reference/star-chamber/generate_config.py" --platform
 ```
 
 Then include in the summary:
@@ -293,8 +281,7 @@ Then include in the summary:
 
 **If user chooses "Direct provider keys":**
 ```bash
-mkdir -p ~/.config/star-chamber
-cp "$CLAUDE_PRAGMA_PATH/reference/star-chamber/providers.json" ~/.config/star-chamber/providers.json
+uv run python "$CLAUDE_PRAGMA_PATH/reference/star-chamber/generate_config.py" --direct
 ```
 
 Then include in the summary:

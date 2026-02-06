@@ -1,4 +1,5 @@
 {
+  "platform": "any-llm",
   "providers": [
     {
       "provider": "openai",
@@ -7,7 +8,7 @@
     },
     {
       "provider": "anthropic",
-      "model": "claude-sonnet-4-20250514",
+      "model": "claude-opus-4-6",
       "api_key": "${ANTHROPIC_API_KEY}"
     },
     {

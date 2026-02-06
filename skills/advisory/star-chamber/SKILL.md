@@ -79,19 +79,7 @@ How would you like to manage API keys?
 **If user chooses "any-llm.ai platform":**
 
 ```bash
-mkdir -p ~/.config/star-chamber
-cat > ~/.config/star-chamber/providers.json << 'EOF'
-{
-  "platform": "any-llm",
-  "providers": [
-    {"provider": "openai", "model": "gpt-4o"},
-    {"provider": "anthropic", "model": "claude-sonnet-4-20250514"},
-    {"provider": "gemini", "model": "gemini-2.0-flash"}
-  ],
-  "consensus_threshold": 2,
-  "timeout_seconds": 60
-}
-EOF
+uv run python "$CLAUDE_PRAGMA_PATH/reference/star-chamber/generate_config.py" --platform
 ```
 
 Then show:
@@ -108,18 +96,7 @@ Setup:
 **If user chooses "Direct provider keys":**
 
 ```bash
-mkdir -p ~/.config/star-chamber
-cat > ~/.config/star-chamber/providers.json << 'EOF'
-{
-  "providers": [
-    {"provider": "openai", "model": "gpt-4o", "api_key": "${OPENAI_API_KEY}"},
-    {"provider": "anthropic", "model": "claude-sonnet-4-20250514", "api_key": "${ANTHROPIC_API_KEY}"},
-    {"provider": "gemini", "model": "gemini-2.0-flash", "api_key": "${GEMINI_API_KEY}"}
-  ],
-  "consensus_threshold": 2,
-  "timeout_seconds": 60
-}
-EOF
+uv run python "$CLAUDE_PRAGMA_PATH/reference/star-chamber/generate_config.py" --direct
 ```
 
 Then show:
@@ -399,19 +376,9 @@ Issues raised by a single provider. May be valid specialized insights.
 
 ## Configuration
 
-Provider configuration is read from `~/.config/star-chamber/providers.json`:
+Provider configuration is read from `~/.config/star-chamber/providers.json`.
 
-```json
-{
-  "providers": [
-    {"provider": "openai", "model": "gpt-4o", "api_key": "${OPENAI_API_KEY}"},
-    {"provider": "anthropic", "model": "claude-sonnet-4-20250514", "api_key": "${ANTHROPIC_API_KEY}"},
-    {"provider": "gemini", "model": "gemini-2.0-flash", "api_key": "${GEMINI_API_KEY}"}
-  ],
-  "consensus_threshold": 2,
-  "timeout_seconds": 60
-}
-```
+The reference configuration with current models is maintained at `reference/star-chamber/providers.json` in this repository. Update models there and re-run the setup flow to propagate changes.
 
 Override config path with `STAR_CHAMBER_CONFIG` environment variable.
 
@@ -449,15 +416,7 @@ The platform tracks **metadata only** (never prompts/responses):
 
 ### Platform Config Example
 
-```json
-{
-  "platform": "any-llm",
-  "providers": [
-    {"provider": "openai", "model": "gpt-4o"},
-    {"provider": "anthropic", "model": "claude-sonnet-4-20250514"}
-  ]
-}
-```
+Same as the reference config but with `"platform": "any-llm"` added and `api_key` fields removed — the library fetches keys from the platform automatically. The setup flow handles this transformation.
 
 Note: `api_key` fields are omitted - the library fetches them from the platform automatically.
 
