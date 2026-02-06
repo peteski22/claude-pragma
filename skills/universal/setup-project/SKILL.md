@@ -333,7 +333,7 @@ Run `/star-chamber` for usage details and options.
 ```
 
 **If uv is missing**, include this warning:
-```
+```text
 ⚠️  **Warning:** uv is not installed. /star-chamber requires uv to run.
 
 Install uv:
