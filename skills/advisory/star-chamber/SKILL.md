@@ -12,11 +12,11 @@ Advisory skill that fans out code reviews to multiple LLM providers (Claude, Ope
 
 **Key characteristics:**
 - Advisory only (doesn't block like validators)
-- Uses `any-llm-sdk` via `uvx` (no global Python install needed)
+- Uses `any-llm-sdk` via `uv run` (no global Python install needed)
 - Supports parallel and sequential review modes
 
 **Requirements:**
-- `uvx` command (part of [uv](https://docs.astral.sh/uv/) Python toolchain)
+- `uv` command (from [uv](https://docs.astral.sh/uv/) Python toolchain)
 - Configuration file at `~/.config/star-chamber/providers.json`
 - API keys: either individual keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`) or single `ANY_LLM_KEY` from any-llm.ai platform
 
@@ -44,25 +44,25 @@ SKILL_BASE="<base directory from header>"
 
 ## Step 0: Check Prerequisites
 
-Before running, verify uvx is available and configuration exists:
+Before running, verify uv is available and configuration exists:
 
 ```bash
-command -v uvx >/dev/null 2>&1 && echo "uvx:ok" || echo "uvx:missing"
+command -v uv >/dev/null 2>&1 && echo "uv:ok" || echo "uv:missing"
 CONFIG_PATH="${STAR_CHAMBER_CONFIG:-$HOME/.config/star-chamber/providers.json}"
 [[ -f "$CONFIG_PATH" ]] && echo "config:exists" || echo "config:missing"
 ```
 
-**If uvx is missing**, stop and show:
+**If uv is missing**, stop and show:
 ```
-uvx is required but not installed.
+uv is required but not installed.
 
-Install uv (includes uvx):
+Install uv:
   curl -LsSf https://astral.sh/uv/install.sh | sh
 
 See: https://docs.astral.sh/uv/getting-started/installation/
 ```
 
-**STOP if uvx is missing. Do not proceed.**
+**STOP if uv is missing. Do not proceed.**
 
 **If config is missing**, ask how to manage API keys:
 
@@ -203,7 +203,7 @@ Provide your review as structured JSON:
 First, determine which SDK packages are needed:
 
 ```bash
-uvx --from any-llm-sdk python "$SKILL_BASE/llm_council.py" --list-sdks
+uv run --with any-llm-sdk python "$SKILL_BASE/llm_council.py" --list-sdks
 ```
 
 This outputs JSON with `required_sdks` array listing needed packages (e.g., `["anthropic", "google-genai"]`).
@@ -219,15 +219,15 @@ This outputs JSON with `required_sdks` array listing needed packages (e.g., `["a
 
 The simplest approach: all providers review independently in a single round.
 
-Execute a single parallel review:
+Execute a single parallel review. Write the prompt to a temp file first, then pipe it to avoid shell quoting issues:
 
 ```bash
-echo "$PROMPT" | uvx --from any-llm-sdk \
-  --with anthropic --with google-genai \
-  python "$SKILL_BASE/llm_council.py" \
-  [--provider <name>...] \
-  [--file <path>...]
+cat << 'EOF' | uv run --with any-llm-sdk [--with <sdk>...] python "$SKILL_BASE/llm_council.py" [--provider <name>...] [--file <path>...]
+{prompt}
+EOF
 ```
+
+**Important:** The `uv run` command and all its arguments must be on a **single line**. Do NOT use `\` line continuations — they break under Claude Code's Bash tool. The `--with` flags come from the `--list-sdks` output's `required_sdks` array (add `--with any-llm-sdk` plus `--with <sdk>` for each entry).
 
 ```text
 Prompt → [Provider A] ──→ Response A
@@ -288,9 +288,9 @@ Please provide your perspective on these points. Note where you agree, disagree,
 
 **Convergence check:** If responses in round N are substantively the same as round N-1 (providers just agree with no new points), you may stop early. This is optional - completing all requested rounds is also acceptable.
 
-**Prompt construction:** When building prompts for shell execution, use heredoc syntax (`cat << 'EOF'`) to avoid quoting issues with apostrophes and special characters in the review content.
+**Prompt construction:** Pipe the prompt via heredoc (`cat << 'EOF' | uv run ...`) to avoid quoting issues with apostrophes and special characters. Never store the prompt in a shell variable — use heredoc piping directly.
 
-**Important:** Each `--with` must be a separate argument. Do NOT quote multiple `--with` flags together.
+**Important:** Each `--with` must be a separate argument. Do NOT quote multiple `--with` flags together. Keep the entire `uv run` command on one line.
 
 ## Step 5: Parse and Aggregate Results
 
@@ -378,7 +378,7 @@ Issues raised by a single provider. May be valid specialized insights.
 
 Provider configuration is read from `~/.config/star-chamber/providers.json`.
 
-The reference configuration with current models is maintained at `reference/star-chamber/providers.json` in this repository. Update models there and re-run the setup flow to propagate changes.
+The reference configuration with current models is maintained at `reference/star-chamber/providers.json` in this repository. Update models there and re-run `generate_config.py` with `--platform` or `--direct` to propagate changes to your local config.
 
 Override config path with `STAR_CHAMBER_CONFIG` environment variable.
 
@@ -453,10 +453,10 @@ Note: `api_key` fields are omitted - the library fetches them from the platform 
 
 **Missing SDK:**
 ```json
-{"provider": "anthropic", "success": false, "error": "Missing SDK for anthropic. Install with: pip install anthropic (or add '--with anthropic' to uvx)"}
+{"provider": "anthropic", "success": false, "error": "Missing SDK for anthropic. Install with: pip install anthropic (or add '--with anthropic' to uv run)"}
 ```
 - Run `--list-sdks` to see required packages
-- Add appropriate `--with` flags to the uvx command
+- Add appropriate `--with` flags to the `uv run` command
 
 **Provider not in sdk_map:**
 ```text

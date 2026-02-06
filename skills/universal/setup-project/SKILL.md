@@ -203,10 +203,10 @@ ln -sf "$CLAUDE_PRAGMA_PATH/skills/advisory/star-chamber" ~/.claude/skills/
 
 **Check star-chamber prerequisites:**
 ```bash
-command -v uvx >/dev/null 2>&1 && echo "uvx:ok" || echo "uvx:missing"
+command -v uv >/dev/null 2>&1 && echo "uv:ok" || echo "uv:missing"
 ```
 
-Store the result - if `uvx:missing`, include a warning in Step 8 output.
+Store the result - if `uv:missing`, include a warning in Step 8 output.
 
 **Go (if detected anywhere):**
 ```bash
@@ -336,11 +336,11 @@ Then include in the summary:
   /star-chamber --debate --rounds 3                             - debate mode with 3 rounds of deliberation
 ```
 
-**If uvx is missing**, include this warning:
+**If uv is missing**, include this warning:
 ```
-⚠️  **Warning:** uvx is not installed. /star-chamber requires uvx to run.
+⚠️  **Warning:** uv is not installed. /star-chamber requires uv to run.
 
-Install uvx:
+Install uv:
   curl -LsSf https://astral.sh/uv/install.sh | sh
 
 Or see: https://docs.astral.sh/uv/getting-started/installation/

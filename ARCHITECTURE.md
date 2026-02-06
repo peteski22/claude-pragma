@@ -614,7 +614,7 @@ The `/star-chamber` skill fans out code reviews to multiple LLM providers (Claud
 
 **Key characteristics:**
 - Advisory only (doesn't block like validators)
-- Uses `any-llm-sdk` via `uvx` (no global Python install needed)
+- Uses `any-llm-sdk` via `uv run` (no global Python install needed)
 - Supports parallel and sequential review modes
 
 **Execution modes:**

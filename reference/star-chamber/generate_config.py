@@ -18,7 +18,11 @@ def main() -> None:
         print(f"Reference file not found: {ref_path}", file=sys.stderr)
         sys.exit(1)
 
-    ref = json.loads(ref_path.read_text())
+    try:
+        ref = json.loads(ref_path.read_text())
+    except json.JSONDecodeError as exc:
+        print(f"Invalid JSON in reference file {ref_path}: {exc}", file=sys.stderr)
+        sys.exit(1)
 
     if args.platform:
         ref["providers"] = [
@@ -28,8 +32,12 @@ def main() -> None:
         ref.pop("platform", None)
 
     dest = pathlib.Path.home() / ".config" / "star-chamber" / "providers.json"
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(json.dumps(ref, indent=2) + "\n")
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(json.dumps(ref, indent=2) + "\n")
+    except OSError as exc:
+        print(f"Failed to write config to {dest}: {exc}", file=sys.stderr)
+        sys.exit(1)
     print(f"Wrote {dest}")
 
 
