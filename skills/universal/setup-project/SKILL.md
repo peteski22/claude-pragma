@@ -203,10 +203,10 @@ ln -sf "$CLAUDE_PRAGMA_PATH/skills/advisory/star-chamber" ~/.claude/skills/
 
 **Check star-chamber prerequisites:**
 ```bash
-command -v uvx >/dev/null 2>&1 && echo "uvx:ok" || echo "uvx:missing"
+command -v uv >/dev/null 2>&1 && echo "uv:ok" || echo "uv:missing"
 ```
 
-Store the result - if `uvx:missing`, include a warning in Step 8 output.
+Store the result - if `uv:missing`, include a warning in Step 8 output.
 
 **Go (if detected anywhere):**
 ```bash
@@ -243,7 +243,7 @@ Check if star-chamber config exists:
 [[ ! -f ~/.config/star-chamber/providers.json ]] && echo "no-star-chamber-config"
 ```
 
-If missing, offer to set it up:
+If missing **and `uv` is available** (from the Step 6 check), offer to set it up. If `uv` is missing, skip this offer and tell the user: "Skipping star-chamber config — `uv` is not installed." The Step 8 output includes install instructions.
 
 ```
 /star-chamber requires provider configuration for multi-LLM reviews.
@@ -264,19 +264,7 @@ How would you like to manage API keys?
 
 **If user chooses "any-llm.ai platform":**
 ```bash
-mkdir -p ~/.config/star-chamber
-cat > ~/.config/star-chamber/providers.json << 'EOF'
-{
-  "platform": "any-llm",
-  "providers": [
-    {"provider": "openai", "model": "gpt-4o"},
-    {"provider": "anthropic", "model": "claude-sonnet-4-20250514"},
-    {"provider": "gemini", "model": "gemini-2.0-flash"}
-  ],
-  "consensus_threshold": 2,
-  "timeout_seconds": 60
-}
-EOF
+uv run python "$CLAUDE_PRAGMA_PATH/reference/star-chamber/generate_config.py" --platform
 ```
 
 Then include in the summary:
@@ -293,8 +281,7 @@ Then include in the summary:
 
 **If user chooses "Direct provider keys":**
 ```bash
-mkdir -p ~/.config/star-chamber
-cp "$CLAUDE_PRAGMA_PATH/reference/star-chamber/providers.json" ~/.config/star-chamber/providers.json
+uv run python "$CLAUDE_PRAGMA_PATH/reference/star-chamber/generate_config.py" --direct
 ```
 
 Then include in the summary:
@@ -342,18 +329,14 @@ Then include in the summary:
   /implement <task>    - implement with validation loop
   /review              - validate current changes
 
-**Star-Chamber Usage:**
-  /star-chamber                                                 - review recent changes using configured providers
-  /star-chamber --file <file> --provider openai --provider gemini  - target specific files and providers
-  /star-chamber --debate                                        - enable debate mode (2 rounds, each sees others' responses)
-  /star-chamber --debate --rounds 3                             - debate mode with 3 rounds of deliberation
+Run `/star-chamber` for usage details and options.
 ```
 
-**If uvx is missing**, include this warning:
-```
-⚠️  **Warning:** uvx is not installed. /star-chamber requires uvx to run.
+**If uv is missing**, include this warning:
+```text
+⚠️  **Warning:** uv is not installed. /star-chamber requires uv to run.
 
-Install uvx:
+Install uv:
   curl -LsSf https://astral.sh/uv/install.sh | sh
 
 Or see: https://docs.astral.sh/uv/getting-started/installation/

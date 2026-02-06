@@ -161,7 +161,7 @@ async def _get_review_internal(
     If api_key is empty and ANY_LLM_KEY is set, the SDK auto-detects platform mode.
     """
     try:
-        # Import here to allow uvx to install the dependency.
+        # Import here to allow uv run --with to install the dependency.
         from any_llm import acompletion
 
         kwargs: dict[str, Any] = {
@@ -194,7 +194,7 @@ async def _get_review_internal(
         sdk_map = load_sdk_map()
         sdk = sdk_map.get(provider.lower())
         if sdk:
-            hint = f"Install with: pip install {sdk} (or add '--with {sdk}' to uvx)"
+            hint = f"Install with: pip install {sdk} (or add '--with {sdk}' to uv run)"
         else:
             hint = "This provider may use the OpenAI-compatible API (no extra SDK needed)"
         return ReviewResult(
@@ -445,7 +445,7 @@ def main() -> None:
             "providers_ready": ready,
             "providers_missing_key": missing_key,
             "required_sdks": sdks,
-            "uvx_with_flags": " ".join(f"--with {sdk}" for sdk in sdks),
+            "uv_with_flags": " ".join(f"--with {sdk}" for sdk in sdks),
             "platform": platform,
         }
         if platform == "any-llm":
