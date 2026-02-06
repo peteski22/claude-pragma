@@ -243,7 +243,7 @@ Check if star-chamber config exists:
 [[ ! -f ~/.config/star-chamber/providers.json ]] && echo "no-star-chamber-config"
 ```
 
-If missing **and `uv` is available** (from the Step 6 check), offer to set it up. If `uv` is missing, skip this offer entirely — the Step 8 warning already tells the user to install `uv`.
+If missing **and `uv` is available** (from the Step 6 check), offer to set it up. If `uv` is missing, skip this offer and tell the user: "Skipping star-chamber config — `uv` is not installed." The Step 8 output includes install instructions.
 
 ```
 /star-chamber requires provider configuration for multi-LLM reviews.
@@ -329,11 +329,7 @@ Then include in the summary:
   /implement <task>    - implement with validation loop
   /review              - validate current changes
 
-**Star-Chamber Usage:**
-  /star-chamber                                                 - review recent changes using configured providers
-  /star-chamber --file <file> --provider openai --provider gemini  - target specific files and providers
-  /star-chamber --debate                                        - enable debate mode (2 rounds, each sees others' responses)
-  /star-chamber --debate --rounds 3                             - debate mode with 3 rounds of deliberation
+Run `/star-chamber` for usage details and options.
 ```
 
 **If uv is missing**, include this warning:

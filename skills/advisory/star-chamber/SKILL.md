@@ -200,6 +200,8 @@ Provide your review as structured JSON:
 
 ## Step 4: Fan Out to Star-Chamber
 
+Use `uv run --with <dep>` to execute scripts with ephemeral dependencies. Do not use `uvx` — it is for installing global tools, not running scripts.
+
 First, determine which SDK packages are needed:
 
 ```bash
