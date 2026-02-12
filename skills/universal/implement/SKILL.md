@@ -127,6 +127,11 @@ The "Pre-Implementation Setup" section of the loaded rules contains **actions to
    - Look for build artifacts (.egg-info, .venv, dist/, node_modules/, target/) indicating local packages.
    - If the task involves sharing code, find existing shared packages first.
    - If the GitHub issue lists multiple approaches, investigate each sufficiently to make an informed decision.
+   - **Architecture violation guard:** If discovered patterns violate architecture rules from the project's CLAUDE.md or language-specific validators (e.g., models defined in route files, business logic in handlers, services that are actually repositories):
+     1. Do not replicate the violations — follow documented layer responsibilities instead.
+     2. Note the pre-existing deviation in the Phase 4 report.
+     3. If the codebase systematically deviates (e.g., no repository layer exists, all models are in route files), follow correct architecture for new code where feasible without breaking existing imports or interfaces.
+     4. If correct architecture would require creating new layers or significant refactoring, note this in the Phase 4 report and recommend a dedicated refactoring task.
 3. Identify files that need changes based on discovered patterns.
 
 ---
