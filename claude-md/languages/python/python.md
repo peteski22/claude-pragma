@@ -12,7 +12,7 @@
 - Use pyproject.toml for project configuration.
 - Use Astral's uv for dependency management.
 - Use src layout or app layout with clear module separation.
-- Organize by layer with clear separation of concerns:
+- Organize by layer with clear separation of concerns.
 
 ### Layered Architecture
 
