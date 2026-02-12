@@ -12,7 +12,18 @@
 - Use pyproject.toml for project configuration.
 - Use Astral's uv for dependency management.
 - Use src layout or app layout with clear module separation.
-- Organize by layer: routes/api, services, repositories, models.
+- Organize by layer with clear separation of concerns.
+
+### Layered Architecture
+
+| Layer | Responsibility | May call | Must not contain |
+|-------|---------------|----------|-----------------|
+| **Routes/API** | Accept requests, validate input, return responses. Thin controllers only. | Services | Business logic, DB queries, model definitions |
+| **Services** | Orchestrate business logic and domain rules. | Repositories, Models | DB queries (ORM or raw SQL), HTTP concerns |
+| **Repositories** | Encapsulate data access (ORM queries, raw SQL, external data fetches). | Models, DB sessions/connections | Business logic, HTTP concerns |
+| **Models** | Define data structures (Pydantic schemas, SQLModel/SQLAlchemy models, dataclasses). | Other models, shared utilities (leaf layer — no imports from services, repositories, or routes) | Business logic, DB queries |
+
+A service that only wraps single CRUD queries with no additional logic is a repository — name and locate it accordingly.
 
 ## Code Quality
 

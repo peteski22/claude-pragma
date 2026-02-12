@@ -119,7 +119,11 @@ If you see new code copying an anti-pattern from existing code:
 ### Architecture
 - Service layer MUST NOT import from route/API layer.
 - Repository layer MUST NOT contain business logic.
-- Models MUST NOT import from services.
+- Models MUST NOT import from services, repositories, or routes.
+- Model classes, schemas, and dataclasses MUST be defined in the models layer (typically models/, schemas/, or domain/ directories), not in route, service, or repository files. A file is in the route/API layer if it lives in a directory named routes/, api/, routers/, views/, or endpoints/, or if it contains HTTP method route decorators (`@router.<method>`, `@app.<method>`, `@bp.route`, `@blueprint.route`, etc.). Exception: private helper types (prefixed with `_`) used only within a single module may be co-located.
+- Route/API handlers MUST be thin controllers: receive request, validate input, call service, return response. Database queries, ORM operations, and business logic MUST NOT appear in route handlers. Receiving a DB session via dependency injection (e.g., `db: Session = Depends(get_db)`) and passing it to a service or repository is acceptable. Transaction scoping decorators and context managers in handlers are acceptable.
+- A service class whose methods are thin wrappers around single database queries with no additional business logic is a repository, not a service. Name and locate it in the repository layer. Repository behavior: `get_user_by_id(id)` performs a single SELECT; `create_audit_entry(data)` performs a single INSERT. Service behavior: `create_order(cart)` validates inventory, calculates totals, applies discounts, then delegates persistence to a repository. A class whose methods predominantly resemble the repository examples is a repository regardless of its name.
+- When a single code pattern triggers multiple architecture rules, report the root cause as the primary violation and suppress derivative violations. For example, when a service is actually a repository, report the misclassification — do not additionally report wrong directory or wrong layer imports as separate violations.
 
 ---
 
