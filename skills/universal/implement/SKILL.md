@@ -41,13 +41,13 @@ Use the Read tool to check each path. Collect those that exist and are readable.
 
 ### Step 2a: Check for local supplements
 
-Also check for local supplements at the repo root:
+Check for `CLAUDE.local.md` at the project root and read it if present:
 
 ```bash
-[[ -f .claude/local/CLAUDE.md ]] && echo "local-supplements:exists"
+[[ -f CLAUDE.local.md ]] && echo "local-supplements:exists"
 ```
 
-If `.claude/local/CLAUDE.md` exists, read it. Local supplements contain project-specific additions (custom test commands, local environment notes, etc.) that apply in addition to generated rules.
+If it exists, read it. Pay particular attention to any "Validation Commands" section, which overrides defaults. Claude Code may also auto-load this file into context; the explicit read here ensures local supplements are always applied regardless of execution environment.
 
 ### Step 3: Read and apply rules
 
@@ -88,7 +88,7 @@ This fallback ensures projects without `/setup-project` still get essential rule
 Track which rule files were loaded for the final report, including:
 - Which project-specific CLAUDE.md files were loaded (if any)
 - Fallback baseline status: not needed, loaded, skipped, or failed (with reason)
-- Local supplements if present
+- CLAUDE.local.md (auto-loaded or explicitly read in Step 2a)
 
 ### Step 5: Execute pre-implementation setup
 
@@ -148,14 +148,17 @@ After implementation is complete, run validation.
 1. **Run linters first** (deterministic checks):
 
    **Check rules for custom validation commands:**
-   Look for a "Validation Commands" section in the loaded rules (from Phase 0). This section contains project-specific lint/test commands that override the defaults below.
+   Look for a "Validation Commands" section in these sources, in precedence order:
+   1. `CLAUDE.local.md` (from Step 2a — highest priority)
+   2. Directory-specific `.claude/CLAUDE.md` files (from Step 2)
+   3. Root `.claude/CLAUDE.md` (from Step 2)
 
-   If custom commands exist, use them. Otherwise, fall back to these defaults:
+   If custom commands exist at any level, use the highest-precedence match. Otherwise, fall back to these defaults:
    - Go: `golangci-lint run --fix -v`
    - Python: `uv run pre-commit run --all-files`
    - TypeScript: `pnpm run lint` or `npx biome check .`
 
-   **Priority order:** See `claude-md/universal/validation-precedence.md` for the canonical precedence rules. In short: local supplements > subdirectory rules > root rules > built-in defaults. Local supplements have the highest priority to allow per-machine customization without modifying version-controlled rules.
+   **Priority order:** See `claude-md/universal/validation-precedence.md` for the canonical precedence rules. In short: CLAUDE.local.md > subdirectory rules > root rules > built-in defaults. CLAUDE.local.md has the highest priority to allow per-machine customization without modifying version-controlled rules.
 
    Fix any issues before proceeding.
 
@@ -198,7 +201,7 @@ Only after validation passes:
 **Rules Applied:**
 - backend/.claude/CLAUDE.md
 - .claude/CLAUDE.md
-- .claude/local/CLAUDE.md (local supplements)
+- CLAUDE.local.md (from Step 2a)
 
 **Changes:**
 - file.go: [what changed]

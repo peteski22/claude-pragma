@@ -123,9 +123,8 @@ Advisory skills provide feedback but don't block completion.
 ```
 myproject/
 ├── .claude/
-│   ├── CLAUDE.md               # Universal rules (commit this)
-│   └── local/
-│       └── CLAUDE.md           # Personal supplements (gitignore this)
+│   └── CLAUDE.md               # Universal rules (commit this)
+├── CLAUDE.local.md             # Personal supplements (gitignored)
 ├── backend/
 │   ├── .claude/CLAUDE.md       # Python-specific rules
 │   └── pyproject.toml
@@ -134,7 +133,7 @@ myproject/
     └── package.json
 ```
 
-When you edit `backend/app/main.py`, both the Python rules and universal rules are injected. If `.claude/local/CLAUDE.md` exists, those rules are also applied as supplements.
+When you edit `backend/app/main.py`, both the Python rules and universal rules are injected. If `CLAUDE.local.md` exists at the project root, it is auto-loaded by Claude Code as per-user supplements.
 
 ## Directory Structure
 
@@ -154,10 +153,12 @@ claude-pragma/
 
 **Commit** the generated `.claude/CLAUDE.md` files so other developers get the same rules without re-running `/setup-project`.
 
-**Gitignore** the `.claude/local/` directory for personal supplements:
+Claude Code adds `CLAUDE.local.md` to `.gitignore` automatically when it creates the file. If you create it manually, verify it is in your `.gitignore` to avoid committing personal rules.
 
-```gitignore
-.claude/local/
+In git worktrees, use `@import` (a Claude Code directive that includes another CLAUDE.md file) in `CLAUDE.local.md` to reference a shared local rules file rather than duplicating it per worktree:
+
+```markdown
+@import ../shared-local-rules.md
 ```
 
 ## More Information
