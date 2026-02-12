@@ -53,20 +53,23 @@ Record which rule files were loaded.
 
 ## Step 2a: Check for local supplements
 
-Also check for local supplements at the repo root:
+Check for `CLAUDE.local.md` at the project root and read it if present:
 
 ```bash
-[[ -f .claude/local/CLAUDE.md ]] && echo "local-supplements:exists"
+[[ -f CLAUDE.local.md ]] && echo "local-supplements:exists"
 ```
 
-If `.claude/local/CLAUDE.md` exists, read it. Local supplements may contain custom validation commands that override the defaults.
+If it exists, read it. Pay particular attention to any "Validation Commands" section, which overrides defaults. Claude Code may also auto-load this file into context; the explicit read here ensures local supplements are always applied regardless of execution environment.
 
 ## Step 3: Run deterministic checks
 
 **Check rules for custom validation commands first:**
-Look for a "Validation Commands" section in the loaded rules (from Step 2 and Step 2a). This section contains project-specific lint/test commands that override the defaults below.
+Look for a "Validation Commands" section in these sources, in precedence order:
+1. `CLAUDE.local.md` (from Step 2a — highest priority)
+2. Directory-specific `.claude/CLAUDE.md` files (from Step 2)
+3. Root `.claude/CLAUDE.md` (from Step 2)
 
-**Priority order:** See `claude-md/universal/validation-precedence.md` for the canonical precedence rules. In short: local supplements > subdirectory rules > root rules > built-in defaults. Local supplements have the highest priority to allow per-machine customization without modifying version-controlled rules.
+Use the highest-precedence match. See `claude-md/universal/validation-precedence.md` for the canonical precedence rules.
 
 If no custom commands found, use these defaults based on file types:
 

@@ -4,7 +4,7 @@ This document defines the priority order for validation commands used by `/imple
 
 ## Priority Order (Highest to Lowest)
 
-1. **`.claude/local/CLAUDE.md`** - Personal/machine-specific overrides
+1. **`CLAUDE.local.md`** - Personal/machine-specific overrides (gitignored, per-user)
 2. **`{subdir}/.claude/CLAUDE.md`** - Project component rules
 3. **`.claude/CLAUDE.md`** - Repository root rules
 4. **Built-in defaults** - Language-specific fallbacks
@@ -31,7 +31,7 @@ Validation commands are configured at the repository root by the setup-project s
 - **Test:** `uv run pytest -x`
 ```
 
-**Local overrides** (`.claude/local/CLAUDE.md`) - machine-specific, not committed:
+**Local overrides** (`CLAUDE.local.md`) - machine-specific, gitignored:
 ```markdown
 ## Validation Commands
 - **Lint:** `./scripts/my-lint.sh`
@@ -58,5 +58,5 @@ Your personal global CLAUDE.md (`~/.claude/CLAUDE.md`) is **separate from this p
 
 **Recommendations:**
 - Keep personal CLAUDE.md language-agnostic (workflow preferences, communication style)
-- Put language-specific personal preferences in `.claude/local/CLAUDE.md` within each project
+- Put language-specific personal preferences in `CLAUDE.local.md` within each project
 - Validators have explicit Language Scope sections to prevent cross-language contamination

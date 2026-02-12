@@ -88,10 +88,9 @@ If any exist, read them. If they have `<!-- Assembled by /setup-project -->` com
 
 ## Step 4: Create root .claude/CLAUDE.md
 
-Create the directories:
+Create the directory:
 ```bash
 mkdir -p .claude
-mkdir -p .claude/local
 ```
 
 Assemble root CLAUDE.md with:
@@ -124,11 +123,11 @@ Always apply the most specific rules available for the code you're working on.
      Update both files together if this guidance changes. -->
 ## Local Supplements
 
-If `.claude/local/CLAUDE.md` exists, read it and apply those rules in addition to the generated rules.
+`CLAUDE.local.md` at the project root contains per-user, per-project instructions. Claude Code auto-loads it and adds it to `.gitignore`; if you create the file manually, verify it is in your `.gitignore`.
 
 ### Validation Command Overrides
 
-Local supplements are generally additive, but can override validation commands. Add a "Validation Commands" section to specify custom lint/test scripts:
+Rules from `CLAUDE.local.md` are generally additive, but can override validation commands. Add a "Validation Commands" section to `CLAUDE.local.md` to specify custom lint/test scripts:
 
 ```markdown
 ## Validation Commands
@@ -137,7 +136,7 @@ Local supplements are generally additive, but can override validation commands. 
 - **Test:** `./scripts/backend-test.sh`
 ```
 
-These override the defaults in the language rules. Precedence (highest → lowest): local supplements > subdirectory rules > root rules > built-in defaults.
+These override the defaults in the language rules. Precedence (highest → lowest): CLAUDE.local.md > subdirectory rules > root rules > built-in defaults.
 
 **Common scenarios for overriding validation commands:**
 
@@ -154,12 +153,13 @@ These override the defaults in the language rules. Precedence (highest → lowes
 - Personal workflow preferences.
 - Machine-specific paths or configurations.
 
-Add `.claude/local/` to your `.gitignore` to keep personal rules out of version control.
+In git worktrees, use `@import` (a Claude Code directive that includes another CLAUDE.md file) in `CLAUDE.local.md` to reference a shared local rules file rather than duplicating it per worktree (e.g., `@import ../shared-local-rules.md`).
 ```
 
-**Create empty local CLAUDE.md (only if it doesn't exist):**
+**Create local supplements file and ensure it is gitignored:**
 ```bash
-[[ ! -f .claude/local/CLAUDE.md ]] && touch .claude/local/CLAUDE.md
+[[ ! -f CLAUDE.local.md ]] && touch CLAUDE.local.md
+grep -qxF 'CLAUDE.local.md' .gitignore 2>/dev/null || echo 'CLAUDE.local.md' >> .gitignore
 ```
 
 ## Step 5: Create subdirectory .claude/CLAUDE.md files
@@ -348,5 +348,5 @@ Then continue with:
 
 **Recommended:**
   - Commit the generated `.claude/CLAUDE.md` files so other developers get the same rules.
-  - Add `.claude/local/` to `.gitignore` for personal supplements.
+  - `CLAUDE.local.md` has been created for personal/machine-specific rules (custom validation commands, local environment notes, personal workflow preferences). It is auto-loaded by Claude Code and gitignored.
 ```

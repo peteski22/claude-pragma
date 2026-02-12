@@ -11,8 +11,6 @@ Always apply the most specific rules available for the code you're working on.
 
 ## Local Supplements
 
-If `.claude/local/CLAUDE.md` exists, read it and apply those rules in addition to the generated rules.
+`CLAUDE.local.md` at the project root contains per-user, per-project instructions. Claude Code auto-loads it and adds it to `.gitignore`; if you create the file manually, verify it is in your `.gitignore`.
 
-Local supplements are generally additive. The one exception: a "Validation Commands" section in local supplements overrides the default lint/test commands. This allows per-machine customization of validation scripts without modifying version-controlled rules.
-
-Add `.claude/local/` to your `.gitignore` to keep personal rules out of version control.
+Rules from `CLAUDE.local.md` are additive to the rules in this file. The one exception: if `CLAUDE.local.md` contains a "Validation Commands" section, use those commands instead of the defaults. This allows per-machine customization of validation scripts without modifying version-controlled rules.
