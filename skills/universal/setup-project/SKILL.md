@@ -201,6 +201,18 @@ ln -sf "$CLAUDE_PRAGMA_PATH/skills/validators/security" ~/.claude/skills/
 ln -sf "$CLAUDE_PRAGMA_PATH/skills/advisory/star-chamber" ~/.claude/skills/
 ```
 
+**Agents (always):**
+```bash
+mkdir -p ~/.claude/agents
+if [ -d "$CLAUDE_PRAGMA_PATH/agents" ]; then
+  for agent in "$CLAUDE_PRAGMA_PATH"/agents/*.md; do
+    [ -f "$agent" ] && ln -sf "$agent" ~/.claude/agents/
+  done
+else
+  echo "WARNING: $CLAUDE_PRAGMA_PATH/agents directory not found, skipping agent linking"
+fi
+```
+
 **Check star-chamber prerequisites:**
 ```bash
 command -v uv >/dev/null 2>&1 && echo "uv:ok" || echo "uv:missing"
@@ -324,6 +336,9 @@ Then include in the summary:
   - /review - review changes against all validators
   - /validate - run all validators
   - /star-chamber - multi-LLM advisory council
+
+**Agents linked:**
+  - {list all .md files found in $CLAUDE_PRAGMA_PATH/agents/}
 
 **Usage:**
   /implement <task>    - implement with validation loop
