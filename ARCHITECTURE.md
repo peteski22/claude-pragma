@@ -602,6 +602,19 @@ It is **not** on the critical path.
 | typescript-style | TypeScript | ✅ Done |
 | security | All | ✅ Done |
 
+### Security: Dual Entrypoint
+
+Security has two entrypoints that share the same rules (`skills/validators/security/SKILL.md`):
+
+| Entrypoint | File | When it runs | Model | Key benefit |
+|------------|------|-------------|-------|-------------|
+| **Skill** | `skills/validators/security/SKILL.md` | Spawned by `/review` or `/validate` | Inherits parent | Part of the validation pipeline |
+| **Agent** | `agents/security.md` | Auto-invoked on security-sensitive code changes | Haiku | Catches issues outside `/review` flow |
+
+The skill has `user-invocable: false` — it only fires as part of the `/review` or `/validate` pipeline. The agent auto-invokes based on its description (user input handling, auth, database queries, shell commands, file operations). Both entrypoints use the same vulnerability checklist and JSON output schema.
+
+**Why dual entrypoints:** The `/review` pipeline already spawns security as a validator skill. But when users write code directly (without `/implement` or `/review`), security issues go uncaught. The agent fills that gap by auto-invoking on security-sensitive changes. It uses Haiku for cost-efficiency and persistent memory to learn project-specific patterns (known false positives, how the project handles auth, etc.).
+
 ---
 
 ## Advisory Skills
