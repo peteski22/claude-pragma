@@ -608,12 +608,12 @@ Security has two entrypoints that share the same rules (`skills/validators/secur
 
 | Entrypoint | File | When it runs | Model | Key benefit |
 |------------|------|-------------|-------|-------------|
-| **Skill** | `skills/validators/security/SKILL.md` | Spawned by `/review` or `/validate` | Inherits parent | Part of the validation pipeline |
-| **Agent** | `agents/security.md` | Auto-invoked on security-sensitive code changes | Haiku | Catches issues outside `/review` flow |
+| **Skill** | `skills/validators/security/SKILL.md` | Spawned by validation orchestrators (e.g., `/review`, `/validate`) | Inherits parent | Part of the validation pipeline |
+| **Agent** | `agents/security.md` | Auto-invoked when code crosses a trust boundary | Sonnet | Catches issues outside `/review` flow |
 
-The skill has `user-invocable: false` — it only fires as part of the `/review` or `/validate` pipeline. The agent auto-invokes based on its description (user input handling, auth, database queries, shell commands, file operations). Both entrypoints use the same vulnerability checklist and JSON output schema.
+The skill has `user-invocable: false` — it only fires as part of validation orchestrator pipelines. The agent auto-invokes based on its description (untrusted input parsing, query/command construction from user data, credential handling, authorization enforcement, security-relevant configuration). Both entrypoints use the same vulnerability checklist and JSON output schema.
 
-**Why dual entrypoints:** The `/review` pipeline already spawns security as a validator skill. But when users write code directly (without `/implement` or `/review`), security issues go uncaught. The agent fills that gap by auto-invoking on security-sensitive changes. It uses Haiku for cost-efficiency and persistent memory to learn project-specific patterns (known false positives, how the project handles auth, etc.).
+**Why dual entrypoints:** The `/review` pipeline already spawns security as a validator skill. But when users write code directly (without `/implement` or `/review`), security issues go uncaught. The agent fills that gap by auto-invoking on trust-boundary changes, with persistent memory to learn project-specific patterns (known false positives, how the project handles auth, etc.).
 
 ---
 
