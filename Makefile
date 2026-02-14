@@ -15,7 +15,7 @@ install:
 	@ln -sf "$(CURDIR)/skills/universal/setup-project" ~/.claude/skills/
 	@echo "Linked skill: /setup-project"
 	@mkdir -p ~/.claude/agents
-	@for agent in $(CURDIR)/agents/*.md; do \
+	@for agent in "$(CURDIR)"/agents/*.md; do \
 		if [ -f "$$agent" ]; then \
 			ln -sf "$$agent" ~/.claude/agents/; \
 			echo "Linked agent: $$(basename $$agent .md)"; \
@@ -31,7 +31,7 @@ uninstall:
 	@echo "Removing claude-pragma skills and agents..."
 	@rm -f ~/.claude/skills/setup-project
 	@echo "Removed skill: /setup-project"
-	@for agent in $(CURDIR)/agents/*.md; do \
+	@for agent in "$(CURDIR)"/agents/*.md; do \
 		if [ -f "$$agent" ]; then \
 			rm -f ~/.claude/agents/$$(basename "$$agent"); \
 			echo "Removed agent: $$(basename $$agent .md)"; \

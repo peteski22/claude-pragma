@@ -338,7 +338,7 @@ Then include in the summary:
   - /star-chamber - multi-LLM advisory council
 
 **Agents linked:**
-  - {list all .md files found in $CLAUDE_PRAGMA_PATH/agents/}
+  - {list all .md files linked from $CLAUDE_PRAGMA_PATH/agents/, or "none" if directory was missing}
 
 **Usage:**
   /implement <task>    - implement with validation loop

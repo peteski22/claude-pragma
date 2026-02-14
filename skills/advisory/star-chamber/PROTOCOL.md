@@ -20,6 +20,7 @@
 - [Configuration](#configuration)
 - [Security Considerations](#security-considerations)
 - [Troubleshooting](#troubleshooting)
+- [Cost Warning](#cost-warning)
 
 ## Runtime Constraint
 
@@ -29,7 +30,7 @@
 STAR_CHAMBER_PATH="$CLAUDE_PRAGMA_PATH/skills/advisory/star-chamber"
 ```
 
-`$CLAUDE_PRAGMA_PATH` is a user-exported environment variable that persists across subprocesses. `$STAR_CHAMBER_PATH` is derived from it and must be set in each bash block that references it.
+`$CLAUDE_PRAGMA_PATH` is a user-exported environment variable that persists across subprocesses. `$STAR_CHAMBER_PATH` is derived from it and must be set in each bash block that references it. When invoked via the skill, the skill base directory (provided by the skill loader header) resolves to the same path via symlink.
 
 ## Step 0: Check Prerequisites
 
@@ -194,14 +195,14 @@ FILES=("${FILE_ARGS[@]}")
 
 **Otherwise, use recent changes:**
 ```bash
-# Get recently changed files.
-git diff HEAD~1 --name-only --diff-filter=ACMRT 2>/dev/null || git diff --cached --name-only
+# Get recently changed files (committed, then staged, then unstaged).
+git diff HEAD~1 --name-only --diff-filter=ACMRT 2>/dev/null || git diff --cached --name-only 2>/dev/null || git diff --name-only --diff-filter=ACMRT
 ```
 
 Filter to code files (exclude generated, vendor, etc.):
 ```bash
 # Exclude patterns.
-echo "$FILES" | grep -v -E '(node_modules|vendor|\.min\.|\.generated\.|__pycache__|\.pyc$)'
+printf '%s\n' "${FILES[@]}" | grep -v -E '(node_modules|vendor|\.min\.|\.generated\.|__pycache__|\.pyc$)'
 ```
 
 ## Step 2: Inject Context
@@ -212,8 +213,12 @@ Gather context to include with the review prompt:
 ```bash
 # Walk up from target files to find CLAUDE.md rules.
 [[ -f .claude/CLAUDE.md ]] && cat .claude/CLAUDE.md
-for dir in $(dirname "$FILE" | tr '/' '\n' | head -3); do
-  [[ -f "${dir}/.claude/CLAUDE.md" ]] && cat "${dir}/.claude/CLAUDE.md"
+for file in "${FILES[@]}"; do
+  dir="$(dirname "$file")"
+  while [[ "$dir" != "." && "$dir" != "/" ]]; do
+    [[ -f "${dir}/.claude/CLAUDE.md" ]] && cat "${dir}/.claude/CLAUDE.md"
+    dir="$(dirname "$dir")"
+  done
 done
 ```
 

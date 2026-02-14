@@ -624,7 +624,7 @@ The skill has `model-invocable: false` — it only fires on explicit user reques
 **Key characteristics:**
 - Advisory only (doesn't block like validators)
 - Uses `any-llm-sdk` via `uv run` (no global Python install needed)
-- Supports parallel and sequential review modes, plus design questions
+- Supports parallel and debate review modes, plus design questions
 - Persistent project memory for learning codebase patterns across reviews (agent only)
 
 **Execution modes:**
@@ -660,4 +660,4 @@ flowchart LR
 - JSON for tooling integration
 - Quality ratings per provider
 
-**Cost consideration:** Each invocation calls all configured providers (~$0.02-0.10 per run). Use intentionally, not automatically.
+**Cost consideration:** Each invocation calls all configured providers (~$0.02-0.10 per run). The agent auto-invokes in basic mode only to keep costs predictable; debate mode is reserved for explicit `/star-chamber` invocations.
