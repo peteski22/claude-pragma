@@ -610,12 +610,22 @@ Advisory skills provide optional, non-blocking feedback. Unlike validators, they
 
 ### Star-Chamber: Multi-LLM Craftsmanship Council
 
-The `/star-chamber` skill fans out code reviews to multiple LLM providers (Claude, OpenAI, Gemini, etc.) and aggregates their feedback into consensus recommendations.
+Star-chamber has two entrypoints that share a single protocol (`skills/advisory/star-chamber/PROTOCOL.md`):
+
+| Entrypoint | File | When it runs | Model | Key benefit |
+|------------|------|-------------|-------|-------------|
+| **Skill** | `skills/advisory/star-chamber/SKILL.md` | User types `/star-chamber` | Inherits parent | Live progress in main conversation |
+| **Agent** | `agents/star-chamber.md` | Auto-invoked on architectural decisions | Sonnet | Isolated context, persistent project memory |
+
+The skill has `model-invocable: false` — it only fires on explicit user request. The agent auto-invokes based on its description (significant implementations, design trade-offs, second opinions). Both entrypoints set `$STAR_CHAMBER_PATH` and delegate to `skills/advisory/star-chamber/PROTOCOL.md` as the single source of truth for the review process.
+
+**Why dual entrypoints:** Running as a skill gives live streaming output during multi-round debates (users see progress). Running as an agent gives isolated context (verbose provider output stays out of the main conversation), persistent memory (learns codebase patterns over time), and cost-appropriate model selection (Sonnet for orchestration).
 
 **Key characteristics:**
 - Advisory only (doesn't block like validators)
 - Uses `any-llm-sdk` via `uv run` (no global Python install needed)
-- Supports parallel and sequential review modes
+- Supports parallel and debate review modes, plus design questions
+- Persistent project memory for learning codebase patterns across reviews (agent only)
 
 **Execution modes:**
 | Mode | Invocation | Description |
@@ -650,4 +660,4 @@ flowchart LR
 - JSON for tooling integration
 - Quality ratings per provider
 
-**Cost consideration:** Each invocation calls all configured providers (~$0.02-0.10 per run). Use intentionally, not automatically.
+**Cost consideration:** Each invocation calls all configured providers (~$0.02-0.10 per run). The agent auto-invokes in basic mode only to keep costs predictable; debate mode is reserved for explicit `/star-chamber` invocations.

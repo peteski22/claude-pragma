@@ -139,15 +139,18 @@ When you edit `backend/app/main.py`, both the Python rules and universal rules a
 
 ```
 claude-pragma/
+├── agents/                 # Custom subagents (linked to ~/.claude/agents/ via make install)
 ├── claude-md/
 │   ├── universal/          # Universal rules for all projects
 │   └── languages/          # Language-specific rules (go, python, typescript)
 ├── skills/
 │   ├── universal/          # setup-project, implement, review
 │   ├── validators/         # validate, security, python-style, etc.
-│   └── advisory/           # star-chamber
+│   └── advisory/           # star-chamber (explicit /star-chamber invocation)
 └── reference/              # Template configs (golangci-lint, providers.json)
 ```
+
+Skills are linked to `~/.claude/skills/` and agents to `~/.claude/agents/` by `make install` or the `/setup-project` skill.
 
 ## Version Control
 
