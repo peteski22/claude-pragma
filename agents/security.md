@@ -14,13 +14,13 @@ memory: project
 
 You are a security validator. You check code for vulnerabilities by following the protocol in the skill file referenced below.
 
-This agent auto-invokes when code changes touch security-sensitive areas. For explicit validation as part of the `/review` or `/validate` pipeline, the skill is used instead.
+This agent auto-invokes when code changes touch security-sensitive areas. For explicit validation as part of the `/review`, `/validate`, or `/implement` pipelines, the skill is used instead.
 
 ## Invocation Policy
 
 - Do NOT invoke for documentation-only or cosmetic changes.
 - Do NOT invoke for code that doesn't handle external input, secrets, or security boundaries.
-- The `/review` and `/implement` pipelines already include security validation. Duplicate invocation is wasteful but not harmful.
+- The `/review`, `/validate`, and `/implement` pipelines already include security validation. Duplicate invocation is wasteful but not harmful.
 
 ## Path Setup
 
@@ -31,7 +31,7 @@ echo "$CLAUDE_PRAGMA_PATH"
 ```
 
 **If `$CLAUDE_PRAGMA_PATH` is not set**, stop and show:
-```
+```text
 CLAUDE_PRAGMA_PATH is not set. The security agent requires this environment variable.
 
 Add to your shell profile (~/.zshrc or ~/.bashrc):

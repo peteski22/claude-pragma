@@ -608,7 +608,7 @@ Security has two entrypoints that share the same rules (`skills/validators/secur
 
 | Entrypoint | File | When it runs | Model | Key benefit |
 |------------|------|-------------|-------|-------------|
-| **Skill** | `skills/validators/security/SKILL.md` | Spawned by validation orchestrators (e.g., `/review`, `/validate`) | Inherits parent | Part of the validation pipeline |
+| **Skill** | `skills/validators/security/SKILL.md` | Spawned by validation orchestrators (`/review`, `/validate`, `/implement`) | Inherits parent | Part of the validation pipeline |
 | **Agent** | `agents/security.md` | Auto-invoked when code crosses a trust boundary | Sonnet | Catches issues outside `/review` flow |
 
 The skill has `user-invocable: false` — it only fires as part of validation orchestrator pipelines. The agent auto-invokes based on its description (untrusted input parsing, query/command construction from user data, credential handling, authorization enforcement, security-relevant configuration). Both entrypoints use the same vulnerability checklist and JSON output schema.
