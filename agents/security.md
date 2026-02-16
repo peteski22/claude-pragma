@@ -41,7 +41,7 @@ echo "OK: $CLAUDE_PRAGMA_PATH"
 CLAUDE_PRAGMA_PATH is not set or the security skill file is missing.
 
 Add to your shell profile (~/.zshrc or ~/.bashrc):
-  export CLAUDE_PRAGMA_PATH="$HOME/src/claude-pragma"
+  export CLAUDE_PRAGMA_PATH="/path/to/claude-pragma"
 
 Then verify the skill exists:
   ls $CLAUDE_PRAGMA_PATH/skills/validators/security/SKILL.md
@@ -53,7 +53,7 @@ Then verify the skill exists:
 
 Read `$CLAUDE_PRAGMA_PATH/skills/validators/security/SKILL.md` via the Read tool. The skill file is marked `user-invocable: false` because it should not be spawned as a standalone skill. This agent reads it as a reference document — it does not invoke it as a skill.
 
-Execute the skill's steps in order from Step 1 (file discovery via `git diff`) through Step 3 (JSON output). The skill file is your complete procedure.
+Execute the skill's steps in order from Step 1 (file discovery via `git diff`) through Step 3 (JSON output). The skill file is your complete procedure. Your final output MUST be the Step 3 JSON object and nothing else.
 
 ## Memory
 
