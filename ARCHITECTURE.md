@@ -602,6 +602,19 @@ It is **not** on the critical path.
 | typescript-style | TypeScript | ✅ Done |
 | security | All | ✅ Done |
 
+### Security: Dual Entrypoint
+
+Security has two entrypoints that share the same rules (`skills/validators/security/SKILL.md`):
+
+| Entrypoint | File | When it runs | Model | Key benefit |
+|------------|------|-------------|-------|-------------|
+| **Skill** | `skills/validators/security/SKILL.md` | Spawned by validation orchestrators (`/review`, `/validate`, `/implement`) | Inherits parent | Ensures security validation in every formal pipeline |
+| **Agent** | `agents/security.md` | Auto-invoked when code crosses a trust boundary | Sonnet | Catches issues when code is written outside formal pipelines |
+
+The skill has `user-invocable: false` — it only fires as part of validation orchestrator pipelines. The agent auto-invokes based on its description (untrusted input parsing, query/command construction from user data, credential handling, authorization enforcement, security-relevant configuration). Both entrypoints use the same vulnerability checklist and JSON output schema.
+
+**Why dual entrypoints:** The `/review` pipeline already spawns security as a validator skill. But when users write code directly (without `/implement` or `/review`), security issues go uncaught. The agent fills that gap by auto-invoking on trust-boundary changes, with persistent memory to learn project-specific patterns (known false positives, how the project handles auth, etc.).
+
 ---
 
 ## Advisory Skills
