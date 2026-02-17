@@ -23,7 +23,7 @@ const (
 	ruleParamCount = "param-count"
 )
 
-// allCheckers is the ordered list of checks to run, initialised once at package load.
+// allCheckers is the ordered list of checks to run, initialized once at package load.
 var allCheckers = []checker{
 	newPrefixChecker("Get", ruleNoGetPrefix),
 	&paramCountChecker{maxParams: 4, rule: ruleParamCount},

@@ -42,6 +42,11 @@ type sectionKind int
 // Each violation is reported relative to the highest section seen so far. The
 // high-water mark advances only when a higher section is encountered, so
 // multiple regressions are all reported against the true maximum.
+//
+// Note: this enforces strict section grouping (all types before all functions).
+// Methods placed immediately after their receiver type will be flagged if a
+// non-function section follows. This is intentional per the project convention
+// of grouping by section rather than by type-with-methods.
 func (c *fileOrderingChecker) check(fileSet *token.FileSet, file *ast.File, filename string) []Violation {
 	var violations []Violation
 	lastSection := sectionNone

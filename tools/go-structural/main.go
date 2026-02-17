@@ -123,7 +123,7 @@ func run(args []string) error {
 	}
 
 	fileSet := token.NewFileSet()
-	var allViolations []checks.Violation
+	allViolations := make([]checks.Violation, 0)
 
 	for _, filename := range allFiles {
 		file, err := parser.ParseFile(fileSet, filename, nil, parser.ParseComments)
