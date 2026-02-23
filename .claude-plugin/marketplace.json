@@ -1,0 +1,17 @@
+{
+  "name": "claude-pragma",
+  "owner": { "name": "Peter Wilson" },
+  "metadata": {
+    "description": "Pragma directives for Claude Code — deterministic linting, semantic LLM validators, and multi-LLM advisory council for Go, Python, and TypeScript"
+  },
+  "plugins": [
+    {
+      "name": "pragma",
+      "source": "./plugins/pragma",
+      "description": "Deterministic linting hooks, semantic code validators, and a multi-LLM advisory council. Enforces coding rules mechanically — not by suggestion.",
+      "version": "1.0.0",
+      "category": "development",
+      "tags": ["validation", "code-quality", "go", "python", "typescript", "security", "linting", "llm-council"]
+    }
+  ]
+}
