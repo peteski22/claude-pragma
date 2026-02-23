@@ -4,34 +4,39 @@
 help:
 	@echo "claude-pragma - Pragma directives for Claude Code"
 	@echo ""
-	@echo "Usage:"
-	@echo "  make install    Link setup-project skill and all agents"
+	@echo "DEPRECATED: Use the plugin marketplace instead:"
+	@echo "  /plugin marketplace add peteski22/claude-pragma"
+	@echo "  /plugin install pragma@claude-pragma"
+	@echo ""
+	@echo "Legacy commands (for migration):"
+	@echo "  make install    Link setup-project skill and all agents (deprecated)"
 	@echo "  make uninstall  Remove setup-project skill and agent links"
 	@echo "  make help       Show this help"
 
 install:
-	@echo "Installing claude-pragma skills and agents..."
+	@echo "WARNING: make install is deprecated. Use the plugin marketplace instead:"
+	@echo "  /plugin marketplace add peteski22/claude-pragma"
+	@echo "  /plugin install pragma@claude-pragma"
+	@echo ""
+	@echo "Installing legacy symlinks for migration..."
 	@mkdir -p ~/.claude/skills
-	@ln -sf "$(CURDIR)/skills/universal/setup-project" ~/.claude/skills/
-	@echo "Linked skill: /setup-project"
+	@ln -sf "$(CURDIR)/plugins/pragma/skills/setup-project" ~/.claude/skills/
+	@echo "Linked skill: /setup-project (deprecated; use /pragma:setup-project via plugin install)"
 	@mkdir -p ~/.claude/agents
-	@for agent in "$(CURDIR)"/agents/*.md; do \
+	@for agent in "$(CURDIR)"/plugins/pragma/agents/*.md; do \
 		if [ -f "$$agent" ]; then \
 			ln -sf "$$agent" ~/.claude/agents/; \
 			echo "Linked agent: $$(basename $$agent .md)"; \
 		fi; \
 	done
 	@echo ""
-	@echo "Add to your shell profile (~/.zshrc or ~/.bashrc):"
-	@echo "  export CLAUDE_PRAGMA_PATH=\"$(CURDIR)\""
-	@echo ""
-	@echo "Then in Claude Code, run /setup-project in any project to set up validators."
+	@echo "Legacy install complete. Consider migrating to the plugin marketplace."
 
 uninstall:
 	@echo "Removing claude-pragma skills and agents..."
 	@rm -f ~/.claude/skills/setup-project
 	@echo "Removed skill: /setup-project"
-	@for agent in "$(CURDIR)"/agents/*.md; do \
+	@for agent in "$(CURDIR)"/plugins/pragma/agents/*.md; do \
 		if [ -f "$$agent" ]; then \
 			rm -f ~/.claude/agents/$$(basename "$$agent"); \
 			echo "Removed agent: $$(basename $$agent .md)"; \
