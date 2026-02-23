@@ -16,8 +16,8 @@ Requires `$CLAUDE_PRAGMA_PATH` environment variable to be set.
 ```bash
 echo "$CLAUDE_PRAGMA_PATH"
 [[ -z "$CLAUDE_PRAGMA_PATH" ]] && echo "ERROR: CLAUDE_PRAGMA_PATH not set"
-[[ ! -d "$CLAUDE_PRAGMA_PATH" ]] && echo "ERROR: CLAUDE_PRAGMA_PATH does not exist"
-[[ ! -f "$CLAUDE_PRAGMA_PATH/claude-md/universal/base.md" ]] && echo "ERROR: Invalid claude-pragma repo"
+! [[ -d "$CLAUDE_PRAGMA_PATH" ]] && echo "ERROR: CLAUDE_PRAGMA_PATH does not exist"
+! [[ -f "$CLAUDE_PRAGMA_PATH/claude-md/universal/base.md" ]] && echo "ERROR: Invalid claude-pragma repo"
 true  # Ensure exit 0; Claude Code reads ERROR output and stops (see below).
 ```
 
@@ -158,7 +158,7 @@ In git worktrees, use `@import` (a Claude Code directive that includes another C
 
 **Create local supplements file and ensure it is gitignored:**
 ```bash
-[[ ! -f CLAUDE.local.md ]] && touch CLAUDE.local.md
+! [[ -f CLAUDE.local.md ]] && touch CLAUDE.local.md
 grep -qxF 'CLAUDE.local.md' .gitignore 2>/dev/null || echo 'CLAUDE.local.md' >> .gitignore
 ```
 
@@ -242,7 +242,7 @@ ln -sf "$CLAUDE_PRAGMA_PATH/skills/validators/typescript-style" ~/.claude/skills
 
 For Go projects, if no golangci-lint config exists:
 ```bash
-{ [[ ! -f .golangci.yml ]] && [[ ! -f .golangci.yaml ]]; } && echo "no-lint-config"
+{ ! [[ -f .golangci.yml ]] && ! [[ -f .golangci.yaml ]]; } && echo "no-lint-config"
 true
 ```
 
@@ -252,7 +252,7 @@ If missing, offer to copy from `$CLAUDE_PRAGMA_PATH/reference/go/golangci-lint.y
 
 Check if star-chamber config exists:
 ```bash
-[[ ! -f ~/.config/star-chamber/providers.json ]] && echo "no-star-chamber-config"
+! [[ -f ~/.config/star-chamber/providers.json ]] && echo "no-star-chamber-config"
 ```
 
 If missing **and `uv` is available** (from the Step 6 check), offer to set it up. If `uv` is missing, skip this offer and tell the user: "Skipping star-chamber config — `uv` is not installed." The Step 8 output includes install instructions.
