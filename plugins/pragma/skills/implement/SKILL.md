@@ -178,6 +178,7 @@ After implementation is complete, run validation.
    - Use the Task tool to spawn validators in parallel. For each, use the Skill tool to invoke the validator and return its JSON output verbatim.
    - Note: This duplicates the dispatch logic in `pragma:validate` intentionally — implement needs inline control for the fix-and-re-validate loop. Keep both in sync.
      - `pragma:security` (always)
+     - `pragma:state-machine` (always)
      - `pragma:go-effective` (if Go files changed)
      - `pragma:go-proverbs` (if Go files changed)
      - `pragma:python-style` (if Python files changed)

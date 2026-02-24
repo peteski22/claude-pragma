@@ -1,0 +1,38 @@
+{
+  "name": "state-machine",
+  "version": "1.0.0",
+  "input": ["git diff (all files)"],
+  "output_schema": "hard/should/warn with JSON structure (unified)",
+  "assumes": [],
+  "scope": [
+    "State enum and status field definitions",
+    "State transition logic and guards",
+    "Terminal and final state classifications",
+    "Cleanup and cancellation enforcement",
+    "Model-vs-runtime consistency"
+  ],
+  "excludes": [
+    "Code style or formatting",
+    "Language idioms",
+    "Security vulnerabilities",
+    "Performance",
+    "Test coverage"
+  ],
+  "hard_rules": [
+    "Terminal states must enforce termination of all associated processes",
+    "State transitions must not create unreachable states",
+    "Cancellation or cleanup must be triggered when entering terminal states with running side-effects"
+  ],
+  "should_rules": [
+    "State classifications should be documented with runtime semantics",
+    "Transition guards should distinguish UI-perspective from system-perspective finality"
+  ],
+  "warn_rules": [
+    "States that block further transitions but have no cleanup side-effects",
+    "Asymmetric state definitions (some terminal states trigger cleanup, others do not)"
+  ],
+  "references": [
+    "Finite State Machine design principles"
+  ],
+  "batch_size": 50
+}

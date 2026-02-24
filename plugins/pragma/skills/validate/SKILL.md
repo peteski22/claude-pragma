@@ -21,6 +21,7 @@ Based on file extensions, select validators:
 - `.py` files → run `pragma:python-style`
 - `.ts` or `.tsx` files → run `pragma:typescript-style`
 - All files → run `pragma:security`
+- All files → run `pragma:state-machine`
 
 ## Step 2: Run validators in parallel
 
@@ -37,16 +38,19 @@ Invoke the `pragma:go-effective` skill using the Skill tool (skill: "pragma:go-e
 1. Task: Invoke `pragma:go-effective` skill and return JSON output verbatim.
 2. Task: Invoke `pragma:go-proverbs` skill and return JSON output verbatim.
 3. Task: Invoke `pragma:security` skill and return JSON output verbatim.
+4. Task: Invoke `pragma:state-machine` skill and return JSON output verbatim.
 
 **Python files changed:**
 1. Task: Invoke `pragma:python-style` skill and return JSON output verbatim.
 2. Task: Invoke `pragma:security` skill and return JSON output verbatim.
+3. Task: Invoke `pragma:state-machine` skill and return JSON output verbatim.
 
 **TypeScript files changed:**
 1. Task: Invoke `pragma:typescript-style` skill and return JSON output verbatim.
 2. Task: Invoke `pragma:security` skill and return JSON output verbatim.
+3. Task: Invoke `pragma:state-machine` skill and return JSON output verbatim.
 
-**Mixed languages:** Combine all applicable validators. Security always runs exactly once regardless of how many languages are detected.
+**Mixed languages:** Combine all applicable validators. Security and state-machine always run exactly once regardless of how many languages are detected.
 
 Run all applicable Tasks in parallel (multiple Task calls in one response).
 
@@ -59,6 +63,9 @@ Collect all validator outputs and present a unified report:
 
 ## Security
 [JSON output from pragma:security]
+
+## State Machine
+[JSON output from pragma:state-machine]
 
 ## Go Effective (if applicable)
 [JSON output from pragma:go-effective]
