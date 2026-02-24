@@ -8,7 +8,7 @@
 
 ```mermaid
 flowchart TD
-    A["/implement add user authentication"] --> B["Phase 0: Rules injected from .claude/CLAUDE.md files"]
+    A["/pragma:implement add user authentication"] --> B["Phase 0: Rules injected from .claude/CLAUDE.md files"]
     B --> C["Phase 1-2: Claude implements following injected rules"]
     C --> D["Phase 3: Linters run (ruff, biome, golangci-lint)"]
     D --> E["Validators run (security, python-style, etc.)"]
@@ -29,22 +29,18 @@ flowchart TD
 ## Quick Start
 
 ```bash
-# 1. Clone and install
-git clone git@github.com:peteski22/claude-pragma.git
-cd claude-pragma
-make install
+# Install the plugin from the marketplace
+/plugin marketplace add peteski22/claude-pragma
+/plugin install pragma@claude-pragma
 
-# 2. Add to your shell profile (~/.zshrc or ~/.bashrc)
-export CLAUDE_PRAGMA_PATH="$HOME/src/claude-pragma"  # adjust path as needed
-
-# 3. Restart your shell, then in any project:
-/setup-project
+# Then in any project:
+/pragma:setup-project
 ```
 
-### Example: Using /implement
+### Example: Using /pragma:implement
 
 ```bash
-> /implement add input validation to the login form
+> /pragma:implement add input validation to the login form
 
 [Phase 0] Injecting rules from:
   - .claude/CLAUDE.md (universal)
@@ -72,9 +68,9 @@ export CLAUDE_PRAGMA_PATH="$HOME/src/claude-pragma"  # adjust path as needed
 
 | Skill | What it does | Why it matters |
 |-------|--------------|----------------|
-| `/setup-project` | Detects languages, creates CLAUDE.md files, links validators | One command to configure any project |
-| `/implement <task>` | Implements with automatic validation loop | Catches issues before you review the code |
-| `/review` | Validates current changes against all rules | Quick check before committing |
+| `/pragma:setup-project` | Detects languages, creates CLAUDE.md files, configures validators | One command to configure any project |
+| `/pragma:implement <task>` | Implements with automatic validation loop | Catches issues before you review the code |
+| `/pragma:review` | Validates current changes against all rules | Quick check before committing |
 
 ### Validators
 
@@ -82,12 +78,12 @@ Validators are semantic checks that run after linters pass. They enforce languag
 
 | Skill | Language | What it checks |
 |-------|----------|----------------|
-| `/validate` | All | Orchestrator - runs all applicable validators |
-| `/security` | All | Secrets, injection vulnerabilities, path traversal, auth gaps |
-| `/python-style` | Python | Google docstrings, type hints, exception chaining, layered architecture |
-| `/typescript-style` | TypeScript | Strict mode, React patterns, proper hooks, state management |
-| `/go-effective` | Go | Effective Go rules - naming, error handling, interface design |
-| `/go-proverbs` | Go | Go Proverbs - idiomatic patterns, concurrency, "clear is better than clever" |
+| `/pragma:validate` | All | Orchestrator - runs all applicable validators |
+| `/pragma:security` | All | Secrets, injection vulnerabilities, path traversal, auth gaps |
+| `/pragma:python-style` | Python | Google docstrings, type hints, exception chaining, layered architecture |
+| `/pragma:typescript-style` | TypeScript | Strict mode, React patterns, proper hooks, state management |
+| `/pragma:go-effective` | Go | Effective Go rules - naming, error handling, interface design |
+| `/pragma:go-proverbs` | Go | Go Proverbs - idiomatic patterns, concurrency, "clear is better than clever" |
 
 ### Advisory Skills
 
@@ -95,13 +91,13 @@ Advisory skills provide feedback but don't block completion.
 
 | Skill | What it does |
 |-------|--------------|
-| `/star-chamber` | Fans out code review to multiple LLMs (OpenAI, Anthropic, Gemini) and aggregates consensus feedback |
+| `/pragma:star-chamber` | Fans out code review to multiple LLMs (OpenAI, Anthropic, Gemini) and aggregates consensus feedback |
 
 ## Validator Severity Levels
 
 | Level | Meaning | What happens |
 |-------|---------|--------------|
-| **HARD** | Must fix | Blocks `/implement` completion |
+| **HARD** | Must fix | Blocks `/pragma:implement` completion |
 | **SHOULD** | Fix or justify | Requires explicit justification to proceed |
 | **WARN** | Advisory | Noted in output but doesn't block |
 
@@ -109,18 +105,17 @@ Advisory skills provide feedback but don't block completion.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `CLAUDE_PRAGMA_PATH` | Yes | Path to your cloned claude-pragma repo |
 | `STAR_CHAMBER_CONFIG` | No | Custom path to star-chamber config (default: `~/.config/star-chamber/providers.json`) |
-| `ANY_LLM_KEY` | For /star-chamber | Platform key from [any-llm.ai](https://any-llm.ai) |
-| `OPENAI_API_KEY` | For /star-chamber | OpenAI API key (if not using any-llm.ai) |
-| `ANTHROPIC_API_KEY` | For /star-chamber | Anthropic API key (if not using any-llm.ai) |
-| `GEMINI_API_KEY` | For /star-chamber | Google Gemini API key (if not using any-llm.ai) |
+| `ANY_LLM_KEY` | For `/pragma:star-chamber` | Platform key from [any-llm.ai](https://any-llm.ai) |
+| `OPENAI_API_KEY` | For `/pragma:star-chamber` | OpenAI API key (if not using any-llm.ai) |
+| `ANTHROPIC_API_KEY` | For `/pragma:star-chamber` | Anthropic API key (if not using any-llm.ai) |
+| `GEMINI_API_KEY` | For `/pragma:star-chamber` | Google Gemini API key (if not using any-llm.ai) |
 
 ## Monorepo Support
 
-`/setup-project` detects languages at root AND in subdirectories, creating appropriate CLAUDE.md files for each:
+`/pragma:setup-project` detects languages at root AND in subdirectories, creating appropriate CLAUDE.md files for each:
 
-```
+```text
 myproject/
 ├── .claude/
 │   └── CLAUDE.md               # Universal rules (commit this)
@@ -137,24 +132,28 @@ When you edit `backend/app/main.py`, both the Python rules and universal rules a
 
 ## Directory Structure
 
-```
+```text
 claude-pragma/
-├── agents/                 # Custom subagents (linked to ~/.claude/agents/ via make install)
-├── claude-md/
-│   ├── universal/          # Universal rules for all projects
-│   └── languages/          # Language-specific rules (go, python, typescript)
-├── skills/
-│   ├── universal/          # setup-project, implement, review
-│   ├── validators/         # validate, security, python-style, etc.
-│   └── advisory/           # star-chamber (explicit /star-chamber invocation)
-└── reference/              # Template configs (golangci-lint, providers.json)
+├── .claude-plugin/
+│   └── marketplace.json        # Marketplace catalog
+├── plugins/
+│   └── pragma/                 # The plugin
+│       ├── .claude-plugin/
+│       │   └── plugin.json     # Plugin manifest
+│       ├── agents/             # Custom subagents (security, star-chamber)
+│       ├── skills/             # All skills (implement, review, validate, etc.)
+│       ├── claude-md/
+│       │   ├── universal/      # Universal rules for all projects
+│       │   └── languages/      # Language-specific rules (go, python, typescript)
+│       ├── reference/          # Template configs (golangci-lint, providers.json)
+│       └── tools/              # go-structural deterministic linter
+├── ARCHITECTURE.md
+└── README.md
 ```
-
-Skills are linked to `~/.claude/skills/` and agents to `~/.claude/agents/` by `make install` or the `/setup-project` skill.
 
 ## Version Control
 
-**Commit** the generated `.claude/CLAUDE.md` files so other developers get the same rules without re-running `/setup-project`.
+**Commit** the generated `.claude/CLAUDE.md` files so other developers get the same rules without re-running `/pragma:setup-project`.
 
 Claude Code adds `CLAUDE.local.md` to `.gitignore` automatically when it creates the file. If you create it manually, verify it is in your `.gitignore` to avoid committing personal rules.
 
@@ -162,6 +161,15 @@ In git worktrees, use `@import` (a Claude Code directive that includes another C
 
 ```markdown
 @import ../shared-local-rules.md
+```
+
+## Legacy Installation (Deprecated)
+
+The previous `make install` + `$CLAUDE_PRAGMA_PATH` approach is deprecated. Use the plugin marketplace instead. If migrating, remove the old symlinks and env var:
+
+```bash
+make uninstall
+# Remove CLAUDE_PRAGMA_PATH from your shell profile
 ```
 
 ## More Information
