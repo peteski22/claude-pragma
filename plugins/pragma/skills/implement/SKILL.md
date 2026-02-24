@@ -72,7 +72,7 @@ If project-specific rules were found and loaded, skip this step entirely and not
 
 If no project-specific rules were found, attempt to load the universal baseline from the plugin:
 
-1. **Resolve plugin root:** The skill loader provides the base directory in the header: `Base directory for this skill: <path>`. Derive `PLUGIN_ROOT` as `<base directory>/../..`.
+1. **Resolve plugin root:** The skill loader provides the base directory in the header: `Base directory for this skill: <path>`. Derive `PLUGIN_ROOT` as `<base directory>/../..` (skills live at `<plugin-root>/skills/<name>/`, so two levels up).
 
 2. **Validate plugin root:** Check that `$PLUGIN_ROOT/.claude-plugin/plugin.json` exists.
    - If missing → skip fallback, note in report: "Fallback baseline: failed (plugin root invalid at $PLUGIN_ROOT)"

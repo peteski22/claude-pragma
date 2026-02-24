@@ -69,6 +69,7 @@ How would you like to manage API keys?
 **If user chooses "any-llm.ai platform":**
 
 ```bash
+STAR_CHAMBER_PATH="<set by caller>"
 PLUGIN_ROOT="$STAR_CHAMBER_PATH/../.."; uv run python "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --platform
 ```
 
@@ -86,6 +87,7 @@ Setup:
 **If user chooses "Direct provider keys":**
 
 ```bash
+STAR_CHAMBER_PATH="<set by caller>"
 PLUGIN_ROOT="$STAR_CHAMBER_PATH/../.."; uv run python "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --direct
 ```
 

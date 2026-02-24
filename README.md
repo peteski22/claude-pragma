@@ -106,16 +106,16 @@ Advisory skills provide feedback but don't block completion.
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `STAR_CHAMBER_CONFIG` | No | Custom path to star-chamber config (default: `~/.config/star-chamber/providers.json`) |
-| `ANY_LLM_KEY` | For /pragma:star-chamber | Platform key from [any-llm.ai](https://any-llm.ai) |
-| `OPENAI_API_KEY` | For /pragma:star-chamber | OpenAI API key (if not using any-llm.ai) |
-| `ANTHROPIC_API_KEY` | For /pragma:star-chamber | Anthropic API key (if not using any-llm.ai) |
-| `GEMINI_API_KEY` | For /pragma:star-chamber | Google Gemini API key (if not using any-llm.ai) |
+| `ANY_LLM_KEY` | For `/pragma:star-chamber` | Platform key from [any-llm.ai](https://any-llm.ai) |
+| `OPENAI_API_KEY` | For `/pragma:star-chamber` | OpenAI API key (if not using any-llm.ai) |
+| `ANTHROPIC_API_KEY` | For `/pragma:star-chamber` | Anthropic API key (if not using any-llm.ai) |
+| `GEMINI_API_KEY` | For `/pragma:star-chamber` | Google Gemini API key (if not using any-llm.ai) |
 
 ## Monorepo Support
 
 `/pragma:setup-project` detects languages at root AND in subdirectories, creating appropriate CLAUDE.md files for each:
 
-```
+```text
 myproject/
 ├── .claude/
 │   └── CLAUDE.md               # Universal rules (commit this)
@@ -132,7 +132,7 @@ When you edit `backend/app/main.py`, both the Python rules and universal rules a
 
 ## Directory Structure
 
-```
+```text
 claude-pragma/
 ├── .claude-plugin/
 │   └── marketplace.json        # Marketplace catalog

@@ -13,7 +13,7 @@ Automatically configure Claude Code for the current project. Supports monorepos 
 
 The skill loader provides the base directory in the header: `Base directory for this skill: <path>`. Derive the plugin root from that:
 
-```
+```text
 PLUGIN_ROOT = <base directory>/../../
 ```
 
@@ -87,7 +87,7 @@ done
 true
 ```
 
-If any exist, read them. If they have `<!-- Assembled by /pragma:setup-project` comment, safe to overwrite. Otherwise ASK before overwriting.
+If any exist, read them. If they have `<!-- Assembled by /pragma:setup-project` comment, safe to overwrite. Otherwise, ask before overwriting.
 
 ## Step 4: Create root .claude/CLAUDE.md
 

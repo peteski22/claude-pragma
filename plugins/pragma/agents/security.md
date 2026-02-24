@@ -30,8 +30,13 @@ When auto-invoked, this agent operates on the current working tree. It discovers
 
 Discover the security skill file via Glob under the plugin cache:
 
-1. Use the Glob tool to search for `**/pragma/.claude-plugin/plugin.json` under `~/.claude/plugins/cache/`.
-2. If Glob returns no results, also try `~/.claude/plugins/` as a fallback.
+0. First, resolve the home directory to an absolute path (Glob does not expand `~`):
+   ```bash
+   echo "$HOME"
+   ```
+   Use the output (e.g., `/Users/alice`) as `$HOME_ABS` in subsequent Glob calls.
+1. Use the Glob tool to search for `**/pragma/.claude-plugin/plugin.json` under `$HOME_ABS/.claude/plugins/cache/`.
+2. If Glob returns no results, also try `$HOME_ABS/.claude/plugins/` as a fallback.
 3. **Require exactly one match.** If multiple matches are found, stop and show:
    ```text
    Multiple pragma plugin installations found:

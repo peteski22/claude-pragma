@@ -29,7 +29,7 @@ Use the Task tool to spawn validators in parallel. For each applicable validator
 - prompt: Use the Skill tool to invoke the validator. The prompt must explicitly require skill invocation and verbatim JSON output.
 
 **Example Task prompt for each validator:**
-```
+```text
 Invoke the `pragma:go-effective` skill using the Skill tool (skill: "pragma:go-effective"). Return its JSON output verbatim — do not summarize, reformat, or re-implement the validation logic.
 ```
 
@@ -54,7 +54,7 @@ Run all applicable Tasks in parallel (multiple Task calls in one response).
 
 Collect all validator outputs and present a unified report:
 
-```
+```markdown
 # Validation Results
 
 ## Security
