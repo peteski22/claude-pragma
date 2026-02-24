@@ -134,6 +134,11 @@ The "Pre-Implementation Setup" section of the loaded rules contains **actions to
      2. Note the pre-existing deviation in the Phase 4 report.
      3. If the codebase systematically deviates (e.g., no repository layer exists, all models are in route files), follow correct architecture for new code where feasible without breaking existing imports or interfaces.
      4. If correct architecture would require creating new layers or significant refactoring, note this in the Phase 4 report and recommend a dedicated refactoring task.
+   - **State model scrutiny guard:** If the task involves modifying state enums, status fields, transition logic, or terminal/final state classifications:
+     1. For each state classified as terminal/final, verify that all running processes, background jobs, or external systems are actually stopped or cleaned up when entering that state.
+     2. If a state is "terminal" only from one system's perspective (e.g., API/UI marks it as done) but not another's (e.g., a worker/Lambda is still running), it is not truly terminal — flag this before implementing.
+     3. Check whether entering a terminal state creates a cancellation signal or cleanup action, not just a status label.
+     4. If the existing codebase has states where "terminal" means "UI considers it done" but runtime processes continue, note this in the Phase 4 report and ensure new code does not compound the problem.
 3. Identify files that need changes based on discovered patterns.
 
 ---
