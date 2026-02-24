@@ -8,7 +8,7 @@ allowed-tools: Bash, Read, Glob, Grep
 
 # Star-Chamber: Multi-LLM Craftsmanship Council
 
-This skill is for explicit `/pragma:star-chamber` invocations with live progress in the main conversation. It supports `--debate` for multi-round deliberation. For automatic invocation on architectural decisions, the `star-chamber` agent handles that separately.
+This skill is for explicit `/star-chamber` invocations with live progress in the main conversation. It supports `--debate` for multi-round deliberation. For automatic invocation on architectural decisions, the `star-chamber` agent handles that separately.
 
 Advisory skill that fans out code reviews and design questions to multiple LLM providers (Claude, OpenAI, Gemini, etc.) and aggregates their feedback into consensus recommendations.
 
@@ -40,4 +40,4 @@ Read and follow the full protocol from `$STAR_CHAMBER_PATH/PROTOCOL.md`. It cont
 
 ## Auto-Invocation
 
-This skill is not auto-invoked (`model-invocable: false`). The `star-chamber` custom subagent handles auto-invocation based on its description. This skill is for explicit `/pragma:star-chamber` invocations only.
+This skill is not auto-invoked (`model-invocable: false`). The `star-chamber` custom subagent handles auto-invocation based on its description. This skill is for explicit `/star-chamber` invocations only.

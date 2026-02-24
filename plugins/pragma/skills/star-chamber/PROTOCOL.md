@@ -1,7 +1,7 @@
 # Star-Chamber Protocol
 
 <!-- Single source of truth for the star-chamber review protocol.
-     Referenced by both skills/star-chamber/SKILL.md (explicit /pragma:star-chamber)
+     Referenced by both skills/star-chamber/SKILL.md (explicit /star-chamber)
      and agents/star-chamber.md (auto-invocation).
      Both consumers set $STAR_CHAMBER_PATH before following this protocol. -->
 
@@ -106,7 +106,7 @@ Edit the config to remove providers you don't have keys for.
 **If user chooses "Skip":**
 
 ```
-To set up manually later, see the Configuration section below or run /pragma:star-chamber again.
+To set up manually later, see the Configuration section below or run /star-chamber again.
 ```
 
 **STOP if config is missing. Do not proceed without configuration.**
@@ -424,19 +424,19 @@ Issues raised by a single provider. May be valid specialized insights.
 
 ```bash
 # Basic - review recent changes with default providers (parallel, single round).
-/pragma:star-chamber
+/star-chamber
 
 # Specific files and providers.
-/pragma:star-chamber --file backend/app/auth.py --provider openai --provider anthropic
+/star-chamber --file backend/app/auth.py --provider openai --provider anthropic
 
 # Debate mode - 2 rounds (default) where each provider sees others' responses.
-/pragma:star-chamber --debate
+/star-chamber --debate
 
 # Debate mode - 3 rounds of deliberation.
-/pragma:star-chamber --debate --rounds 3
+/star-chamber --debate --rounds 3
 
 # Debate with specific files.
-/pragma:star-chamber --debate --rounds 2 --file auth.py --provider openai --provider gemini
+/star-chamber --debate --rounds 2 --file auth.py --provider openai --provider gemini
 ```
 
 ## Configuration

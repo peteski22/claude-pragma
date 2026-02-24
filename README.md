@@ -8,7 +8,7 @@
 
 ```mermaid
 flowchart TD
-    A["/pragma:implement add user authentication"] --> B["Phase 0: Rules injected from .claude/CLAUDE.md files"]
+    A["/implement add user authentication"] --> B["Phase 0: Rules injected from .claude/CLAUDE.md files"]
     B --> C["Phase 1-2: Claude implements following injected rules"]
     C --> D["Phase 3: Linters run (ruff, biome, golangci-lint)"]
     D --> E["Validators run (security, python-style, etc.)"]
@@ -34,13 +34,15 @@ flowchart TD
 /plugin install pragma@claude-pragma
 
 # Then in any project:
-/pragma:setup-project
+/setup-project
 ```
 
-### Example: Using /pragma:implement
+> **Note:** Skills are shown as `/star-chamber (pragma)` in the CLI autocomplete. The short form `/star-chamber` is the easiest way to invoke them. The fully-qualified form `/pragma:star-chamber` also works.
+
+### Example: Using /implement
 
 ```bash
-> /pragma:implement add input validation to the login form
+> /implement add input validation to the login form
 
 [Phase 0] Injecting rules from:
   - .claude/CLAUDE.md (universal)
@@ -68,9 +70,9 @@ flowchart TD
 
 | Skill | What it does | Why it matters |
 |-------|--------------|----------------|
-| `/pragma:setup-project` | Detects languages, creates CLAUDE.md files, configures validators | One command to configure any project |
-| `/pragma:implement <task>` | Implements with automatic validation loop | Catches issues before you review the code |
-| `/pragma:review` | Validates current changes against all rules | Quick check before committing |
+| `/setup-project` | Detects languages, creates CLAUDE.md files, configures validators | One command to configure any project |
+| `/implement <task>` | Implements with automatic validation loop | Catches issues before you review the code |
+| `/review` | Validates current changes against all rules | Quick check before committing |
 
 ### Validators
 
@@ -78,12 +80,12 @@ Validators are semantic checks that run after linters pass. They enforce languag
 
 | Skill | Language | What it checks |
 |-------|----------|----------------|
-| `/pragma:validate` | All | Orchestrator - runs all applicable validators |
-| `/pragma:security` | All | Secrets, injection vulnerabilities, path traversal, auth gaps |
-| `/pragma:python-style` | Python | Google docstrings, type hints, exception chaining, layered architecture |
-| `/pragma:typescript-style` | TypeScript | Strict mode, React patterns, proper hooks, state management |
-| `/pragma:go-effective` | Go | Effective Go rules - naming, error handling, interface design |
-| `/pragma:go-proverbs` | Go | Go Proverbs - idiomatic patterns, concurrency, "clear is better than clever" |
+| `/validate` | All | Orchestrator - runs all applicable validators |
+| `/security` | All | Secrets, injection vulnerabilities, path traversal, auth gaps |
+| `/python-style` | Python | Google docstrings, type hints, exception chaining, layered architecture |
+| `/typescript-style` | TypeScript | Strict mode, React patterns, proper hooks, state management |
+| `/go-effective` | Go | Effective Go rules - naming, error handling, interface design |
+| `/go-proverbs` | Go | Go Proverbs - idiomatic patterns, concurrency, "clear is better than clever" |
 
 ### Advisory Skills
 
@@ -91,13 +93,13 @@ Advisory skills provide feedback but don't block completion.
 
 | Skill | What it does |
 |-------|--------------|
-| `/pragma:star-chamber` | Fans out code review to multiple LLMs (OpenAI, Anthropic, Gemini) and aggregates consensus feedback |
+| `/star-chamber` | Fans out code review to multiple LLMs (OpenAI, Anthropic, Gemini) and aggregates consensus feedback |
 
 ## Validator Severity Levels
 
 | Level | Meaning | What happens |
 |-------|---------|--------------|
-| **HARD** | Must fix | Blocks `/pragma:implement` completion |
+| **HARD** | Must fix | Blocks `/implement` completion |
 | **SHOULD** | Fix or justify | Requires explicit justification to proceed |
 | **WARN** | Advisory | Noted in output but doesn't block |
 
@@ -106,14 +108,14 @@ Advisory skills provide feedback but don't block completion.
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `STAR_CHAMBER_CONFIG` | No | Custom path to star-chamber config (default: `~/.config/star-chamber/providers.json`) |
-| `ANY_LLM_KEY` | For `/pragma:star-chamber` | Platform key from [any-llm.ai](https://any-llm.ai) |
-| `OPENAI_API_KEY` | For `/pragma:star-chamber` | OpenAI API key (if not using any-llm.ai) |
-| `ANTHROPIC_API_KEY` | For `/pragma:star-chamber` | Anthropic API key (if not using any-llm.ai) |
-| `GEMINI_API_KEY` | For `/pragma:star-chamber` | Google Gemini API key (if not using any-llm.ai) |
+| `ANY_LLM_KEY` | For `/star-chamber` | Platform key from [any-llm.ai](https://any-llm.ai) |
+| `OPENAI_API_KEY` | For `/star-chamber` | OpenAI API key (if not using any-llm.ai) |
+| `ANTHROPIC_API_KEY` | For `/star-chamber` | Anthropic API key (if not using any-llm.ai) |
+| `GEMINI_API_KEY` | For `/star-chamber` | Google Gemini API key (if not using any-llm.ai) |
 
 ## Monorepo Support
 
-`/pragma:setup-project` detects languages at root AND in subdirectories, creating appropriate CLAUDE.md files for each:
+`/setup-project` detects languages at root AND in subdirectories, creating appropriate CLAUDE.md files for each:
 
 ```text
 myproject/
@@ -153,7 +155,7 @@ claude-pragma/
 
 ## Version Control
 
-**Commit** the generated `.claude/CLAUDE.md` files so other developers get the same rules without re-running `/pragma:setup-project`.
+**Commit** the generated `.claude/CLAUDE.md` files so other developers get the same rules without re-running `/setup-project`.
 
 Claude Code adds `CLAUDE.local.md` to `.gitignore` automatically when it creates the file. If you create it manually, verify it is in your `.gitignore` to avoid committing personal rules.
 

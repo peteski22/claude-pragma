@@ -87,7 +87,7 @@ done
 true
 ```
 
-If any exist, read them. If they have `<!-- Assembled by /pragma:setup-project` comment, safe to overwrite. Otherwise, ask before overwriting.
+If any exist, read them. If they have `<!-- Assembled by /setup-project` comment, safe to overwrite. Otherwise, ask before overwriting.
 
 ## Step 4: Create root .claude/CLAUDE.md
 
@@ -104,9 +104,9 @@ Assemble root CLAUDE.md with:
 
 **Header:**
 ```markdown
-<!-- Assembled by /pragma:setup-project from claude-pragma -->
+<!-- Assembled by /setup-project from claude-pragma -->
 <!-- Org/Repo: {org}/{repo} -->
-<!-- Re-run /pragma:setup-project to regenerate -->
+<!-- Re-run /setup-project to regenerate -->
 ```
 
 **Meta-rule to include after universal rules:**
@@ -179,10 +179,10 @@ Assemble with:
 
 **Header:**
 ```markdown
-<!-- Assembled by /pragma:setup-project from claude-pragma -->
+<!-- Assembled by /setup-project from claude-pragma -->
 <!-- Subdirectory: {subdir} -->
 <!-- Languages: {lang} -->
-<!-- Re-run /pragma:setup-project to regenerate -->
+<!-- Re-run /setup-project to regenerate -->
 ```
 
 ## Step 6: Verify plugin skills and agents
@@ -225,7 +225,7 @@ Check if star-chamber config exists:
 If missing **and `uv` is available** (from the Step 6 check), offer to set it up. If `uv` is missing, skip this offer and tell the user: "Skipping star-chamber config — `uv` is not installed." The Step 8 output includes install instructions.
 
 ```
-/pragma:star-chamber requires provider configuration for multi-LLM reviews.
+/star-chamber requires provider configuration for multi-LLM reviews.
 
 Would you like to set up the configuration?
 
@@ -278,7 +278,7 @@ Then include in the summary:
 
 **If user declines setup**, note in summary:
 ```
-**Star-Chamber:** Not configured (run /pragma:star-chamber to set up later)
+**Star-Chamber:** Not configured (run /star-chamber to set up later)
 ```
 
 ## Step 8: Output summary
@@ -299,25 +299,25 @@ Then include in the summary:
   - frontend/.claude/CLAUDE.md (TypeScript rules)
 
 **Skills available (via pragma plugin):**
-  - /pragma:implement - implement with auto-validation
-  - /pragma:review - review changes against all validators
-  - /pragma:validate - run all validators
-  - /pragma:star-chamber - multi-LLM advisory council
+  - /implement - implement with auto-validation
+  - /review - review changes against all validators
+  - /validate - run all validators
+  - /star-chamber - multi-LLM advisory council
 
 **Agents available (via pragma plugin):**
   - security - auto-invokes on trust boundary changes
   - star-chamber - auto-invokes on architectural decisions
 
 **Usage:**
-  /pragma:implement <task>    - implement with validation loop
-  /pragma:review              - validate current changes
+  /implement <task>    - implement with validation loop
+  /review              - validate current changes
 
-Run `/pragma:star-chamber` for usage details and options.
+Run `/star-chamber` for usage details and options.
 ```
 
 **If uv is missing**, include this warning:
 ```text
-⚠️  **Warning:** uv is not installed. /pragma:star-chamber requires uv to run.
+⚠️  **Warning:** uv is not installed. /star-chamber requires uv to run.
 
 Install uv:
   curl -LsSf https://astral.sh/uv/install.sh | sh

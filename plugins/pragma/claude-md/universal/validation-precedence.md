@@ -1,6 +1,6 @@
 # Validation Command Precedence
 
-This document defines the priority order for validation commands used by `/pragma:implement` and `/pragma:review` skills.
+This document defines the priority order for validation commands used by `/implement` and `/review` skills.
 
 ## Priority Order (Highest to Lowest)
 
@@ -52,7 +52,7 @@ Validation commands are configured at the repository root by the setup-project s
 
 Your personal global CLAUDE.md (`~/.claude/CLAUDE.md`) is **separate from this precedence order**. It applies to all Claude Code conversations but has these characteristics:
 
-- **It is NOT merged into generated project rules.** When `/pragma:setup-project` creates `.claude/CLAUDE.md` files, it uses only the claude-pragma templates.
+- **It is NOT merged into generated project rules.** When `/setup-project` creates `.claude/CLAUDE.md` files, it uses only the claude-pragma templates.
 - **It IS visible to validators** because they use `context: fork` and inherit the conversation context.
 - **It MAY cause confusion** if it contains language-specific rules (e.g., Go rules appearing in Python context).
 

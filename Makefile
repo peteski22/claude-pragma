@@ -21,7 +21,7 @@ install:
 	@echo "Installing legacy symlinks for migration..."
 	@mkdir -p ~/.claude/skills
 	@ln -sf "$(CURDIR)/plugins/pragma/skills/setup-project" ~/.claude/skills/
-	@echo "Linked skill: /setup-project (deprecated; use /pragma:setup-project via plugin install)"
+	@echo "Linked skill: /setup-project (deprecated; use /setup-project via plugin install)"
 	@mkdir -p ~/.claude/agents
 	@for agent in "$(CURDIR)"/plugins/pragma/agents/*.md; do \
 		if [ -f "$$agent" ]; then \
