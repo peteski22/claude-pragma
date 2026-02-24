@@ -11,14 +11,14 @@ flowchart TB
     subgraph Setup["One-Time Setup"]
         S1["Clone claude-pragma repo"]
         S2["Install pragma plugin"]
-        S3["Run /pragma:setup-project"]
+        S3["Run /setup-project"]
         S1 --> S2 --> S3
         S3 --> S3a["Detects: backend/ (Python)<br/>frontend/ (TypeScript)<br/>services/go/ (Go)"]
         S3a --> S3b["Creates .claude/CLAUDE.md files"]
         S3b --> S3c["Verifies plugin skills"]
     end
 
-    subgraph Implement["Developer runs: /pragma:implement 'Add user authentication'"]
+    subgraph Implement["Developer runs: /implement 'Add user authentication'"]
         direction TB
 
         subgraph P0["Phase 0: Rule Injection"]
@@ -66,7 +66,7 @@ flowchart TB
         P3f -->|Yes| P4
     end
 
-    subgraph Review["Developer runs: /pragma:review"]
+    subgraph Review["Developer runs: /review"]
         R1["Get changed files"]
         R2["Inject rules (Step 2)"]
         R3["Run linters"]
@@ -87,7 +87,7 @@ flowchart TB
 
 ## Output Examples
 
-After `/pragma:implement` or `/pragma:review`, you get both formats:
+After `/implement` or `/review`, you get both formats:
 
 ### Human-Readable Report
 
@@ -174,7 +174,7 @@ If there's a conflict between what CLAUDE.md says and what a validator checks, t
 
 ### 2. Rules are injected, not remembered
 
-`/pragma:implement` and `/pragma:review` **mechanically read** applicable CLAUDE.md files before doing any work. This is Phase 0 / Step 2 - it happens first, explicitly, and is recorded.
+`/implement` and `/review` **mechanically read** applicable CLAUDE.md files before doing any work. This is Phase 0 / Step 2 - it happens first, explicitly, and is recorded.
 
 > **Critical**: Phase 0 (rule injection) is mandatory. It must complete before any other phase. This is the single most important design decision - it eliminates reliance on LLM memory.
 
@@ -197,12 +197,12 @@ This prevents overlap and makes maintenance clear.
 
 ## Monorepo Validator Map
 
-This diagram shows the complete flow for a multi-language monorepo from `/pragma:implement` through validation.
+This diagram shows the complete flow for a multi-language monorepo from `/implement` through validation.
 
 ```mermaid
 flowchart TB
     subgraph Trigger["Trigger"]
-        Start["/pragma:implement task"]
+        Start["/implement task"]
     end
 
     subgraph Phase0["Phase 0: Rule Injection"]
@@ -317,7 +317,7 @@ flowchart TD
         Output[Output: Rules Applied, Files Changed, Validation Results]
     end
 
-    Start["/pragma:implement task"] --> Phase0
+    Start["/implement task"] --> Phase0
     Phase0 --> Phase12
     Phase12 --> Phase3
     ReVal -->|No| Phase4
@@ -548,7 +548,7 @@ Phase 4 combines all validator results into a single output:
 | LLM forgets rules | Rules are mechanically injected in Phase 0 |
 | Rules not applied | Output includes "Rules Applied" - observable |
 | Validators overlap | Contracts declare scope/excludes |
-| Validation skipped | `/pragma:implement` won't complete until validation passes |
+| Validation skipped | `/implement` won't complete until validation passes |
 | Silent failures | Validators echo `applied_rules` in JSON output |
 
 ## Edge Cases
@@ -585,7 +585,7 @@ The more specific rule always wins, but the conflict is recorded so it can be re
 
 The root CLAUDE.md contains a meta-rule telling Claude to read subdirectory rules. This is a **fallback** for ad-hoc interactions, not the primary mechanism.
 
-For `/pragma:implement` and `/pragma:review`, rule injection is mechanical and explicit. The meta-rule exists for:
+For `/implement` and `/review`, rule injection is mechanical and explicit. The meta-rule exists for:
 - Manual Claude interactions
 - Documentation of intent
 - Edge cases where someone bypasses the workflow
@@ -608,12 +608,12 @@ Security has two entrypoints that share the same rules (plugin path: `skills/sec
 
 | Entrypoint | File | When it runs | Model | Key benefit |
 |------------|------|-------------|-------|-------------|
-| **Skill** | `skills/security/SKILL.md` | Spawned by validation orchestrators (`/pragma:review`, `/pragma:validate`, `/pragma:implement`) | Inherits parent | Ensures security validation in every formal pipeline |
+| **Skill** | `skills/security/SKILL.md` | Spawned by validation orchestrators (`/review`, `/validate`, `/implement`) | Inherits parent | Ensures security validation in every formal pipeline |
 | **Agent** | `agents/security.md` | Auto-invoked when code crosses a trust boundary | Sonnet | Catches issues when code is written outside formal pipelines |
 
 The skill has `user-invocable: false` — it only fires as part of validation orchestrator pipelines. The agent auto-invokes based on its description (untrusted input parsing, query/command construction from user data, credential handling, authorization enforcement, security-relevant configuration). Both entrypoints use the same vulnerability checklist and JSON output schema.
 
-**Why dual entrypoints:** The `/pragma:review` pipeline already spawns security as a validator skill. But when users write code directly (without `/pragma:implement` or `/pragma:review`), security issues go uncaught. The agent fills that gap by auto-invoking on trust-boundary changes, with persistent memory to learn project-specific patterns (known false positives, how the project handles auth, etc.).
+**Why dual entrypoints:** The `/review` pipeline already spawns security as a validator skill. But when users write code directly (without `/implement` or `/review`), security issues go uncaught. The agent fills that gap by auto-invoking on trust-boundary changes, with persistent memory to learn project-specific patterns (known false positives, how the project handles auth, etc.).
 
 ---
 
@@ -627,7 +627,7 @@ Star-chamber has two entrypoints that share a single protocol (plugin path: `ski
 
 | Entrypoint | File | When it runs | Model | Key benefit |
 |------------|------|-------------|-------|-------------|
-| **Skill** | `skills/star-chamber/SKILL.md` | User types `/pragma:star-chamber` | Inherits parent | Live progress in main conversation |
+| **Skill** | `skills/star-chamber/SKILL.md` | User types `/star-chamber` | Inherits parent | Live progress in main conversation |
 | **Agent** | `agents/star-chamber.md` | Auto-invoked on architectural decisions | Sonnet | Isolated context, persistent project memory |
 
 The skill has `model-invocable: false` — it only fires on explicit user request. The agent auto-invokes based on its description (significant implementations, design trade-offs, second opinions). Both entrypoints set `$STAR_CHAMBER_PATH` and delegate to `skills/star-chamber/PROTOCOL.md` as the single source of truth for the review process.
@@ -644,7 +644,7 @@ The skill has `model-invocable: false` — it only fires on explicit user reques
 | Mode | Invocation | Description |
 |------|------------|-------------|
 | Parallel | (default) | Independent calls to all providers simultaneously |
-| Debate | `/pragma:star-chamber --debate --rounds N` | Multiple rounds with anonymous synthesis between rounds |
+| Debate | `/star-chamber --debate --rounds N` | Multiple rounds with anonymous synthesis between rounds |
 
 **Debate mode** uses [Chatham House rules](https://www.chathamhouse.org/about-us/chatham-house-rule) for inter-round summarization: feedback from each round is synthesized by content themes without attributing points to specific providers. This encourages engagement with ideas rather than sources, and reduces bias from provider reputation.
 
@@ -661,7 +661,7 @@ flowchart LR
         A1[star-chamber]
     end
 
-    Impl["/pragma:implement"] --> Validators
+    Impl["/implement"] --> Validators
     Validators -->|"must pass"| Complete[Complete]
 
     Complete -.->|"optional"| Advisory
@@ -673,4 +673,4 @@ flowchart LR
 - JSON for tooling integration
 - Quality ratings per provider
 
-**Cost consideration:** Each invocation calls all configured providers (~$0.02-0.10 per run). The agent auto-invokes in basic mode only to keep costs predictable; debate mode is reserved for explicit `/pragma:star-chamber` invocations.
+**Cost consideration:** Each invocation calls all configured providers (~$0.02-0.10 per run). The agent auto-invokes in basic mode only to keep costs predictable; debate mode is reserved for explicit `/star-chamber` invocations.

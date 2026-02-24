@@ -83,7 +83,7 @@ If no project-specific rules were found, attempt to load the universal baseline 
 4. **Load baseline:** If both checks pass, read `$PLUGIN_ROOT/claude-md/universal/base.md` as the baseline rules.
    - Note in report: "Fallback baseline: loaded from pragma plugin"
 
-This fallback ensures projects without `/pragma:setup-project` still get essential rules (branch creation, scope verification, etc.).
+This fallback ensures projects without `/setup-project` still get essential rules (branch creation, scope verification, etc.).
 
 ### Step 4: Record applied rules
 

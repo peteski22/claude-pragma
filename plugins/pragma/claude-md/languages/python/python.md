@@ -62,6 +62,6 @@ A service that only wraps single CRUD queries with no additional logic is a repo
 
 ## Validation Commands
 
-These commands are used by `/pragma:implement` and `/pragma:review` during validation. Override in `CLAUDE.local.md` if your project uses different scripts.
+These commands are used by `/implement` and `/review` during validation. Override in `CLAUDE.local.md` if your project uses different scripts.
 
 - **Lint:** `uv run pre-commit run --all-files`
