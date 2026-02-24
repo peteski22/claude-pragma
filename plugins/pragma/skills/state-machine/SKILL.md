@@ -41,13 +41,13 @@ Your task is to validate that state machine definitions, transitions, and termin
 Get all changed files. Try in order until one succeeds:
 
 ```bash
-# 1. Committed changes (most common).
+# 1. Committed changes (most common)
 git diff HEAD~1 --name-only --diff-filter=ACMRT
 
-# 2. Staged changes (pre-commit).
+# 2. Staged changes (pre-commit)
 git diff --cached --name-only --diff-filter=ACMRT
 
-# 3. Unstaged changes (working directory).
+# 3. Unstaged changes (working directory)
 git diff --name-only --diff-filter=ACMRT
 ```
 
