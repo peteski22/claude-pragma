@@ -24,7 +24,7 @@
 
 ## Runtime Constraint
 
-**Each Bash tool invocation in Claude Code runs in a separate subprocess.** Shell variables do not persist between invocations. `$STAR_CHAMBER_PATH` must be set at the top of every bash block that references it.
+**Each Bash tool invocation in Claude Code runs in a separate subprocess.** Shell variables do not persist between invocations. `$STAR_CHAMBER_PATH` must be set at the top of every bash block that references it. **Use `;` (not `&&`) to chain the assignment with subsequent commands** — `&&` breaks variable propagation in `bash -c` contexts.
 
 `$STAR_CHAMBER_PATH` is set by the caller:
 - **Skill invocation:** The skill loader provides the base directory in the header. The skill sets `STAR_CHAMBER_PATH` to that directory.
@@ -269,7 +269,7 @@ Use `uv run --with <dep>` to execute scripts with ephemeral dependencies. Do not
 First, determine which SDK packages are needed:
 
 ```bash
-uv run --with any-llm-sdk python "$STAR_CHAMBER_PATH/llm_council.py" --list-sdks
+STAR_CHAMBER_PATH="<set by caller>"; uv run --with any-llm-sdk python "$STAR_CHAMBER_PATH/llm_council.py" --list-sdks
 ```
 
 This outputs JSON with `required_sdks` array listing needed packages (e.g., `["anthropic", "google-genai"]`).
@@ -288,7 +288,7 @@ The simplest approach: all providers review independently in a single round.
 Execute a single parallel review. Write the prompt to a temp file first, then pipe it to avoid shell quoting issues:
 
 ```bash
-cat << 'EOF' | uv run --with any-llm-sdk [--with <sdk>...] python "$STAR_CHAMBER_PATH/llm_council.py" [--provider <name>...] [--file <path>...]
+STAR_CHAMBER_PATH="<set by caller>"; cat << 'EOF' | uv run --with any-llm-sdk [--with <sdk>...] python "$STAR_CHAMBER_PATH/llm_council.py" [--provider <name>...] [--file <path>...]
 {prompt}
 EOF
 ```
