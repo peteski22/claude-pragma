@@ -169,6 +169,7 @@ async def _get_review_internal(
             "provider": provider,
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.3,
+            "max_tokens": 8192,
         }
         if api_key:
             kwargs["api_key"] = api_key

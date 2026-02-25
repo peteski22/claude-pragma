@@ -288,7 +288,7 @@ The simplest approach: all providers review independently in a single round.
 Execute a single parallel review. Write the prompt to a temp file first, then pipe it to avoid shell quoting issues:
 
 ```bash
-cat << 'EOF' | uv run --with any-llm-sdk [--with <sdk>...] python "$STAR_CHAMBER_PATH/llm_council.py" [--provider <name>...] [--file <path>...]
+cat << 'EOF' | uv run --with any-llm-sdk [--with <sdk>...] python "$STAR_CHAMBER_PATH/llm_council.py" [--provider <name>...] [--file <path>...] 2>/dev/null
 {prompt}
 EOF
 ```
