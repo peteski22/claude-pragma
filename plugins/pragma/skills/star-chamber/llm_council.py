@@ -33,12 +33,17 @@ API_KEY_PATTERNS = [
 ]
 
 
+# Fallback when provider config omits max_tokens.
+DEFAULT_MAX_TOKENS = 16384
+
+
 class ProviderConfig(TypedDict, total=False):
     """Configuration for a single LLM provider."""
 
     provider: str
     model: str
     api_key: str
+    max_tokens: int
 
 
 class ReviewResult(TypedDict, total=False):
@@ -154,7 +159,8 @@ def get_required_sdks(provider_names: list[str]) -> list[str]:
 
 
 async def _get_review_internal(
-    provider: str, model: str, prompt: str, api_key: str
+    provider: str, model: str, prompt: str, api_key: str,
+    max_tokens: int = DEFAULT_MAX_TOKENS,
 ) -> ReviewResult:
     """Send prompt to a single provider and return structured response.
 
@@ -169,8 +175,14 @@ async def _get_review_internal(
             "provider": provider,
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.3,
-            "max_tokens": 8192,
         }
+        # OpenAI gpt-5.x and o-series models require max_completion_tokens
+        # instead of max_tokens. any-llm-sdk doesn't map this automatically
+        # (see https://github.com/mozilla-ai/any-llm/issues/862).
+        if provider.lower() == "openai":
+            kwargs["max_completion_tokens"] = max_tokens
+        else:
+            kwargs["max_tokens"] = max_tokens
         if api_key:
             kwargs["api_key"] = api_key
         # If no api_key, SDK checks ANY_LLM_KEY and auto-routes through platform.
@@ -242,18 +254,19 @@ async def _get_review_internal(
 
 
 async def get_review(
-    provider: str, model: str, prompt: str, api_key: str, timeout: float | None = None
+    provider: str, model: str, prompt: str, api_key: str,
+    timeout: float | None = None, max_tokens: int = DEFAULT_MAX_TOKENS,
 ) -> ReviewResult:
     """Get review with optional timeout.
 
     Wraps _get_review_internal with asyncio.wait_for for timeout handling.
     """
     if timeout is None:
-        return await _get_review_internal(provider, model, prompt, api_key)
+        return await _get_review_internal(provider, model, prompt, api_key, max_tokens=max_tokens)
 
     try:
         return await asyncio.wait_for(
-            _get_review_internal(provider, model, prompt, api_key),
+            _get_review_internal(provider, model, prompt, api_key, max_tokens=max_tokens),
             timeout=timeout,
         )
     except asyncio.TimeoutError:
@@ -325,7 +338,7 @@ async def run_council(
     tasks = [
         get_review(
             p["provider"], p["model"], prompt, p.get("api_key", ""),
-            timeout=timeout,
+            timeout=timeout, max_tokens=p.get("max_tokens", DEFAULT_MAX_TOKENS),
         )
         for p in providers
     ]
