@@ -6,10 +6,10 @@
   "assumes": [],
   "scope": [
     "Orchestrates all applicable validators based on detected file types",
-    "Dispatches pragma:go-effective and pragma:go-proverbs for .go files",
-    "Dispatches pragma:python-style for .py files",
-    "Dispatches pragma:typescript-style for .ts/.tsx files",
-    "Dispatches pragma:security for all files (exactly once)"
+    "Dispatches go-effective and go-proverbs for .go files",
+    "Dispatches python-style for .py files",
+    "Dispatches typescript-style for .ts/.tsx files",
+    "Dispatches security for all files (exactly once)"
   ],
   "excludes": [
     "Direct validation logic (delegated to individual validators)",
@@ -19,10 +19,10 @@
   "should_rules": [],
   "warn_rules": [],
   "references": [
-    "pragma:go-effective",
-    "pragma:go-proverbs",
-    "pragma:python-style",
-    "pragma:typescript-style",
-    "pragma:security"
+    "go-effective",
+    "go-proverbs",
+    "python-style",
+    "typescript-style",
+    "security"
   ]
 }

@@ -1,15 +1,17 @@
 # Claude Pragma
 
-**The problem:** Claude Code follows CLAUDE.md rules inconsistently. Rules get forgotten mid-conversation, ignored during complex tasks, or applied partially. There's no enforcement mechanism.
+**The problem:** AI coding agents follow rules inconsistently. Rules get forgotten mid-conversation, ignored during complex tasks, or applied partially. There's no enforcement mechanism.
 
 **The solution:** claude-pragma provides skills that mechanically inject rules and validate compliance. Rules aren't remembered - they're enforced by validators that run automatically on every implementation.
+
+**Works with both [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [OpenCode](https://opencode.ai).**
 
 ## How It Works
 
 ```mermaid
 flowchart TD
     A["/implement add user authentication"] --> B["Phase 0: Rules injected from .claude/CLAUDE.md files"]
-    B --> C["Phase 1-2: Claude implements following injected rules"]
+    B --> C["Phase 1-2: Agent implements following injected rules"]
     C --> D["Phase 3: Linters run (ruff, biome, golangci-lint)"]
     D --> E["Validators run (security, python-style, etc.)"]
     E --> F{Pass?}
@@ -18,15 +20,15 @@ flowchart TD
     F -->|Yes| H["Phase 4: Complete with validation report"]
 ```
 
-**Key principle:** Validators are authoritative, not CLAUDE.md. If there's a conflict, the validator wins.
+**Key principle:** Validators are authoritative, not rules files. If there's a conflict, the validator wins.
 
 ## Prerequisites
 
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI installed
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) or [OpenCode](https://opencode.ai) installed
 - Git
 - [uv](https://docs.astral.sh/uv/) (for Python-based validators and star-chamber)
 
-## Quick Start
+## Quick Start: Claude Code
 
 ```bash
 # Install the plugin from the marketplace
@@ -38,6 +40,28 @@ flowchart TD
 ```
 
 > **Note:** Skills are shown as `/star-chamber (pragma)` in the CLI autocomplete. The short form `/star-chamber` is the easiest way to invoke them. The fully-qualified form `/pragma:star-chamber` also works.
+
+## Quick Start: OpenCode
+
+```bash
+# Clone the repo
+git clone https://github.com/peteski22/claude-pragma.git
+cd claude-pragma
+
+# Install globally (skills, agents, and commands available in all sessions)
+make install AGENT=opencode
+
+# Then in any project:
+/setup-project
+```
+
+This symlinks skills and generates agents and commands into `~/.config/opencode/`. Then run `/setup-project` in any project to detect languages and create the appropriate rule files.
+
+To install into a specific project instead of globally:
+
+```bash
+make install AGENT=opencode PROJECT=/path/to/your/project
+```
 
 ### Example: Using /implement
 
@@ -53,10 +77,10 @@ flowchart TD
   Modified: frontend/src/components/LoginForm.tsx
 
 [Phase 3] Validating...
-  ✓ biome: passed
-  ✓ tsc: passed
-  ✓ security: passed
-  ✓ typescript-style: passed
+  biome: passed
+  tsc: passed
+  security: passed
+  typescript-style: passed
 
 [Phase 4] Complete
   Files changed: 2
@@ -130,34 +154,38 @@ myproject/
     └── package.json
 ```
 
-When you edit `backend/app/main.py`, both the Python rules and universal rules are injected. If `CLAUDE.local.md` exists at the project root, it is auto-loaded by Claude Code as per-user supplements.
+When you edit `backend/app/main.py`, both the Python rules and universal rules are injected. If `CLAUDE.local.md` exists at the project root, it is auto-loaded as per-user supplements.
 
 ## Directory Structure
 
 ```text
 claude-pragma/
 ├── .claude-plugin/
-│   └── marketplace.json        # Marketplace catalog
+│   └── marketplace.json        # Claude Code marketplace catalog
 ├── plugins/
-│   └── pragma/                 # The plugin
+│   └── pragma/                 # Shared plugin content
 │       ├── .claude-plugin/
-│       │   └── plugin.json     # Plugin manifest
-│       ├── agents/             # Custom subagents (security, star-chamber)
-│       ├── skills/             # All skills (implement, review, validate, etc.)
+│       │   └── plugin.json     # Claude Code plugin manifest
+│       ├── agents/             # Claude Code subagents (security, star-chamber)
+│       ├── skills/             # Skills shared by Claude Code and OpenCode
 │       ├── claude-md/
 │       │   ├── universal/      # Universal rules for all projects
 │       │   └── languages/      # Language-specific rules (go, python, typescript)
 │       ├── reference/          # Template configs (golangci-lint, providers.json)
 │       └── tools/              # go-structural deterministic linter
+├── scripts/
+│   └── install.sh              # Install/uninstall for all agents
 ├── ARCHITECTURE.md
 └── README.md
 ```
+
+Both Claude Code and OpenCode share the same skills from `plugins/pragma/skills/` and rule files from `plugins/pragma/claude-md/`. OpenCode accesses skills via symlinks created by `make install AGENT=opencode`.
 
 ## Version Control
 
 **Commit** the generated `.claude/CLAUDE.md` files so other developers get the same rules without re-running `/setup-project`.
 
-Claude Code adds `CLAUDE.local.md` to `.gitignore` automatically when it creates the file. If you create it manually, verify it is in your `.gitignore` to avoid committing personal rules.
+`CLAUDE.local.md` is for per-user, per-machine rules and should be gitignored. If you create it manually, verify it is in your `.gitignore` to avoid committing personal rules.
 
 In git worktrees, use `@import` (a Claude Code directive that includes another CLAUDE.md file) in `CLAUDE.local.md` to reference a shared local rules file rather than duplicating it per worktree:
 
@@ -167,7 +195,7 @@ In git worktrees, use `@import` (a Claude Code directive that includes another C
 
 ## Legacy Installation (Deprecated)
 
-The previous `make install` + `$CLAUDE_PRAGMA_PATH` approach is deprecated. Use the plugin marketplace instead. If migrating, remove the old symlinks and env var:
+The previous `make install` + `$CLAUDE_PRAGMA_PATH` approach for Claude Code is deprecated. Use the plugin marketplace instead. If migrating, remove the old symlinks and env var:
 
 ```bash
 make uninstall

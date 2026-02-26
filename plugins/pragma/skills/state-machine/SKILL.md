@@ -23,7 +23,7 @@ This validator checks ONLY:
 This validator MUST NOT report on:
 - Code style or formatting (handled by language-specific validators)
 - Language idioms (handled by language-specific validators)
-- Security vulnerabilities (handled by pragma:security)
+- Security vulnerabilities (handled by security)
 - Performance
 - Test coverage
 
