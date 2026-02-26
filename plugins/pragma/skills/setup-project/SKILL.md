@@ -34,8 +34,8 @@ true
 Plugin root could not be resolved. The pragma plugin may not be installed correctly.
 
 Reinstall:
-  /plugin marketplace add peteski22/claude-pragma
-  /plugin install pragma@claude-pragma
+  /plugin marketplace add peteski22/agent-pragma
+  /plugin install pragma@agent-pragma
 ```
 
 **STOP if check fails. Do not proceed.**
@@ -104,7 +104,7 @@ Assemble root CLAUDE.md with:
 
 **Header:**
 ```markdown
-<!-- Assembled by /setup-project from claude-pragma -->
+<!-- Assembled by /setup-project from agent-pragma -->
 <!-- Org/Repo: {org}/{repo} -->
 <!-- Re-run /setup-project to regenerate -->
 ```
@@ -122,7 +122,7 @@ For example:
 Always apply the most specific rules available for the code you're working on.
 
 <!-- NOTE: This section intentionally mirrors claude-md/universal/context-aware.md.
-     Generated files must be standalone (users' repos can't reference claude-pragma).
+     Generated files must be standalone (users' repos can't reference agent-pragma).
      Update both files together if this guidance changes. -->
 ## Local Supplements
 
@@ -179,7 +179,7 @@ Assemble with:
 
 **Header:**
 ```markdown
-<!-- Assembled by /setup-project from claude-pragma -->
+<!-- Assembled by /setup-project from agent-pragma -->
 <!-- Subdirectory: {subdir} -->
 <!-- Languages: {lang} -->
 <!-- Re-run /setup-project to regenerate -->

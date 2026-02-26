@@ -1,4 +1,4 @@
-module github.com/peteski22/claude-pragma/tools/go-structural
+module github.com/peteski22/agent-pragma/tools/go-structural
 
 go 1.25.7
 

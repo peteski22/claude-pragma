@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/peteski22/claude-pragma/tools/go-structural/checks"
+	"github.com/peteski22/agent-pragma/tools/go-structural/checks"
 )
 
 // parseTestFile parses a testdata fixture and runs all checks against it.

@@ -1,8 +1,8 @@
 {
-  "name": "claude-pragma",
+  "name": "agent-pragma",
   "owner": { "name": "Peter Wilson" },
   "metadata": {
-    "description": "Pragma directives for Claude Code — deterministic linting, semantic LLM validators, and multi-LLM advisory council for Go, Python, and TypeScript"
+    "description": "Pragma directives for AI coding agents — deterministic linting, semantic LLM validators, and multi-LLM advisory council for Go, Python, and TypeScript"
   },
   "plugins": [
     {

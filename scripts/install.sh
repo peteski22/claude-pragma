@@ -264,8 +264,8 @@ case "${ACTION}" in
     install)
         if [[ "${AGENT}" == "claude" ]]; then
             echo "WARNING: Legacy install is deprecated. Use the plugin marketplace instead:"
-            echo "  /plugin marketplace add peteski22/claude-pragma"
-            echo "  /plugin install pragma@claude-pragma"
+            echo "  /plugin marketplace add peteski22/agent-pragma"
+            echo "  /plugin install pragma@agent-pragma"
             echo ""
         fi
         echo "Installing pragma for ${AGENT} (${target})..."
