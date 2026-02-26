@@ -21,8 +21,8 @@ This validator checks ONLY:
 - Idiomatic patterns (Effective Go)
 
 This validator MUST NOT report on:
-- Security vulnerabilities (handled by pragma:security)
-- Go Proverbs philosophy (handled by pragma:go-proverbs)
+- Security vulnerabilities (handled by security)
+- Go Proverbs philosophy (handled by go-proverbs)
 - Formatting issues (handled by golangci-lint)
 - Performance or benchmarking
 - Dependency choices

@@ -45,38 +45,22 @@ flowchart TD
 
 ```bash
 # Clone the repo
-git clone https://github.com/peteski22/claude-pragma.git ~/.local/share/claude-pragma
+git clone https://github.com/peteski22/claude-pragma.git
+cd claude-pragma
 
 # Install globally (skills, agents, and commands available in all sessions)
-make -C ~/.local/share/claude-pragma opencode-install
+make install AGENT=opencode
 
 # Then in any project:
 /setup-project
 ```
 
-This symlinks skills, agents, and commands into `~/.config/opencode/`. To inject the pragma rule files as context in a specific project, add an `opencode.json` to that project:
+This symlinks skills and generates agents and commands into `~/.config/opencode/`. Then run `/setup-project` in any project to detect languages and create the appropriate rule files.
 
-```json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "instructions": [
-    "~/.local/share/claude-pragma/plugins/pragma/claude-md/universal/base.md",
-    "~/.local/share/claude-pragma/plugins/pragma/claude-md/languages/python/python.md"
-  ]
-}
-```
-
-Include only the language rules relevant to your project (go, python, typescript). Or run `/setup-project` inside OpenCode to auto-generate `.claude/CLAUDE.md` files with the right rules for your detected languages.
-
-**Other install options:**
+To install into a specific project instead of globally:
 
 ```bash
-# Install into a single project instead of globally
-cd /path/to/your/project
-~/.local/share/claude-pragma/scripts/opencode-install.sh --project
-
-# Uninstall
-make -C ~/.local/share/claude-pragma opencode-uninstall
+make install AGENT=opencode PROJECT=/path/to/your/project
 ```
 
 ### Example: Using /implement
@@ -178,30 +162,24 @@ When you edit `backend/app/main.py`, both the Python rules and universal rules a
 claude-pragma/
 ├── .claude-plugin/
 │   └── marketplace.json        # Claude Code marketplace catalog
-├── .opencode/
-│   ├── agents/                 # OpenCode subagents (security, star-chamber)
-│   ├── commands/               # OpenCode slash commands (/implement, /review, etc.)
-│   └── skills/                 # OpenCode skills (validators + workflows)
 ├── plugins/
 │   └── pragma/                 # Shared plugin content
 │       ├── .claude-plugin/
 │       │   └── plugin.json     # Claude Code plugin manifest
 │       ├── agents/             # Claude Code subagents (security, star-chamber)
-│       ├── skills/             # Claude Code skills (implement, review, validate, etc.)
+│       ├── skills/             # Skills shared by Claude Code and OpenCode
 │       ├── claude-md/
 │       │   ├── universal/      # Universal rules for all projects
 │       │   └── languages/      # Language-specific rules (go, python, typescript)
 │       ├── reference/          # Template configs (golangci-lint, providers.json)
 │       └── tools/              # go-structural deterministic linter
 ├── scripts/
-│   └── opencode-install.sh     # OpenCode installer
-├── opencode.json               # OpenCode config (instructions references)
-├── AGENTS.md                   # OpenCode project description
+│   └── install.sh              # Install/uninstall for all agents
 ├── ARCHITECTURE.md
 └── README.md
 ```
 
-Both Claude Code and OpenCode share the same rule files in `plugins/pragma/claude-md/` and the same skill instruction content.
+Both Claude Code and OpenCode share the same skills from `plugins/pragma/skills/` and rule files from `plugins/pragma/claude-md/`. OpenCode accesses skills via symlinks created by `make install AGENT=opencode`.
 
 ## Version Control
 

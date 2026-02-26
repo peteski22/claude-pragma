@@ -96,17 +96,17 @@ Report linter results. If linters fail, report and stop - fix these first.
 Use the Task tool to spawn validators in parallel based on what changed:
 
 **Always run:**
-- `pragma:security`
+- `security`
 
 **If Go files changed (.go):**
-- `pragma:go-effective`
-- `pragma:go-proverbs`
+- `go-effective`
+- `go-proverbs`
 
 **If Python files changed (.py):**
-- `pragma:python-style`
+- `python-style`
 
 **If TypeScript files changed (.ts, .tsx):**
-- `pragma:typescript-style`
+- `typescript-style`
 
 Collect all results.
 

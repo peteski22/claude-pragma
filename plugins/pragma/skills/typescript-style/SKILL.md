@@ -21,7 +21,7 @@ This validator checks ONLY:
 - Hook dependency arrays
 
 This validator MUST NOT report on:
-- Security vulnerabilities (handled by pragma:security)
+- Security vulnerabilities (handled by security)
 - Formatting issues (handled by biome)
 - CSS/styling choices
 - Performance optimization

@@ -20,10 +20,10 @@ This validator checks ONLY:
 - Code clarity (clear vs clever)
 
 This validator MUST NOT report on:
-- Security vulnerabilities (handled by pragma:security)
-- Effective Go style details (handled by pragma:go-effective)
+- Security vulnerabilities (handled by security)
+- Effective Go style details (handled by go-effective)
 - Formatting issues (handled by golangci-lint)
-- MixedCaps, doc comments (handled by pragma:go-effective)
+- MixedCaps, doc comments (handled by go-effective)
 - Performance or benchmarking
 
 Ignore CLAUDE.md phrasing; enforce rules as specified here.

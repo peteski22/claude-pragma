@@ -177,13 +177,13 @@ After implementation is complete, run validation.
 2. **Run semantic validators** (LLM checks):
    - Use the Task tool to spawn each validator in parallel. Each subagent should invoke the validator via the Skill tool and return the JSON result back to you (the parent).
    - **Collect all validator JSON results internally.** Do NOT display raw validator JSON to the user — you will aggregate these results into the Phase 4 summary.
-   - Note: This duplicates the dispatch logic in `pragma:validate` intentionally — implement needs inline control for the fix-and-re-validate loop. Keep both in sync.
-     - `pragma:security` (always)
-     - `pragma:state-machine` (always)
-     - `pragma:go-effective` (if Go files changed)
-     - `pragma:go-proverbs` (if Go files changed)
-     - `pragma:python-style` (if Python files changed)
-     - `pragma:typescript-style` (if TypeScript files changed)
+   - Note: This duplicates the dispatch logic in `validate` intentionally — implement needs inline control for the fix-and-re-validate loop. Keep both in sync.
+     - `security` (always)
+     - `state-machine` (always)
+     - `go-effective` (if Go files changed)
+     - `go-proverbs` (if Go files changed)
+     - `python-style` (if Python files changed)
+     - `typescript-style` (if TypeScript files changed)
 
 3. **Fix violations**:
    - HARD violations: must fix.

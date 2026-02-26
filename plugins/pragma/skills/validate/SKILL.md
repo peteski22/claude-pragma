@@ -17,11 +17,11 @@ git diff HEAD~1 --name-only --diff-filter=ACMRT 2>/dev/null || git diff --cached
 ```
 
 Based on file extensions, select validators:
-- `.go` files → run `pragma:go-effective`, `pragma:go-proverbs`
-- `.py` files → run `pragma:python-style`
-- `.ts` or `.tsx` files → run `pragma:typescript-style`
-- All files → run `pragma:security`
-- All files → run `pragma:state-machine`
+- `.go` files → run `go-effective`, `go-proverbs`
+- `.py` files → run `python-style`
+- `.ts` or `.tsx` files → run `typescript-style`
+- All files → run `security`
+- All files → run `state-machine`
 
 ## Step 2: Run validators in parallel
 
@@ -31,24 +31,24 @@ Use the Task tool to spawn validators in parallel. For each applicable validator
 
 **Example Task prompt for each validator:**
 ```text
-Invoke the `pragma:go-effective` skill using the Skill tool (skill: "pragma:go-effective"). Return its JSON output verbatim — do not summarize, reformat, or re-implement the validation logic.
+Invoke the `go-effective` skill using the Skill tool (skill: "go-effective"). Return its JSON output verbatim — do not summarize, reformat, or re-implement the validation logic.
 ```
 
 **Go files changed:**
-1. Task: Invoke `pragma:go-effective` skill and return JSON output verbatim.
-2. Task: Invoke `pragma:go-proverbs` skill and return JSON output verbatim.
-3. Task: Invoke `pragma:security` skill and return JSON output verbatim.
-4. Task: Invoke `pragma:state-machine` skill and return JSON output verbatim.
+1. Task: Invoke `go-effective` skill and return JSON output verbatim.
+2. Task: Invoke `go-proverbs` skill and return JSON output verbatim.
+3. Task: Invoke `security` skill and return JSON output verbatim.
+4. Task: Invoke `state-machine` skill and return JSON output verbatim.
 
 **Python files changed:**
-1. Task: Invoke `pragma:python-style` skill and return JSON output verbatim.
-2. Task: Invoke `pragma:security` skill and return JSON output verbatim.
-3. Task: Invoke `pragma:state-machine` skill and return JSON output verbatim.
+1. Task: Invoke `python-style` skill and return JSON output verbatim.
+2. Task: Invoke `security` skill and return JSON output verbatim.
+3. Task: Invoke `state-machine` skill and return JSON output verbatim.
 
 **TypeScript files changed:**
-1. Task: Invoke `pragma:typescript-style` skill and return JSON output verbatim.
-2. Task: Invoke `pragma:security` skill and return JSON output verbatim.
-3. Task: Invoke `pragma:state-machine` skill and return JSON output verbatim.
+1. Task: Invoke `typescript-style` skill and return JSON output verbatim.
+2. Task: Invoke `security` skill and return JSON output verbatim.
+3. Task: Invoke `state-machine` skill and return JSON output verbatim.
 
 **Mixed languages:** Combine all applicable validators. Security and state-machine always run exactly once regardless of how many languages are detected.
 
@@ -62,22 +62,22 @@ Collect all validator outputs and present a unified report:
 # Validation Results
 
 ## Security
-[JSON output from pragma:security]
+[JSON output from security]
 
 ## State Machine
-[JSON output from pragma:state-machine]
+[JSON output from state-machine]
 
 ## Go Effective (if applicable)
-[JSON output from pragma:go-effective]
+[JSON output from go-effective]
 
 ## Go Proverbs (if applicable)
-[JSON output from pragma:go-proverbs]
+[JSON output from go-proverbs]
 
 ## Python Style (if applicable)
-[JSON output from pragma:python-style]
+[JSON output from python-style]
 
 ## TypeScript Style (if applicable)
-[JSON output from pragma:typescript-style]
+[JSON output from typescript-style]
 
 ## Summary
 - Total validators run: N

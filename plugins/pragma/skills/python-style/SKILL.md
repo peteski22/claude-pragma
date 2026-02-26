@@ -21,7 +21,7 @@ This validator checks ONLY:
 - Code organization (imports, module structure)
 
 This validator MUST NOT report on:
-- Security vulnerabilities (handled by pragma:security)
+- Security vulnerabilities (handled by security)
 - Formatting issues (handled by ruff)
 - Type correctness (handled by ty or mypy)
 - Test coverage
