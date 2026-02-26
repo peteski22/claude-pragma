@@ -53,8 +53,8 @@ Discover the security skill file via Glob under the plugin cache:
 Security skill file not found. The pragma plugin may not be installed correctly.
 
 Install the plugin:
-  /plugin marketplace add peteski22/claude-pragma
-  /plugin install pragma@claude-pragma
+  /plugin marketplace add peteski22/agent-pragma
+  /plugin install pragma@agent-pragma
 ```
 
 **STOP if not found. Do not proceed.**

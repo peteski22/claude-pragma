@@ -1,6 +1,6 @@
 # Architecture
 
-This document explains the design decisions behind claude-pragma.
+This document explains the design decisions behind agent-pragma.
 
 ## User Flow: End-to-End
 
@@ -9,7 +9,7 @@ This diagram shows the complete workflow from project setup through implementati
 ```mermaid
 flowchart TB
     subgraph Setup["One-Time Setup"]
-        S1["Clone claude-pragma repo"]
+        S1["Clone agent-pragma repo"]
         S2["Install pragma plugin"]
         S3["Run /setup-project"]
         S1 --> S2 --> S3

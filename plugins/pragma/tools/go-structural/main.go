@@ -18,7 +18,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/peteski22/claude-pragma/tools/go-structural/checks"
+	"github.com/peteski22/agent-pragma/tools/go-structural/checks"
 )
 
 // version is the semantic version of go-structural.

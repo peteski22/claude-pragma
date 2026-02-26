@@ -1,8 +1,8 @@
-# Claude Pragma
+# Agent Pragma
 
 **The problem:** AI coding agents follow rules inconsistently. Rules get forgotten mid-conversation, ignored during complex tasks, or applied partially. There's no enforcement mechanism.
 
-**The solution:** claude-pragma provides skills that mechanically inject rules and validate compliance. Rules aren't remembered - they're enforced by validators that run automatically on every implementation.
+**The solution:** agent-pragma provides skills that mechanically inject rules and validate compliance. Rules aren't remembered - they're enforced by validators that run automatically on every implementation.
 
 **Works with both [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [OpenCode](https://opencode.ai).**
 
@@ -32,8 +32,8 @@ flowchart TD
 
 ```bash
 # Install the plugin from the marketplace
-/plugin marketplace add peteski22/claude-pragma
-/plugin install pragma@claude-pragma
+/plugin marketplace add peteski22/agent-pragma
+/plugin install pragma@agent-pragma
 
 # Then in any project:
 /setup-project
@@ -45,8 +45,8 @@ flowchart TD
 
 ```bash
 # Clone the repo
-git clone https://github.com/peteski22/claude-pragma.git
-cd claude-pragma
+git clone https://github.com/peteski22/agent-pragma.git
+cd agent-pragma
 
 # Install globally (skills, agents, and commands available in all sessions)
 make install AGENT=opencode
@@ -159,7 +159,7 @@ When you edit `backend/app/main.py`, both the Python rules and universal rules a
 ## Directory Structure
 
 ```text
-claude-pragma/
+agent-pragma/
 ├── .claude-plugin/
 │   └── marketplace.json        # Claude Code marketplace catalog
 ├── plugins/
@@ -205,7 +205,7 @@ make uninstall
 ## More Information
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Design decisions, validator contracts, system flow diagrams
-- [Issues](https://github.com/peteski22/claude-pragma/issues) - Bug reports and feature requests
+- [Issues](https://github.com/peteski22/agent-pragma/issues) - Bug reports and feature requests
 
 ## License
 

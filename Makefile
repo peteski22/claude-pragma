@@ -4,11 +4,11 @@ AGENT ?= claude
 .DEFAULT_GOAL := help
 
 help:
-	@echo "claude-pragma - Pragma directives for Claude Code (and OpenCode)"
+	@echo "agent-pragma - Pragma directives for AI coding agents"
 	@echo ""
 	@echo "Claude Code (recommended):"
-	@echo "  /plugin marketplace add peteski22/claude-pragma"
-	@echo "  /plugin install pragma@claude-pragma"
+	@echo "  /plugin marketplace add peteski22/agent-pragma"
+	@echo "  /plugin install pragma@agent-pragma"
 	@echo ""
 	@echo "OpenCode:"
 	@echo "  make install AGENT=opencode                        Install globally (~/.config/opencode/)"
