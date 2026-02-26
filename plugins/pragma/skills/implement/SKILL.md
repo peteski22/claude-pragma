@@ -175,7 +175,8 @@ After implementation is complete, run validation.
    Fix any issues before proceeding.
 
 2. **Run semantic validators** (LLM checks):
-   - Use the Task tool to spawn validators in parallel. For each, use the Skill tool to invoke the validator and return its JSON output verbatim.
+   - Use the Task tool to spawn each validator in parallel. Each subagent should invoke the validator via the Skill tool and return the JSON result back to you (the parent).
+   - **Collect all validator JSON results internally.** Do NOT display raw validator JSON to the user — you will aggregate these results into the Phase 4 summary.
    - Note: This duplicates the dispatch logic in `pragma:validate` intentionally — implement needs inline control for the fix-and-re-validate loop. Keep both in sync.
      - `pragma:security` (always)
      - `pragma:state-machine` (always)
@@ -190,6 +191,8 @@ After implementation is complete, run validation.
    - WARN: note but don't block.
 
 4. **Re-validate** if fixes were made.
+
+5. **After all validators pass, proceed to Phase 4.** Do not stop here — the final output must be the Phase 4 summary, not raw validator output.
 
 ---
 
