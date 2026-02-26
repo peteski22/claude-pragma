@@ -196,7 +196,12 @@ command -v uv >/dev/null 2>&1 && echo "uv:ok" || echo "uv:missing"
 
 Store the result - if `uv:missing`, include a warning in Step 8 output.
 
-**Go (if detected anywhere) — build go-structural:**
+**Build go-structural (ONLY if Go was detected in Step 2):**
+
+Skip this entirely if no `go` language was detected in Step 2 output (e.g. if the only output was `root:python`, there is no Go — do not build go-structural).
+
+If and only if Go was detected (any line matching `*:go` in Step 2 output):
+
 ```bash
 cd "$PLUGIN_ROOT/tools/go-structural" && go build -o go-structural . && echo "go-structural:ok" || echo "go-structural:build-failed"
 ```
