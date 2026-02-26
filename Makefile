@@ -1,17 +1,31 @@
-.PHONY: help install uninstall
+.PHONY: help install uninstall opencode-install opencode-install-project opencode-uninstall
 .DEFAULT_GOAL := help
 
 help:
-	@echo "claude-pragma - Pragma directives for Claude Code"
+	@echo "claude-pragma - Pragma directives for Claude Code and OpenCode"
 	@echo ""
-	@echo "DEPRECATED: Use the plugin marketplace instead:"
+	@echo "Claude Code (recommended):"
 	@echo "  /plugin marketplace add peteski22/claude-pragma"
 	@echo "  /plugin install pragma@claude-pragma"
 	@echo ""
-	@echo "Legacy commands (for migration):"
+	@echo "OpenCode:"
+	@echo "  make opencode-install          Install globally (~/.config/opencode/)"
+	@echo "  make opencode-install-project  Install into current project (.opencode/)"
+	@echo "  make opencode-uninstall        Remove global install"
+	@echo ""
+	@echo "Legacy Claude Code commands (deprecated):"
 	@echo "  make install    Link setup-project skill and all agents (deprecated)"
 	@echo "  make uninstall  Remove setup-project skill and agent links"
 	@echo "  make help       Show this help"
+
+opencode-install:
+	@bash "$(CURDIR)/scripts/opencode-install.sh"
+
+opencode-install-project:
+	@bash "$(CURDIR)/scripts/opencode-install.sh" --project
+
+opencode-uninstall:
+	@bash "$(CURDIR)/scripts/opencode-install.sh" --uninstall
 
 install:
 	@echo "WARNING: make install is deprecated. Use the plugin marketplace instead:"
