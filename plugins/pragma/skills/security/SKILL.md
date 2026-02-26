@@ -96,7 +96,7 @@ If more than 50 files changed, process in batches of 50. Note batch number in ou
 
 ## Step 3: Report
 
-Output MUST follow this JSON schema (unified with other validators):
+Output MUST follow this JSON schema exactly. Do not include prose outside the JSON.
 
 ```json
 {
