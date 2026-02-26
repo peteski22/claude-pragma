@@ -248,7 +248,7 @@ How would you like to manage API keys?
 
 **If user chooses "any-llm.ai platform":**
 ```bash
-uv run python "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --platform
+uv run --no-project python "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --platform
 ```
 
 Then include in the summary:
@@ -265,7 +265,7 @@ Then include in the summary:
 
 **If user chooses "Direct provider keys":**
 ```bash
-uv run python "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --direct
+uv run --no-project python "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --direct
 ```
 
 Then include in the summary:

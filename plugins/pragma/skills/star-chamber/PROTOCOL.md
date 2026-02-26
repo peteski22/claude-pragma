@@ -70,7 +70,7 @@ How would you like to manage API keys?
 
 ```bash
 STAR_CHAMBER_PATH="<set by caller>"
-PLUGIN_ROOT="$STAR_CHAMBER_PATH/../.."; uv run python "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --platform
+PLUGIN_ROOT="$STAR_CHAMBER_PATH/../.."; uv run --no-project python "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --platform
 ```
 
 Then show:
@@ -88,7 +88,7 @@ Setup:
 
 ```bash
 STAR_CHAMBER_PATH="<set by caller>"
-PLUGIN_ROOT="$STAR_CHAMBER_PATH/../.."; uv run python "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --direct
+PLUGIN_ROOT="$STAR_CHAMBER_PATH/../.."; uv run --no-project python "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --direct
 ```
 
 Then show:
@@ -264,12 +264,12 @@ Provide your review as structured JSON:
 
 ## Step 4: Fan Out to Star-Chamber
 
-Use `uv run --with <dep>` to execute scripts with ephemeral dependencies. Do not use `uvx` — it runs CLI tools from PyPI (similar to `npx`), not project scripts with local file paths.
+Use `uv run --no-project --with <dep>` to execute scripts with ephemeral dependencies, isolated from the host project's environment. The `--no-project` flag is critical — without it, `uv` discovers the host project's `pyproject.toml` and includes its dependencies, which can cause version conflicts. Do not use `uvx` — it runs CLI tools from PyPI (similar to `npx`), not project scripts with local file paths.
 
 First, determine which SDK packages are needed:
 
 ```bash
-STAR_CHAMBER_PATH="<set by caller>"; uv run --with any-llm-sdk python "$STAR_CHAMBER_PATH/llm_council.py" --list-sdks
+STAR_CHAMBER_PATH="<set by caller>"; uv run --no-project --with any-llm-sdk python "$STAR_CHAMBER_PATH/llm_council.py" --list-sdks
 ```
 
 This outputs JSON with `required_sdks` array listing needed packages (e.g., `["anthropic", "google-genai"]`).
@@ -288,7 +288,7 @@ The simplest approach: all providers review independently in a single round.
 Execute a single parallel review. Write the prompt to a temp file first, then pipe it to avoid shell quoting issues:
 
 ```bash
-STAR_CHAMBER_PATH="<set by caller>"; cat << 'EOF' | uv run --with any-llm-sdk [--with <sdk>...] python "$STAR_CHAMBER_PATH/llm_council.py" [--provider <name>...] [--file <path>...]
+STAR_CHAMBER_PATH="<set by caller>"; cat << 'EOF' | uv run --no-project --with any-llm-sdk [--with <sdk>...] python "$STAR_CHAMBER_PATH/llm_council.py" [--provider <name>...] [--file <path>...]
 {prompt}
 EOF
 ```
