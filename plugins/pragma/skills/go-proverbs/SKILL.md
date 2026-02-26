@@ -139,7 +139,7 @@ If WebFetch fails, use this list:
 
 ## Step 5: Report
 
-Output MUST follow this JSON schema:
+Output MUST follow this JSON schema exactly. Do not include prose outside the JSON.
 
 ```json
 {
