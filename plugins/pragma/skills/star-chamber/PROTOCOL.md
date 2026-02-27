@@ -195,7 +195,7 @@ Determine what code to review:
 ```bash
 # Get recently changed files (committed, then staged, then unstaged).
 # Filter out generated/vendor files.
-{ git diff HEAD~1 --name-only --diff-filter=ACMRT 2>/dev/null || git diff --cached --name-only --diff-filter=ACMRT 2>/dev/null || git diff --name-only --diff-filter=ACMRT; } | grep -v -E '(node_modules|vendor|\.min\.|\.generated\.|__pycache__|\.pyc$)'
+( git diff HEAD~1 --name-only --diff-filter=ACMRT 2>/dev/null || git diff --cached --name-only --diff-filter=ACMRT 2>/dev/null || git diff --name-only --diff-filter=ACMRT ) | grep -v -E '(node_modules|vendor|\.min\.|\.generated\.|__pycache__|\.pyc$)'
 ```
 
 Save the output as the file list for subsequent steps. Since each Bash tool invocation is isolated, you must re-derive or re-read file lists in each block that needs them (e.g., write to a temp file and read it back, or re-run the discovery command).
