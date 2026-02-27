@@ -32,7 +32,12 @@ git checkout -b <prefix>/<short-description>
 
 **If not in a git repository**, skip git steps and note in report.
 
-**If there are uncommitted changes**, ask the user: stash, commit, or continue?
+**If there are uncommitted changes**, you MUST ask the user before proceeding. Present these options:
+- Stash the changes
+- Commit the changes first
+- Continue with uncommitted changes in the working tree
+
+Do NOT stash, commit, or discard uncommitted changes without explicit user approval.
 
 **If in detached HEAD state**, ask user whether to create a branch from current commit.
 
