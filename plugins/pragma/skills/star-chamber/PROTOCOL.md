@@ -329,6 +329,34 @@ For each subsequent round (2 to N):
 Final: Use last round responses for consensus building
 ```
 
+**Persisting round results:**
+
+Context compaction can fire between rounds and destroy previous round responses. To prevent data loss, persist each round's results to a per-run temp directory.
+
+Before the first round, create an isolated temp directory:
+```bash
+SC_TMPDIR=$(mktemp -d "${TMPDIR:-/tmp}/star-chamber-XXXXXX")
+```
+
+For each round, redirect `llm_council.py` stdout directly to a round file instead of capturing in a shell variable:
+```bash
+STAR_CHAMBER_PATH="<set by caller>"; cat << 'EOF' | uv run --project "$STAR_CHAMBER_PATH" --isolated python "$STAR_CHAMBER_PATH/llm_council.py" > "$SC_TMPDIR/round-${ROUND_NUMBER}.json"
+{prompt}
+EOF
+```
+
+Before starting round N+1, read back round N results from the temp file rather than relying on conversation context:
+```bash
+cat "$SC_TMPDIR/round-$((ROUND_NUMBER - 1)).json"
+```
+
+This ensures the anonymous synthesis step has access to the actual provider responses even if compaction occurred between rounds.
+
+Clean up the temp directory after the final round is complete and results have been presented:
+```bash
+rm -rf "$SC_TMPDIR"
+```
+
 **Round 1:** Call llm_council.py with the original prompt (all providers, parallel).
 
 **Round 2+:** Create ONE anonymous summary of all responses from the previous round, then call llm_council.py again with the augmented prompt. All providers receive the same summary - this maintains parallel execution and aligns with the anonymous synthesis approach.
