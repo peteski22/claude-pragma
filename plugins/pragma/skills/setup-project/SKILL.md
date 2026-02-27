@@ -57,7 +57,7 @@ Check root directory AND immediate subdirectories for language markers.
 ```bash
 # Root level
 [[ -f go.mod ]] && echo "root:go"
-{ [[ -f pyproject.toml ]] || [[ -f setup.py ]]; } && echo "root:python"
+( [[ -f pyproject.toml ]] || [[ -f setup.py ]] ) && echo "root:python"
 [[ -f package.json ]] && echo "root:javascript"
 [[ -f tsconfig.json ]] && echo "root:typescript"
 [[ -f Cargo.toml ]] && echo "root:rust"
@@ -65,7 +65,7 @@ Check root directory AND immediate subdirectories for language markers.
 # Subdirectories (one level deep)
 for dir in */; do
   [[ -f "${dir}go.mod" ]] && echo "${dir%/}:go"
-  { [[ -f "${dir}pyproject.toml" ]] || [[ -f "${dir}setup.py" ]]; } && echo "${dir%/}:python"
+  ( [[ -f "${dir}pyproject.toml" ]] || [[ -f "${dir}setup.py" ]] ) && echo "${dir%/}:python"
   [[ -f "${dir}package.json" ]] && echo "${dir%/}:javascript"
   [[ -f "${dir}tsconfig.json" ]] && echo "${dir%/}:typescript"
   [[ -f "${dir}Cargo.toml" ]] && echo "${dir%/}:rust"
@@ -248,7 +248,7 @@ How would you like to manage API keys?
 
 **If user chooses "any-llm.ai platform":**
 ```bash
-uv run --no-project --isolated python "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --platform
+uv run --no-project --isolated "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --platform
 ```
 
 Then include in the summary:
@@ -265,7 +265,7 @@ Then include in the summary:
 
 **If user chooses "Direct provider keys":**
 ```bash
-uv run --no-project --isolated python "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --direct
+uv run --no-project --isolated "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --direct
 ```
 
 Then include in the summary:
