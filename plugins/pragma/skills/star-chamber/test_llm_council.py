@@ -77,3 +77,54 @@ class TestMaxTokensPassthrough:
             assert calls_by_provider["gemini"].get("max_tokens") == 65536
             # anthropic: no max_tokens in config, should get default.
             assert calls_by_provider["anthropic"].get("max_tokens") == DEFAULT_MAX_TOKENS
+
+
+class TestApiBasePassthrough:
+    """Verify api_base from provider config is passed to acompletion."""
+
+    def test_api_base_forwarded_to_acompletion(self):
+        """api_base should be passed to acompletion when provided."""
+        mock_acompletion = _mock_acompletion()
+        mock_module = MagicMock()
+        mock_module.acompletion = mock_acompletion
+
+        with patch.dict(sys.modules, {"any_llm": mock_module}):
+            asyncio.run(
+                _get_review_internal(
+                    "llamafile", "local-model", "test prompt", "",
+                    api_base="http://gpu-box.local:8080/v1",
+                ),
+            )
+            assert mock_acompletion.call_args.kwargs.get("api_base") == "http://gpu-box.local:8080/v1"
+
+    def test_api_base_omitted_when_empty(self):
+        """api_base should not be in kwargs when empty or omitted."""
+        mock_acompletion = _mock_acompletion()
+        mock_module = MagicMock()
+        mock_module.acompletion = mock_acompletion
+
+        with patch.dict(sys.modules, {"any_llm": mock_module}):
+            asyncio.run(_get_review_internal("gemini", "gemini-2.5-flash", "test prompt", "key"))
+            assert "api_base" not in mock_acompletion.call_args.kwargs
+
+    def test_run_council_threads_api_base_from_provider(self):
+        """run_council should read api_base from provider config and pass it through."""
+        mock_acompletion = _mock_acompletion()
+        mock_module = MagicMock()
+        mock_module.acompletion = mock_acompletion
+
+        providers = [
+            {"provider": "llamafile", "model": "local", "api_base": "http://localhost:8080/v1"},
+            {"provider": "openai", "model": "gpt-5.2", "api_key": "k1"},
+        ]
+
+        with patch.dict(sys.modules, {"any_llm": mock_module}):
+            asyncio.run(run_council("test prompt", providers))
+            calls_by_provider = {
+                c.kwargs["provider"]: c.kwargs
+                for c in mock_acompletion.call_args_list
+            }
+            # llamafile: api_base should be forwarded.
+            assert calls_by_provider["llamafile"].get("api_base") == "http://localhost:8080/v1"
+            # openai: no api_base in config, should not be in kwargs.
+            assert "api_base" not in calls_by_provider["openai"]

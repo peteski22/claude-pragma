@@ -44,6 +44,7 @@ class ProviderConfig(TypedDict, total=False):
     model: str
     api_key: str
     max_tokens: int
+    api_base: str
 
 
 class ReviewResult(TypedDict, total=False):
@@ -160,11 +161,12 @@ def get_required_sdks(provider_names: list[str]) -> list[str]:
 
 async def _get_review_internal(
     provider: str, model: str, prompt: str, api_key: str,
-    max_tokens: int = DEFAULT_MAX_TOKENS,
+    max_tokens: int = DEFAULT_MAX_TOKENS, api_base: str = "",
 ) -> ReviewResult:
     """Send prompt to a single provider and return structured response.
 
     If api_key is empty and ANY_LLM_KEY is set, the SDK auto-detects platform mode.
+    If api_base is set, it overrides the provider's default endpoint URL.
     """
     try:
         # Import here to allow uv run --with to install the dependency.
@@ -186,6 +188,8 @@ async def _get_review_internal(
         if api_key:
             kwargs["api_key"] = api_key
         # If no api_key, SDK checks ANY_LLM_KEY and auto-routes through platform.
+        if api_base:
+            kwargs["api_base"] = api_base
 
         response = await acompletion(**kwargs)
         if not response.choices:
@@ -256,17 +260,22 @@ async def _get_review_internal(
 async def get_review(
     provider: str, model: str, prompt: str, api_key: str,
     timeout: float | None = None, max_tokens: int = DEFAULT_MAX_TOKENS,
+    api_base: str = "",
 ) -> ReviewResult:
     """Get review with optional timeout.
 
     Wraps _get_review_internal with asyncio.wait_for for timeout handling.
     """
     if timeout is None:
-        return await _get_review_internal(provider, model, prompt, api_key, max_tokens=max_tokens)
+        return await _get_review_internal(
+            provider, model, prompt, api_key, max_tokens=max_tokens, api_base=api_base,
+        )
 
     try:
         return await asyncio.wait_for(
-            _get_review_internal(provider, model, prompt, api_key, max_tokens=max_tokens),
+            _get_review_internal(
+                provider, model, prompt, api_key, max_tokens=max_tokens, api_base=api_base,
+            ),
             timeout=timeout,
         )
     except asyncio.TimeoutError:
@@ -339,6 +348,7 @@ async def run_council(
         get_review(
             p["provider"], p["model"], prompt, p.get("api_key", ""),
             timeout=timeout, max_tokens=p.get("max_tokens", DEFAULT_MAX_TOKENS),
+            api_base=p.get("api_base", ""),
         )
         for p in providers
     ]
