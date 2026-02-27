@@ -519,7 +519,7 @@ Note: `api_key` fields are omitted - the library fetches them from the platform 
 
 **Missing SDK:**
 ```json
-{"provider": "anthropic", "success": false, "error": "Missing SDK for anthropic. Add '--with anthropic' to the uv run command."}
+{"provider": "anthropic", "success": false, "error": "Missing SDK for anthropic. Install with: pip install anthropic (or add '--with anthropic' to uv run)"}
 ```
 - Run `--list-sdks` to see required packages
 - Add the missing SDK as a `--with <sdk>` flag to the `uv run` command
