@@ -17,7 +17,7 @@ $ARGUMENTS
 
 ## Phase 0: Inject Applicable Rules
 
-Before starting work, collect and read all applicable CLAUDE.md rules.
+Before starting work, collect and read all applicable project rules.
 
 ### Step 1: Identify target directories
 
@@ -25,19 +25,17 @@ Based on the task, identify which directories will contain files to be created o
 
 If uncertain, err on the side of including more directories rather than fewer. Extra rules being applied is safe; missing rules is not.
 
-### Step 2: Walk up and collect rules
+### Step 2: Collect project rules
 
-For each directory, walk upward to repo root collecting `.claude/CLAUDE.md` files:
+Collect rules from `.claude/rules/*.md` at the project root:
 
 ```
-For a file in backend/app/handlers/:
-  Check: backend/app/handlers/.claude/CLAUDE.md
-  Check: backend/app/.claude/CLAUDE.md
-  Check: backend/.claude/CLAUDE.md
-  Check: .claude/CLAUDE.md (root)
+Check: .claude/rules/*.md (all files, auto-loaded by Claude Code)
 ```
 
-Use the Read tool to check each path. Collect those that exist and are readable. A file is considered "found" only if it exists and can be successfully read.
+Use the Glob tool to discover `.claude/rules/*.md` files, then the Read tool to load them. Collect those that exist and are readable. A file is considered "found" only if it exists and can be successfully read.
+
+**Note:** Path-scoped rules (those with `paths:` frontmatter) are auto-loaded by Claude Code only for matching files. When collecting rules manually, read the frontmatter and apply path-scoped rules only to the target directories they match.
 
 ### Step 2a: Check for local supplements
 
@@ -51,13 +49,12 @@ If it exists, read it. Pay particular attention to any "Validation Commands" sec
 
 ### Step 3: Read and apply rules
 
-Read each discovered CLAUDE.md file.
+Read each discovered rule file.
 Apply rules in order of precedence (most specific first):
 
 ```
-1. backend/app/.claude/CLAUDE.md (if exists) - highest precedence
-2. backend/.claude/CLAUDE.md (if exists)
-3. .claude/CLAUDE.md (root) - lowest precedence
+1. .claude/rules/{lang}.md with matching paths (path-scoped, highest precedence)
+2. .claude/rules/universal.md (universal rules)
 ```
 
 Earlier rules override later rules where they conflict.
@@ -66,7 +63,7 @@ If two rules conflict and precedence is unclear, prefer the more specific rule a
 
 ### Step 3a: Fallback baseline (conditional)
 
-**This step only applies if NO `.claude/CLAUDE.md` files were found in Step 2.**
+**This step only applies if NO `.claude/rules/*.md` files were found in Step 2.**
 
 If project-specific rules were found and loaded, skip this step entirely and note in report: "Fallback baseline: not needed (project rules loaded)"
 
@@ -88,7 +85,7 @@ This fallback ensures projects without `/setup-project` still get essential rule
 ### Step 4: Record applied rules
 
 Track which rule files were loaded for the final report, including:
-- Which project-specific CLAUDE.md files were loaded (if any)
+- Which project-specific rule files were loaded (if any)
 - Fallback baseline status: not needed, loaded, skipped, or failed (with reason)
 - CLAUDE.local.md (auto-loaded or explicitly read in Step 2a)
 
@@ -129,7 +126,7 @@ The "Pre-Implementation Setup" section of the loaded rules contains **actions to
    - Look for build artifacts (.egg-info, .venv, dist/, node_modules/, target/) indicating local packages.
    - If the task involves sharing code, find existing shared packages first.
    - If the GitHub issue lists multiple approaches, investigate each sufficiently to make an informed decision.
-   - **Architecture violation guard:** If discovered patterns violate architecture rules from the project's CLAUDE.md or language-specific validators (e.g., models defined in route files, business logic in handlers, services that are actually repositories):
+   - **Architecture violation guard:** If discovered patterns violate architecture rules from the project's `.claude/rules/` or language-specific validators (e.g., models defined in route files, business logic in handlers, services that are actually repositories):
      1. Do not replicate the violations — follow documented layer responsibilities instead.
      2. Note the pre-existing deviation in the Phase 4 report.
      3. If the codebase systematically deviates (e.g., no repository layer exists, all models are in route files), follow correct architecture for new code where feasible without breaking existing imports or interfaces.
@@ -162,8 +159,8 @@ After implementation is complete, run validation.
    **Check rules for custom validation commands:**
    Look for a "Validation Commands" section in these sources, in precedence order:
    1. `CLAUDE.local.md` (from Step 2a — highest priority)
-   2. Directory-specific `.claude/CLAUDE.md` files (from Step 2)
-   3. Root `.claude/CLAUDE.md` (from Step 2)
+   2. Path-scoped `.claude/rules/*.md` files (from Step 2)
+   3. Universal `.claude/rules/universal.md` (from Step 2)
 
    If custom commands exist at any level, use the highest-precedence match. Otherwise, fall back to these defaults:
    - Go: `golangci-lint run --fix -v`
@@ -217,8 +214,8 @@ Only after validation passes:
 **Branch:** `branch-name` (created | existing | continued | skipped)
 
 **Rules Applied:**
-- backend/.claude/CLAUDE.md
-- .claude/CLAUDE.md
+- .claude/rules/python.md (scoped to backend/**)
+- .claude/rules/universal.md
 - CLAUDE.local.md (from Step 2a)
 
 **Changes:**

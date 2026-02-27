@@ -206,14 +206,9 @@ Gather context to include with the review prompt:
 
 **Project rules (if they exist):**
 ```bash
-# Walk up from target files to find CLAUDE.md rules.
-[[ -f .claude/CLAUDE.md ]] && cat .claude/CLAUDE.md
-for file in "${FILES[@]}"; do
-  dir="$(dirname "$file")"
-  while [[ "$dir" != "." && "$dir" != "/" ]]; do
-    [[ -f "${dir}/.claude/CLAUDE.md" ]] && cat "${dir}/.claude/CLAUDE.md"
-    dir="$(dirname "$dir")"
-  done
+# Load modular rules from .claude/rules/.
+for f in .claude/rules/*.md; do
+  [[ -f "$f" ]] && cat "$f"
 done
 ```
 
