@@ -476,6 +476,38 @@ The reference configuration with current models is maintained at `reference/star
 
 Override config path with `STAR_CHAMBER_CONFIG` environment variable.
 
+### Provider fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `provider` | yes | Provider name (e.g., `openai`, `anthropic`, `llamafile`, `ollama`) |
+| `model` | yes | Model identifier |
+| `api_key` | no | API key or `${ENV_VAR}` reference. Omit for platform mode or keyless local providers. |
+| `max_tokens` | no | Max response tokens (default: 16384) |
+| `api_base` | no | Custom base URL. Use for local/self-hosted LLMs (llamafile, ollama, vLLM, LocalAI, lmstudio). Omit for cloud providers — the SDK uses built-in defaults. |
+
+### Local/self-hosted LLM examples
+
+```json
+{
+  "provider": "llamafile",
+  "model": "local-model",
+  "api_base": "http://gpu-box.local:8080/v1",
+  "max_tokens": 4096
+}
+```
+
+```json
+{
+  "provider": "ollama",
+  "model": "llama3",
+  "api_base": "http://localhost:11434",
+  "max_tokens": 4096
+}
+```
+
+Cloud providers (openai, anthropic, gemini) do not need `api_base` — omit the field entirely.
+
 ## Using any-llm.ai Managed Platform (Optional)
 
 Instead of setting individual API keys, you can use the [any-llm.ai](https://any-llm.ai) managed platform for:
