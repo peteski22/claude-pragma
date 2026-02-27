@@ -161,7 +161,7 @@ In git worktrees, use `@import` (a Claude Code directive that includes another C
 
 **Create local supplements file and ensure it is gitignored:**
 ```bash
-! [[ -f CLAUDE.local.md ]] && touch CLAUDE.local.md
+test -f CLAUDE.local.md || touch CLAUDE.local.md
 grep -qxF 'CLAUDE.local.md' .gitignore 2>/dev/null || echo 'CLAUDE.local.md' >> .gitignore
 ```
 
@@ -214,7 +214,7 @@ If `go` is not available or the build fails, note in Step 8 output that go-struc
 
 For Go projects, if no golangci-lint config exists:
 ```bash
-{ ! [[ -f .golangci.yml ]] && ! [[ -f .golangci.yaml ]]; } && echo "no-lint-config"
+{ test ! -f .golangci.yml && test ! -f .golangci.yaml; } && echo "no-lint-config"
 true
 ```
 
@@ -224,7 +224,7 @@ If missing, offer to copy from `$PLUGIN_ROOT/reference/go/golangci-lint.yml`, re
 
 Check if star-chamber config exists:
 ```bash
-! [[ -f ~/.config/star-chamber/providers.json ]] && echo "no-star-chamber-config"
+test ! -f ~/.config/star-chamber/providers.json && echo "no-star-chamber-config"
 ```
 
 If missing **and `uv` is available** (from the Step 6 check), offer to set it up. If `uv` is missing, skip this offer and tell the user: "Skipping star-chamber config — `uv` is not installed." The Step 8 output includes install instructions.
