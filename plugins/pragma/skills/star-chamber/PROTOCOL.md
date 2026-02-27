@@ -331,23 +331,30 @@ Final: Use last round responses for consensus building
 
 **Persisting round results:**
 
-Context compaction can fire between rounds and destroy previous round responses. To prevent data loss, persist each round's results to a temp file.
+Context compaction can fire between rounds and destroy previous round responses. To prevent data loss, persist each round's results to a per-run temp directory.
 
-After each round's `llm_council.py` call completes, write the raw JSON output to a temp file:
+Before the first round, create an isolated temp directory:
 ```bash
-echo "$ROUND_OUTPUT" > "/tmp/star-chamber-round-${ROUND_NUMBER}.json"
+SC_TMPDIR=$(mktemp -d "${TMPDIR:-/tmp}/star-chamber-XXXXXX")
+```
+
+For each round, redirect `llm_council.py` stdout directly to a round file instead of capturing in a shell variable:
+```bash
+STAR_CHAMBER_PATH="<set by caller>"; cat << 'EOF' | uv run --project "$STAR_CHAMBER_PATH" --isolated python "$STAR_CHAMBER_PATH/llm_council.py" > "$SC_TMPDIR/round-${ROUND_NUMBER}.json"
+{prompt}
+EOF
 ```
 
 Before starting round N+1, read back round N results from the temp file rather than relying on conversation context:
 ```bash
-cat "/tmp/star-chamber-round-$((ROUND_NUMBER - 1)).json"
+cat "$SC_TMPDIR/round-$((ROUND_NUMBER - 1)).json"
 ```
 
 This ensures the anonymous synthesis step has access to the actual provider responses even if compaction occurred between rounds.
 
-Clean up temp files after the final round is complete and results have been presented:
+Clean up the temp directory after the final round is complete and results have been presented:
 ```bash
-rm -f /tmp/star-chamber-round-*.json
+rm -rf "$SC_TMPDIR"
 ```
 
 **Round 1:** Call llm_council.py with the original prompt (all providers, parallel).
