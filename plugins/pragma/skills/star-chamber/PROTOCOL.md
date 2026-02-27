@@ -70,7 +70,7 @@ How would you like to manage API keys?
 
 ```bash
 STAR_CHAMBER_PATH="<set by caller>"
-PLUGIN_ROOT="$STAR_CHAMBER_PATH/../.."; uv run --no-project --isolated python "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --platform
+PLUGIN_ROOT="$STAR_CHAMBER_PATH/../.."; uv run --no-project --isolated "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --platform
 ```
 
 Then show:
@@ -88,7 +88,7 @@ Setup:
 
 ```bash
 STAR_CHAMBER_PATH="<set by caller>"
-PLUGIN_ROOT="$STAR_CHAMBER_PATH/../.."; uv run --no-project --isolated python "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --direct
+PLUGIN_ROOT="$STAR_CHAMBER_PATH/../.."; uv run --no-project --isolated "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --direct
 ```
 
 Then show:
@@ -264,12 +264,12 @@ Provide your review as structured JSON:
 
 ## Step 4: Fan Out to Star-Chamber
 
-Use `uv run --no-project --isolated --with <dep>` to execute scripts with ephemeral dependencies, fully isolated from the host project's environment. The `--no-project` flag prevents `uv` from discovering the host project's `pyproject.toml`. The `--isolated` flag prevents `uv` from reusing an active virtual environment (via `VIRTUAL_ENV`) or a `.venv` directory found in the current or parent directories — without it, host project packages leak into `sys.path` even with `--no-project`. Do not use `uvx` — it runs CLI tools from PyPI (similar to `npx`), not project scripts with local file paths.
+Use `uv run --project "$STAR_CHAMBER_PATH" --isolated` to execute scripts with dependencies pinned in the star-chamber `pyproject.toml`, fully isolated from the host project's environment. The `--project` flag points `uv` at the star-chamber directory's `pyproject.toml` (not the host project's). The `--isolated` flag prevents `uv` from reusing an active virtual environment (via `VIRTUAL_ENV`) or a `.venv` directory found in the current or parent directories — without it, host project packages leak into `sys.path`. Do not use `uvx` — it runs CLI tools from PyPI (similar to `npx`), not project scripts with local file paths.
 
 First, determine which SDK packages are needed:
 
 ```bash
-STAR_CHAMBER_PATH="<set by caller>"; uv run --no-project --isolated --with any-llm-sdk python "$STAR_CHAMBER_PATH/llm_council.py" --list-sdks
+STAR_CHAMBER_PATH="<set by caller>"; uv run --project "$STAR_CHAMBER_PATH" --isolated "$STAR_CHAMBER_PATH/llm_council.py" --list-sdks
 ```
 
 This outputs JSON with `required_sdks` array listing needed packages (e.g., `["anthropic", "google-genai"]`).
@@ -288,12 +288,12 @@ The simplest approach: all providers review independently in a single round.
 Execute a single parallel review. Write the prompt to a temp file first, then pipe it to avoid shell quoting issues:
 
 ```bash
-STAR_CHAMBER_PATH="<set by caller>"; cat << 'EOF' | uv run --no-project --isolated --with any-llm-sdk [--with <sdk>...] python "$STAR_CHAMBER_PATH/llm_council.py" [--provider <name>...] [--file <path>...]
+STAR_CHAMBER_PATH="<set by caller>"; cat << 'EOF' | uv run --project "$STAR_CHAMBER_PATH" --isolated [--with <sdk>...] "$STAR_CHAMBER_PATH/llm_council.py" [--provider <name>...] [--file <path>...]
 {prompt}
 EOF
 ```
 
-**Important:** The `uv run` command and all its arguments must be on a **single line**. Do NOT use `\` line continuations — they break under Claude Code's Bash tool. The `--with` flags come from the `--list-sdks` output's `required_sdks` array (add `--with any-llm-sdk` plus `--with <sdk>` for each entry).
+**Important:** The `uv run` command and all its arguments must be on a **single line**. Do NOT use `\` line continuations — they break under Claude Code's Bash tool. The core `any-llm-sdk` is pinned via `pyproject.toml`. Provider-specific SDKs (from `--list-sdks` output's `required_sdks` array) are added as `--with <sdk>` flags (e.g., `--with anthropic --with google-genai`).
 
 ```text
 Prompt → [Provider A] ──→ Response A
@@ -384,7 +384,7 @@ Please provide your perspective on these points. Note where you agree, disagree,
 
 **Prompt construction:** Pipe the prompt via heredoc (`cat << 'EOF' | uv run ...`) to avoid quoting issues with apostrophes and special characters. Never store the prompt in a shell variable — use heredoc piping directly.
 
-**Important:** Each `--with` must be a separate argument. Do NOT quote multiple `--with` flags together. Keep the entire `uv run` command on one line.
+**Important:** Keep the entire `uv run` command on one line. The core `any-llm-sdk` is resolved from `pyproject.toml`; provider SDKs are added via `--with` flags from the `--list-sdks` output. Each `--with` must be a separate argument.
 
 ## Step 5: Parse and Aggregate Results
 
@@ -550,7 +550,7 @@ Note: `api_key` fields are omitted - the library fetches them from the platform 
 {"provider": "anthropic", "success": false, "error": "Missing SDK for anthropic. Install with: pip install anthropic (or add '--with anthropic' to uv run)"}
 ```
 - Run `--list-sdks` to see required packages
-- Add appropriate `--with` flags to the `uv run` command
+- Add the missing SDK as a `--with <sdk>` flag to the `uv run` command
 
 **Provider not in sdk_map:**
 ```text
