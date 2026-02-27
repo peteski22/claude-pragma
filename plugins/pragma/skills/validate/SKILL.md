@@ -63,8 +63,7 @@ Collect all validator outputs and present a human-readable summary. Do NOT displ
 
 | Validator | Result | HARD | SHOULD | WARN |
 |-----------|--------|------|--------|------|
-| Security | ✓ pass | 0 | 0 | 0 |
-| Go Effective | ✗ fail | 1 | 1 | 2 |
+| {validator} | {✓ pass / ✗ fail} | {count} | {count} | {count} |
 
 ## HARD violations (must fix)
 - **{validator}** `{file}:{line}` — {rule description}
@@ -77,7 +76,7 @@ Collect all validator outputs and present a human-readable summary. Do NOT displ
 - {count} advisory warnings from {validator} ({brief context})
 
 ## Verdict
-**PASS/FAIL** — {1-2 sentence summary with reasoning}
+**PASS / PASS with warnings / FAIL** — {1-2 sentence summary with reasoning}
 ```
 
 **Important formatting rules:**
