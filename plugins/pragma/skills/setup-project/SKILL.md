@@ -333,6 +333,6 @@ Or see: https://docs.astral.sh/uv/getting-started/installation/
 Then continue with:
 ```
 **Recommended:**
-  - Commit the generated `.claude/CLAUDE.md` files so other developers get the same rules.
+  - **Optional:** If you want other contributors to benefit from the same rules, commit the generated `.claude/CLAUDE.md` files. Otherwise, add `.claude/` to `.gitignore` to keep them local.
   - `CLAUDE.local.md` has been created for personal/machine-specific rules (custom validation commands, local environment notes, personal workflow preferences). It is auto-loaded by Claude Code and gitignored.
 ```
