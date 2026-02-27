@@ -55,7 +55,7 @@ make install AGENT=opencode
 /setup-project
 ```
 
-This symlinks skills and generates agents and commands into `~/.config/opencode/`. Then run `/setup-project` in any project to detect languages and create the appropriate rule files.
+This symlinks skills and generates agents and commands into `~/.config/opencode/`. Then run `/setup-project` in any project to detect languages, create the appropriate rule files, and generate `opencode.json` so OpenCode auto-loads the rules.
 
 To install into a specific project instead of globally:
 
@@ -149,6 +149,7 @@ myproject/
 │       ├── local-supplements.md      # Documents CLAUDE.local.md usage
 │       ├── python.md                 # Python rules (scoped to backend/**)
 │       └── typescript.md             # TypeScript rules (scoped to frontend/**)
+├── opencode.json                     # OpenCode instructions (loads .claude/rules/*.md)
 ├── CLAUDE.local.md                   # Personal supplements (gitignored)
 ├── backend/
 │   └── pyproject.toml
@@ -157,6 +158,8 @@ myproject/
 ```
 
 Language-specific rules use `paths:` frontmatter to scope them to matching files. When you edit `backend/app/main.py`, both `python.md` (scoped to `backend/**/*.py`) and `universal.md` are applied. `CLAUDE.local.md` at the project root is auto-loaded as per-user supplements.
+
+Both agents load rules from the same `.claude/rules/*.md` files — Claude Code natively, OpenCode via the `instructions` glob in `opencode.json`. This keeps a single source of truth for project rules.
 
 ## Directory Structure
 

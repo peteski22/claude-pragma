@@ -210,7 +210,31 @@ Assemble each language rule file with:
 ```
 
 
-## Step 6: Verify plugin skills and agents
+## Step 6: Create opencode.json for OpenCode compatibility
+
+OpenCode uses `opencode.json` at the project root to load custom instructions. Create or update this file so OpenCode auto-loads the same `.claude/rules/*.md` files that Claude Code loads natively.
+
+**Check for existing opencode.json:**
+```bash
+test -f opencode.json && echo "opencode-json:exists" || echo "opencode-json:missing"
+```
+
+**If missing**, create it:
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [".claude/rules/*.md"]
+}
+```
+
+**If it exists**, read it and check whether the `instructions` field already includes `.claude/rules/*.md`:
+- If `instructions` already contains `.claude/rules/*.md` → no changes needed.
+- If `instructions` exists but does not contain `.claude/rules/*.md` → append `.claude/rules/*.md` to the existing array.
+- If `instructions` field is missing → add it with `[".claude/rules/*.md"]`.
+
+**Do not overwrite** other fields in an existing `opencode.json` (e.g., `model`, `provider`, `agent`).
+
+## Step 7: Verify plugin skills and agents
 
 All skills and agents are provided by the pragma plugin — no symlinks needed.
 
@@ -219,7 +243,7 @@ All skills and agents are provided by the pragma plugin — no symlinks needed.
 command -v uv >/dev/null 2>&1 && echo "uv:ok" || echo "uv:missing"
 ```
 
-Store the result - if `uv:missing`, include a warning in Step 8 output.
+Store the result - if `uv:missing`, include a warning in Step 9 output.
 
 **Build go-structural (ONLY if Go was detected in Step 2):**
 
@@ -231,9 +255,9 @@ If and only if Go was detected (any line matching `*:go` in Step 2 output):
 cd "$PLUGIN_ROOT/tools/go-structural" && go build -o go-structural . && echo "go-structural:ok" || echo "go-structural:build-failed"
 ```
 
-If `go` is not available or the build fails, note in Step 8 output that go-structural is unavailable.
+If `go` is not available or the build fails, note in Step 9 output that go-structural is unavailable.
 
-## Step 7: Offer reference configs
+## Step 8: Offer reference configs
 
 ### Go linter config
 
@@ -252,7 +276,7 @@ Check if star-chamber config exists:
 test -f "$HOME/.config/star-chamber/providers.json" || echo "no-star-chamber-config"
 ```
 
-If missing **and `uv` is available** (from the Step 6 check), offer to set it up. If `uv` is missing, skip this offer and tell the user: "Skipping star-chamber config — `uv` is not installed." The Step 8 output includes install instructions.
+If missing **and `uv` is available** (from the Step 7 check), offer to set it up. If `uv` is missing, skip this offer and tell the user: "Skipping star-chamber config — `uv` is not installed." The Step 9 output includes install instructions.
 
 ```
 /star-chamber requires provider configuration for multi-LLM reviews.
@@ -311,7 +335,7 @@ Then include in the summary:
 **Star-Chamber:** Not configured (run /star-chamber to set up later)
 ```
 
-## Step 8: Output summary
+## Step 9: Output summary
 
 ```
 ## Setup Complete
@@ -328,6 +352,7 @@ Then include in the summary:
   - .claude/rules/local-supplements.md
   - .claude/rules/python.md (scoped to backend/**)
   - .claude/rules/typescript.md (scoped to frontend/**)
+  - opencode.json (OpenCode instructions — loads .claude/rules/*.md)
 
 **Skills available (via pragma plugin):**
   - /implement - implement with auto-validation
