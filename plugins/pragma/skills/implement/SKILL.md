@@ -167,7 +167,7 @@ After implementation is complete, run validation.
    - Python: `uv run pre-commit run --all-files`
    - TypeScript: `pnpm run lint` or `npx biome check .`
 
-   **Priority order:** See `claude-md/universal/validation-precedence.md` for the canonical precedence rules. In short: CLAUDE.local.md > subdirectory rules > root rules > built-in defaults. CLAUDE.local.md has the highest priority to allow per-machine customization without modifying version-controlled rules.
+   **Priority order:** See `claude-md/universal/validation-precedence.md` for the canonical precedence rules. In short: CLAUDE.local.md > path-scoped `.claude/rules/{lang}.md` > `.claude/rules/universal.md` > built-in defaults. CLAUDE.local.md has the highest priority to allow per-machine customization without modifying version-controlled rules.
 
    Fix any issues before proceeding.
 

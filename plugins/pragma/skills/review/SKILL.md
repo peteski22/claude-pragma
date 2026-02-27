@@ -38,10 +38,13 @@ Collect rules from `.claude/rules/*.md` at the project root:
 Check: .claude/rules/*.md (all files, auto-loaded by Claude Code)
 ```
 
-Use the Glob tool to discover `.claude/rules/*.md` files, then the Read tool to load them. Collect and read those that exist.
+Use the Glob tool to discover `.claude/rules/*.md` files, then the Read tool to load them.
+
+**Path-scoped filtering:** Always include `universal.md` and `local-supplements.md`. For files with `paths:` frontmatter, include only if at least one declared path pattern matches a changed file from Step 1. Files without `paths:` frontmatter are treated as global and always included. This prevents unrelated language rules from being applied (e.g., Go rules on a Python-only change).
+
 De-duplicate (a rule file only needs to be read once even if multiple files share it).
 
-**Precedence:** Most specific rules override more general rules.
+**Precedence:** Most specific (path-scoped) rules override more general (universal) rules.
 
 If two rules conflict and precedence is unclear, prefer the more specific rule and note the conflict in the report.
 
