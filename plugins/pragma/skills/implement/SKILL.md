@@ -175,7 +175,7 @@ After implementation is complete, run validation.
    Fix any issues before proceeding.
 
 2. **Run semantic validators** (LLM checks):
-   - Use the Task tool to spawn validators in parallel. For each validator, create a Task with `subagent_type: "general-purpose"` and a prompt instructing the subagent to invoke the validator skill (e.g., `pragma:security`) via the Skill tool and return the JSON result verbatim.
+   - Use the Task tool to spawn validators in parallel. For each validator, create a Task with `subagent_type: "general-purpose"` and a prompt instructing the subagent to invoke the validator skill via the Skill tool (e.g., `skill: "security"`) and return the JSON result verbatim.
    - Do NOT use validator names as the `subagent_type` — most validators are skills, not agents. Always use `general-purpose` as the subagent type.
    - **Collect all validator JSON results internally.** Do NOT display raw validator JSON to the user — you will aggregate these results into the Phase 4 summary.
    - Note: This duplicates the dispatch logic in `validate` intentionally — implement needs inline control for the fix-and-re-validate loop. Keep both in sync.
