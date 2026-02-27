@@ -70,7 +70,7 @@ How would you like to manage API keys?
 
 ```bash
 STAR_CHAMBER_PATH="<set by caller>"
-PLUGIN_ROOT="$STAR_CHAMBER_PATH/../.."; uv run --no-project --isolated python "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --platform
+PLUGIN_ROOT="$STAR_CHAMBER_PATH/../.."; uv run --no-project --isolated "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --platform
 ```
 
 Then show:
@@ -88,7 +88,7 @@ Setup:
 
 ```bash
 STAR_CHAMBER_PATH="<set by caller>"
-PLUGIN_ROOT="$STAR_CHAMBER_PATH/../.."; uv run --no-project --isolated python "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --direct
+PLUGIN_ROOT="$STAR_CHAMBER_PATH/../.."; uv run --no-project --isolated "$PLUGIN_ROOT/reference/star-chamber/generate_config.py" --direct
 ```
 
 Then show:
@@ -269,7 +269,7 @@ Use `uv run --project "$STAR_CHAMBER_PATH" --isolated` to execute scripts with d
 First, determine which SDK packages are needed:
 
 ```bash
-STAR_CHAMBER_PATH="<set by caller>"; uv run --project "$STAR_CHAMBER_PATH" --isolated python "$STAR_CHAMBER_PATH/llm_council.py" --list-sdks
+STAR_CHAMBER_PATH="<set by caller>"; uv run --project "$STAR_CHAMBER_PATH" --isolated "$STAR_CHAMBER_PATH/llm_council.py" --list-sdks
 ```
 
 This outputs JSON with `required_sdks` array listing needed packages (e.g., `["anthropic", "google-genai"]`).
@@ -288,7 +288,7 @@ The simplest approach: all providers review independently in a single round.
 Execute a single parallel review. Write the prompt to a temp file first, then pipe it to avoid shell quoting issues:
 
 ```bash
-STAR_CHAMBER_PATH="<set by caller>"; cat << 'EOF' | uv run --project "$STAR_CHAMBER_PATH" --isolated [--with <sdk>...] python "$STAR_CHAMBER_PATH/llm_council.py" [--provider <name>...] [--file <path>...]
+STAR_CHAMBER_PATH="<set by caller>"; cat << 'EOF' | uv run --project "$STAR_CHAMBER_PATH" --isolated [--with <sdk>...] "$STAR_CHAMBER_PATH/llm_council.py" [--provider <name>...] [--file <path>...]
 {prompt}
 EOF
 ```
