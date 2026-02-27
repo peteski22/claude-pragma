@@ -54,38 +54,39 @@ Invoke the `go-effective` skill using the Skill tool (skill: "go-effective"). Re
 
 Run all applicable Tasks in parallel (multiple Task calls in one response).
 
-## Step 3: Aggregate results
+## Step 3: Aggregate and present results
 
-Collect all validator outputs and present a unified report:
+Collect all validator outputs and present a human-readable summary. Do NOT display raw validator JSON to the user — interpret and summarise the results.
 
 ```markdown
 # Validation Results
 
-## Security
-[JSON output from security]
+| Validator | Result | HARD | SHOULD | WARN |
+|-----------|--------|------|--------|------|
+| Security | ✓ pass | 0 | 0 | 0 |
+| Go Effective | ✗ fail | 1 | 1 | 2 |
 
-## State Machine
-[JSON output from state-machine]
+## HARD violations (must fix)
+- **{validator}** `{file}:{line}` — {rule description}
 
-## Go Effective (if applicable)
-[JSON output from go-effective]
+## SHOULD violations (fix or justify)
+- **{validator}** `{file}:{line}` — {rule description}
+  - *Accepted:* {reason — e.g., pre-existing code outside diff scope, justified trade-off}
 
-## Go Proverbs (if applicable)
-[JSON output from go-proverbs]
+## Warnings
+- {count} advisory warnings from {validator} ({brief context})
 
-## Python Style (if applicable)
-[JSON output from python-style]
-
-## TypeScript Style (if applicable)
-[JSON output from typescript-style]
-
-## Summary
-- Total validators run: N
-- HARD violations: N (must fix)
-- SHOULD violations: N (fix or justify)
-- Warnings: N (advisory)
-- Pass: YES/NO
+## Verdict
+**PASS/FAIL** — {1-2 sentence summary with reasoning}
 ```
+
+**Important formatting rules:**
+- One line per validator in the summary table.
+- List HARD violations with file location and rule.
+- For each SHOULD violation, explain why it was accepted or flag it for fixing.
+- Group warnings concisely — don't list every warning individually unless actionable.
+- The verdict must explain the reasoning (e.g., "all violations are in pre-existing code outside the diff scope").
+- Omit empty sections (e.g., if no HARD violations, don't include the HARD violations heading).
 
 ## Step 4: Verdict
 
