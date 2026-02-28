@@ -209,8 +209,15 @@ Gather context to include with the review prompt:
 Load rules from `.claude/rules/`, filtering path-scoped rules to only those relevant to the review target files (from Step 1). Always include `universal.md` and `local-supplements.md`. For files with `paths:` frontmatter, include only if at least one declared path pattern matches a file in the review target list. Files without `paths:` frontmatter are treated as global and always included.
 
 ```bash
+# Re-derive the review target file list (each Bash invocation is isolated).
+FILES="$(
+  ( git diff HEAD~1 --name-only --diff-filter=ACMRT 2>/dev/null \
+    || git diff --cached --name-only --diff-filter=ACMRT 2>/dev/null \
+    || git diff --name-only --diff-filter=ACMRT ) \
+  | grep -v -E '(node_modules|vendor|\.min\.|\.generated\.|__pycache__|\.pyc$)'
+)"
+
 # Load modular rules from .claude/rules/, filtering by path scope.
-# $FILES contains the newline-separated review target file list from Step 1.
 RULE_DIR=".claude/rules"
 for f in "$RULE_DIR"/*.md; do
   [[ -f "$f" ]] || continue

@@ -95,7 +95,7 @@ If any exist, read them. If they have `<!-- Assembled by /setup-project` comment
 Check for old-style assembled CLAUDE.md files from previous versions of `/setup-project`:
 
 ```bash
-for f in .claude/CLAUDE.md */claude/CLAUDE.md; do
+for f in .claude/CLAUDE.md */.claude/CLAUDE.md; do
   [[ -f "$f" ]] && echo "legacy:$f"
 done
 true
@@ -220,8 +220,8 @@ paths:
 **File extension mapping:**
 - `go` → `*.go`
 - `python` → `*.py`
-- `typescript` → `*.{ts,tsx}`
-- `javascript` → `*.{js,jsx}`
+- `typescript` → `*.ts` and `*.tsx` (use two separate `paths` entries, not brace expansion)
+- `javascript` → `*.js` and `*.jsx` (use two separate `paths` entries, not brace expansion)
 - `rust` → `*.rs`
 
 Assemble each language rule file with:
