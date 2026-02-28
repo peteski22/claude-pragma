@@ -10,7 +10,7 @@
 
 ```mermaid
 flowchart TD
-    A["/implement add user authentication"] --> B["Phase 0: Rules injected from .claude/CLAUDE.md files"]
+    A["/implement add user authentication"] --> B["Phase 0: Rules injected from .claude/rules/*.md"]
     B --> C["Phase 1-2: Agent implements following injected rules"]
     C --> D["Phase 3: Linters run (ruff, biome, golangci-lint)"]
     D --> E["Validators run (security, python-style, etc.)"]
@@ -55,7 +55,7 @@ make install AGENT=opencode
 /setup-project
 ```
 
-This symlinks skills and generates agents and commands into `~/.config/opencode/`. Then run `/setup-project` in any project to detect languages and create the appropriate rule files.
+This symlinks skills and generates agents and commands into `~/.config/opencode/`. Then run `/setup-project` in any project to detect languages, create the appropriate rule files, and generate `opencode.json` so OpenCode auto-loads the rules.
 
 To install into a specific project instead of globally:
 
@@ -69,8 +69,8 @@ make install AGENT=opencode PROJECT=/path/to/your/project
 > /implement add input validation to the login form
 
 [Phase 0] Injecting rules from:
-  - .claude/CLAUDE.md (universal)
-  - frontend/.claude/CLAUDE.md (typescript)
+  - .claude/rules/universal.md
+  - .claude/rules/typescript.md (scoped to frontend/**)
 
 [Phase 1-2] Implementing...
   Created: frontend/src/utils/validation.ts
@@ -94,7 +94,7 @@ make install AGENT=opencode PROJECT=/path/to/your/project
 
 | Skill | What it does | Why it matters |
 |-------|--------------|----------------|
-| `/setup-project` | Detects languages, creates CLAUDE.md files, configures validators | One command to configure any project |
+| `/setup-project` | Detects languages, creates `.claude/rules/` files, configures validators | One command to configure any project |
 | `/implement <task>` | Implements with automatic validation loop | Catches issues before you review the code |
 | `/review` | Validates current changes against all rules | Quick check before committing |
 
@@ -139,22 +139,27 @@ Advisory skills provide feedback but don't block completion.
 
 ## Monorepo Support
 
-`/setup-project` detects languages at root AND in subdirectories, creating appropriate CLAUDE.md files for each:
+`/setup-project` detects languages at root AND in subdirectories, creating path-scoped rule files:
 
 ```text
 myproject/
 ├── .claude/
-│   └── CLAUDE.md               # Universal rules (commit this)
-├── CLAUDE.local.md             # Personal supplements (gitignored)
+│   └── rules/
+│       ├── universal.md              # Universal rules
+│       ├── local-supplements.md      # Documents CLAUDE.local.md usage
+│       ├── python.md                 # Python rules (scoped to backend/**)
+│       └── typescript.md             # TypeScript rules (scoped to frontend/**)
+├── opencode.json                     # OpenCode instructions (loads .claude/rules/*.md)
+├── CLAUDE.local.md                   # Personal supplements (gitignored)
 ├── backend/
-│   ├── .claude/CLAUDE.md       # Python-specific rules
 │   └── pyproject.toml
 └── frontend/
-    ├── .claude/CLAUDE.md       # TypeScript-specific rules
     └── package.json
 ```
 
-When you edit `backend/app/main.py`, both the Python rules and universal rules are injected. If `CLAUDE.local.md` exists at the project root, it is auto-loaded as per-user supplements.
+Language-specific rules use `paths:` frontmatter to scope them to matching files. When you edit `backend/app/main.py`, both `python.md` (scoped to `backend/**/*.py`) and `universal.md` are applied. `CLAUDE.local.md` at the project root is auto-loaded as per-user supplements.
+
+Both agents load rules from the same `.claude/rules/*.md` files — Claude Code natively, OpenCode via the `instructions` glob in `opencode.json`. This keeps a single source of truth for project rules.
 
 ## Directory Structure
 
@@ -183,7 +188,7 @@ Both Claude Code and OpenCode share the same skills from `plugins/pragma/skills/
 
 ## Version Control
 
-**Commit** the generated `.claude/CLAUDE.md` files so other developers get the same rules without re-running `/setup-project`.
+**Optionally commit** the generated `.claude/rules/` files so other developers get the same rules without re-running `/setup-project`.
 
 `CLAUDE.local.md` is for per-user, per-machine rules and should be gitignored. If you create it manually, verify it is in your `.gitignore` to avoid committing personal rules.
 

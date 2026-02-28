@@ -205,15 +205,57 @@ Save the output as the file list for subsequent steps. Since each Bash tool invo
 Gather context to include with the review prompt:
 
 **Project rules (if they exist):**
+
+Load rules from `.claude/rules/`, filtering path-scoped rules to only those relevant to the review target files (from Step 1). Always include `universal.md` and `local-supplements.md`. For files with `paths:` frontmatter, include only if at least one declared path pattern matches a file in the review target list. Files without `paths:` frontmatter are treated as global and always included.
+
 ```bash
-# Walk up from target files to find CLAUDE.md rules.
-[[ -f .claude/CLAUDE.md ]] && cat .claude/CLAUDE.md
-for file in "${FILES[@]}"; do
-  dir="$(dirname "$file")"
-  while [[ "$dir" != "." && "$dir" != "/" ]]; do
-    [[ -f "${dir}/.claude/CLAUDE.md" ]] && cat "${dir}/.claude/CLAUDE.md"
-    dir="$(dirname "$dir")"
-  done
+# Re-derive the review target file list (each Bash invocation is isolated).
+FILES="$(
+  ( git diff HEAD~1 --name-only --diff-filter=ACMRT 2>/dev/null \
+    || git diff --cached --name-only --diff-filter=ACMRT 2>/dev/null \
+    || git diff --name-only --diff-filter=ACMRT ) \
+  | grep -v -E '(node_modules|vendor|\.min\.|\.generated\.|__pycache__|\.pyc$)'
+)"
+
+# Load modular rules from .claude/rules/, filtering by path scope.
+RULE_DIR=".claude/rules"
+for f in "$RULE_DIR"/*.md; do
+  [[ -f "$f" ]] || continue
+  basename="$(basename "$f")"
+
+  # Always include universal and local-supplements (not path-scoped).
+  if [[ "$basename" == "universal.md" ]] || [[ "$basename" == "local-supplements.md" ]]; then
+    cat "$f"
+    continue
+  fi
+
+  # If no paths: frontmatter, treat as global — always include.
+  if ! grep -q '^paths:' "$f"; then
+    cat "$f"
+    continue
+  fi
+
+  # For path-scoped rules, include only if a target file matches a declared pattern.
+  matched=false
+  while IFS= read -r pattern; do
+    [[ -z "$pattern" ]] && continue
+    pattern="${pattern#- }"
+    pattern="${pattern%\"}"
+    pattern="${pattern#\"}"
+    while IFS= read -r file_path; do
+      [[ -z "$file_path" ]] && continue
+      # shellcheck disable=SC2254
+      if [[ "$file_path" == $pattern ]]; then
+        matched=true
+        break
+      fi
+    done <<< "$FILES"
+    $matched && break
+  done < <(awk '/^paths:[[:space:]]*$/{p=1;next} p&&/^[[:space:]]*-[[:space:]]/{gsub(/^[[:space:]]*-[[:space:]]*/,"",$0);print;next} p{exit}' "$f")
+
+  if $matched; then
+    cat "$f"
+  fi
 done
 ```
 

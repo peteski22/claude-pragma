@@ -32,20 +32,19 @@ Collect the list of changed files and their directories.
 
 ## Step 2: Inject applicable rules
 
-For each changed file, walk upward from its directory to repo root, collecting `.claude/CLAUDE.md` files:
+Collect rules from `.claude/rules/*.md` at the project root:
 
 ```
-For a file in backend/app/handlers/:
-  Check: backend/app/handlers/.claude/CLAUDE.md
-  Check: backend/app/.claude/CLAUDE.md
-  Check: backend/.claude/CLAUDE.md
-  Check: .claude/CLAUDE.md (root)
+Check: .claude/rules/*.md (all files, auto-loaded by Claude Code)
 ```
 
-Use the Read tool to check each path. Collect and read those that exist.
+Use the Glob tool to discover `.claude/rules/*.md` files, then the Read tool to load them.
+
+**Path-scoped filtering:** Always include `universal.md` and `local-supplements.md`. For files with `paths:` frontmatter, include only if at least one declared path pattern matches a changed file from Step 1. Files without `paths:` frontmatter are treated as global and always included. This prevents unrelated language rules from being applied (e.g., Go rules on a Python-only change).
+
 De-duplicate (a rule file only needs to be read once even if multiple files share it).
 
-**Precedence:** Most specific rules override more general rules.
+**Precedence:** Most specific (path-scoped) rules override more general (universal) rules.
 
 If two rules conflict and precedence is unclear, prefer the more specific rule and note the conflict in the report.
 
@@ -66,8 +65,8 @@ If it exists, read it. Pay particular attention to any "Validation Commands" sec
 **Check rules for custom validation commands first:**
 Look for a "Validation Commands" section in these sources, in precedence order:
 1. `CLAUDE.local.md` (from Step 2a — highest priority)
-2. Directory-specific `.claude/CLAUDE.md` files (from Step 2)
-3. Root `.claude/CLAUDE.md` (from Step 2)
+2. Path-scoped `.claude/rules/*.md` files (from Step 2)
+3. Universal `.claude/rules/universal.md` (from Step 2)
 
 Use the highest-precedence match. See `claude-md/universal/validation-precedence.md` for the canonical precedence rules.
 
@@ -116,8 +115,8 @@ Collect all results.
 ## Review Results
 
 ### Rules Applied
-- backend/.claude/CLAUDE.md
-- .claude/CLAUDE.md
+- .claude/rules/python.md (scoped to backend/**)
+- .claude/rules/universal.md
 
 ### Files Changed
 - cmd/main.go

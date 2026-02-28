@@ -14,7 +14,7 @@ flowchart TB
         S3["Run /setup-project"]
         S1 --> S2 --> S3
         S3 --> S3a["Detects: backend/ (Python)<br/>frontend/ (TypeScript)<br/>services/go/ (Go)"]
-        S3a --> S3b["Creates .claude/CLAUDE.md files"]
+        S3a --> S3b["Creates .claude/rules/*.md files"]
         S3b --> S3c["Verifies plugin skills"]
     end
 
@@ -24,7 +24,7 @@ flowchart TB
         subgraph P0["Phase 0: Rule Injection"]
             P0a["Identify target dirs:<br/>backend/, frontend/"]
             P0b["Walk up, collect rules"]
-            P0c["Read & apply:<br/>• backend/.claude/CLAUDE.md<br/>• frontend/.claude/CLAUDE.md<br/>• .claude/CLAUDE.md"]
+            P0c["Read & apply:<br/>• .claude/rules/python.md<br/>• .claude/rules/typescript.md<br/>• .claude/rules/universal.md"]
             P0a --> P0b --> P0c
         end
 
@@ -97,9 +97,9 @@ After `/implement` or `/review`, you get both formats:
 **Task:** Add user authentication
 
 **Rules Applied:**
-- backend/.claude/CLAUDE.md (Python)
-- frontend/.claude/CLAUDE.md (TypeScript)
-- .claude/CLAUDE.md (Universal)
+- .claude/rules/python.md (scoped to backend/**)
+- .claude/rules/typescript.md (scoped to frontend/**)
+- .claude/rules/universal.md
 
 **Files Changed:**
 - backend/app/services/auth.py: AuthService with login/logout
@@ -125,9 +125,9 @@ Ready for /review or commit.
 {
   "task": "Add user authentication",
   "applied_rules": [
-    "backend/.claude/CLAUDE.md",
-    "frontend/.claude/CLAUDE.md",
-    ".claude/CLAUDE.md"
+    ".claude/rules/python.md",
+    ".claude/rules/typescript.md",
+    ".claude/rules/universal.md"
   ],
   "rule_conflicts": [],
   "files_changed": [
@@ -174,7 +174,7 @@ If there's a conflict between what CLAUDE.md says and what a validator checks, t
 
 ### 2. Rules are injected, not remembered
 
-`/implement` and `/review` **mechanically read** applicable CLAUDE.md files before doing any work. This is Phase 0 / Step 2 - it happens first, explicitly, and is recorded.
+`/implement` and `/review` **mechanically read** applicable `.claude/rules/*.md` files before doing any work. This is Phase 0 / Step 2 - it happens first, explicitly, and is recorded.
 
 > **Critical**: Phase 0 (rule injection) is mandatory. It must complete before any other phase. This is the single most important design decision - it eliminates reliance on LLM memory.
 
@@ -209,9 +209,9 @@ flowchart TB
         P0[Identify changed files]
         P0 --> DetectLang{Detect language}
 
-        DetectLang -->|.py files| PyRules["Load: backend/.claude/CLAUDE.md<br/>+ .claude/CLAUDE.md"]
-        DetectLang -->|.ts/.tsx files| TSRules["Load: frontend/.claude/CLAUDE.md<br/>+ .claude/CLAUDE.md"]
-        DetectLang -->|.go files| GoRules["Load: services/go/.claude/CLAUDE.md<br/>+ .claude/CLAUDE.md"]
+        DetectLang -->|.py files| PyRules["Load: .claude/rules/python.md<br/>+ .claude/rules/universal.md"]
+        DetectLang -->|.ts/.tsx files| TSRules["Load: .claude/rules/typescript.md<br/>+ .claude/rules/universal.md"]
+        DetectLang -->|.go files| GoRules["Load: .claude/rules/go.md<br/>+ .claude/rules/universal.md"]
     end
 
     subgraph Phase12["Phase 1-2: Implement"]
@@ -257,15 +257,15 @@ flowchart TB
 
 ```mermaid
 graph TD
-    Root[".claude/CLAUDE.md<br/>(Universal rules)"]
+    Root[".claude/rules/universal.md<br/>(Universal rules)"]
 
-    Root --> Backend["backend/.claude/CLAUDE.md<br/>(Python rules)"]
-    Root --> Frontend["frontend/.claude/CLAUDE.md<br/>(TypeScript rules)"]
-    Root --> Services["services/go/.claude/CLAUDE.md<br/>(Go rules)"]
+    Root --> Python[".claude/rules/python.md<br/>(paths: backend/**/*.py)"]
+    Root --> TS[".claude/rules/typescript.md<br/>(paths: frontend/**/*.{ts,tsx})"]
+    Root --> Go[".claude/rules/go.md<br/>(paths: services/go/**/*.go)"]
 
-    Backend --> PyFiles["backend/**/*.py"]
-    Frontend --> TSFiles["frontend/**/*.ts,tsx"]
-    Services --> GoFiles["services/go/**/*.go"]
+    Python --> PyFiles["backend/**/*.py"]
+    TS --> TSFiles["frontend/**/*.ts,tsx"]
+    Go --> GoFiles["services/go/**/*.go"]
 ```
 
 ## System Flow
@@ -275,7 +275,7 @@ flowchart TD
     subgraph Phase0["Phase 0: Inject Rules (MANDATORY)"]
         P0A[Identify target directories]
         P0B[Walk up to repo root]
-        P0C[Collect .claude/CLAUDE.md files]
+        P0C[Collect .claude/rules/*.md files]
         P0D[Read and apply - most specific first]
         P0E[Record applied_rules]
         P0A --> P0B --> P0C --> P0D --> P0E
@@ -325,61 +325,26 @@ flowchart TD
 
 ## Rule Injection Detail
 
-Rule injection walks up from the changed file to the repo root, collecting `.claude/CLAUDE.md` files. Most specific rules take precedence.
+Rule injection loads all `.claude/rules/*.md` files and applies path-scoped rules to matching files. More specific (path-scoped) rules take precedence over universal rules.
 
-### Go Example
-
-```mermaid
-flowchart TD
-    File["Changed file:<br/>services/go/handlers/user.go"]
-
-    File --> Check1{"services/go/handlers/<br/>.claude/CLAUDE.md?"}
-    Check1 -->|missing| Check2
-
-    Check2{"services/go/<br/>.claude/CLAUDE.md?"}
-    Check2 -->|exists| Rule2["Load Go rules"]
-    Check2 -->|missing| Check3
-
-    Rule2 --> Check3{".claude/CLAUDE.md?<br/>(root)"}
-    Check3 -->|exists| Rule3["Load universal rules"]
-
-    Rule3 --> Apply["Apply: Go rules + Universal"]
-```
-
-### Python Example
+### How Path-Scoped Rules Work
 
 ```mermaid
 flowchart TD
     File["Changed file:<br/>backend/app/services/users.py"]
 
-    File --> Check1{"backend/app/services/<br/>.claude/CLAUDE.md?"}
-    Check1 -->|missing| Check2
+    File --> Glob["Glob: .claude/rules/*.md"]
+    Glob --> Check1{".claude/rules/python.md<br/>paths: backend/**/*.py"}
+    Check1 -->|matches| Rule1["Load Python rules"]
 
-    Check2{"backend/<br/>.claude/CLAUDE.md?"}
-    Check2 -->|exists| Rule2["Load Python rules"]
+    Glob --> Check2{".claude/rules/typescript.md<br/>paths: frontend/**/*.{ts,tsx}"}
+    Check2 -->|no match| Skip["Skip"]
 
-    Rule2 --> Check3{".claude/CLAUDE.md?<br/>(root)"}
-    Check3 -->|exists| Rule3["Load universal rules"]
+    Glob --> Check3{".claude/rules/universal.md<br/>(no paths — always applies)"}
+    Check3 --> Rule2["Load universal rules"]
 
-    Rule3 --> Apply["Apply: Python rules + Universal"]
-```
-
-### TypeScript Example
-
-```mermaid
-flowchart TD
-    File["Changed file:<br/>frontend/src/components/Button.tsx"]
-
-    File --> Check1{"frontend/src/components/<br/>.claude/CLAUDE.md?"}
-    Check1 -->|missing| Check2
-
-    Check2{"frontend/<br/>.claude/CLAUDE.md?"}
-    Check2 -->|exists| Rule2["Load TypeScript rules"]
-
-    Rule2 --> Check3{".claude/CLAUDE.md?<br/>(root)"}
-    Check3 -->|exists| Rule3["Load universal rules"]
-
-    Rule3 --> Apply["Apply: TypeScript rules + Universal"]
+    Rule1 --> Apply["Apply: Python rules + Universal"]
+    Rule2 --> Apply
 ```
 
 ## Validator Contracts
@@ -463,8 +428,8 @@ Each validator produces JSON in this schema:
 {
   "validator": "python-style",
   "applied_rules": [
-    "backend/.claude/CLAUDE.md",
-    ".claude/CLAUDE.md"
+    ".claude/rules/python.md",
+    ".claude/rules/universal.md"
   ],
   "files_checked": ["backend/app/services/users.py"],
   "pass": false,
@@ -489,9 +454,9 @@ Phase 4 combines all validator results into a single output:
 {
   "task": "implement user authentication",
   "applied_rules": [
-    "backend/.claude/CLAUDE.md",
-    "frontend/.claude/CLAUDE.md",
-    ".claude/CLAUDE.md"
+    ".claude/rules/python.md",
+    ".claude/rules/typescript.md",
+    ".claude/rules/universal.md"
   ],
   "rule_conflicts": [],
   "files_changed": [
@@ -572,7 +537,7 @@ When rules conflict (e.g., subdirectory rule contradicts root rule), the conflic
       "rule": "line-length",
       "root_value": 80,
       "override_value": 120,
-      "source": "backend/.claude/CLAUDE.md",
+      "source": ".claude/rules/python.md",
       "resolution": "Used override (more specific)"
     }
   ]
@@ -581,16 +546,16 @@ When rules conflict (e.g., subdirectory rule contradicts root rule), the conflic
 
 The more specific rule always wins, but the conflict is recorded so it can be reviewed.
 
-## Meta-rule (fallback only)
+## Modular Rules
 
-The root CLAUDE.md contains a meta-rule telling Claude to read subdirectory rules. This is a **fallback** for ad-hoc interactions, not the primary mechanism.
+All rules live in `.claude/rules/*.md` at the project root. Language-specific rules use `paths:` frontmatter to scope them to matching files only.
 
-For `/implement` and `/review`, rule injection is mechanical and explicit. The meta-rule exists for:
-- Manual Claude interactions
-- Documentation of intent
-- Edge cases where someone bypasses the workflow
+**How each agent loads rules:**
 
-It is **not** on the critical path.
+- **Claude Code:** Auto-loads all `.claude/rules/*.md` files natively. No additional configuration needed.
+- **OpenCode:** Loads rules via the `instructions` glob in `opencode.json` at the project root. `/setup-project` generates this file with `{"instructions": [".claude/rules/*.md"]}`.
+
+For `/implement` and `/review`, rule injection is mechanical and explicit — the skills read `.claude/rules/*.md` directly. Both agents also auto-load these files for ad-hoc interactions outside the formal workflow.
 
 ## Validators
 
