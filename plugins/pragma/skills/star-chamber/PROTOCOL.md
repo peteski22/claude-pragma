@@ -377,12 +377,12 @@ Context compaction can fire between rounds and destroy previous round responses.
 
 Before the first round, create the fixed parent directory and a unique run subdirectory, then inform the user:
 ```bash
-mkdir -p "${TMPDIR:-/tmp}/star-chamber" && SC_TMPDIR=$(mktemp -d "${TMPDIR:-/tmp}/star-chamber/run-XXXXXX")
+SC_PARENT="${TMPDIR:-/tmp}/star-chamber"; mkdir -p "$SC_PARENT" && chmod 700 "$SC_PARENT" && SC_TMPDIR=$(mktemp -d "$SC_PARENT/run-XXXXXX")
 ```
 
-Tell the user: _"Debate mode will read and write round results in `${TMPDIR:-/tmp}/star-chamber/`. Approve access to this directory to avoid repeated prompts."_
+Tell the user: _"Debate mode will read and write round results in `<resolved SC_PARENT path>`. Approve access to this directory to avoid repeated prompts."_ Use the resolved value of `$SC_PARENT` (e.g. `/tmp/star-chamber`) so the path the user sees matches the actual permission prompt.
 
-The fixed parent path lets the user grant blanket Bash permission once, while the unique `run-XXXXXX` subdirectory keeps concurrent star-chamber sessions isolated from each other.
+The fixed parent path lets the user grant blanket Bash permission once, while the unique `run-XXXXXX` subdirectory keeps concurrent star-chamber sessions isolated from each other. The `chmod 700` ensures only the current user can access the directory.
 
 For each round, redirect `llm_council.py` stdout directly to a round file instead of capturing in a shell variable:
 ```bash
