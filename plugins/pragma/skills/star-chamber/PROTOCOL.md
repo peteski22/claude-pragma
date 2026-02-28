@@ -375,10 +375,14 @@ Final: Use last round responses for consensus building
 
 Context compaction can fire between rounds and destroy previous round responses. To prevent data loss, persist each round's results to a per-run temp directory.
 
-Before the first round, create an isolated temp directory:
+Before the first round, create the fixed parent directory and a unique run subdirectory, then inform the user:
 ```bash
-SC_TMPDIR=$(mktemp -d "${TMPDIR:-/tmp}/star-chamber-XXXXXX")
+mkdir -p "${TMPDIR:-/tmp}/star-chamber" && SC_TMPDIR=$(mktemp -d "${TMPDIR:-/tmp}/star-chamber/run-XXXXXX")
 ```
+
+Tell the user: _"Debate mode will read and write round results in `${TMPDIR:-/tmp}/star-chamber/`. Approve access to this directory to avoid repeated prompts."_
+
+The fixed parent path lets the user grant blanket Bash permission once, while the unique `run-XXXXXX` subdirectory keeps concurrent star-chamber sessions isolated from each other.
 
 For each round, redirect `llm_council.py` stdout directly to a round file instead of capturing in a shell variable:
 ```bash
