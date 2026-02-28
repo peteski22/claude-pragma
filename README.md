@@ -30,16 +30,47 @@ flowchart TD
 
 ## Quick Start: Claude Code
 
-```bash
-# Install the plugin from the marketplace
-/plugin marketplace add peteski22/agent-pragma
-/plugin install pragma@agent-pragma
+1. Add the marketplace:
+   ```text
+   /plugin marketplace add peteski22/agent-pragma
+   ```
 
-# Then in any project:
-/setup-project
-```
+2. Install the plugin:
+   ```text
+   /plugin install pragma@agent-pragma
+   ```
+
+3. Enable auto-update (recommended):
+   ```text
+   /plugin
+   → Marketplaces tab → select agent-pragma → Enable auto-update
+   ```
+   Third-party marketplaces have auto-update **disabled** by default. Enabling it ensures you receive new versions automatically when Claude Code starts.
+
+4. Set up your project:
+   ```text
+   /setup-project
+   ```
 
 > **Note:** Skills are shown as `/star-chamber (pragma)` in the CLI autocomplete. The short form `/star-chamber` is the easiest way to invoke them. The fully-qualified form `/pragma:star-chamber` also works.
+
+## Updating
+
+If you enabled auto-update in the Quick Start, new versions are fetched automatically when Claude Code starts and you'll be notified to restart your session.
+
+To update manually, both steps are required in this order:
+
+1. Update the marketplace (fetches the latest plugin metadata):
+   ```text
+   /plugin marketplace update agent-pragma
+   ```
+
+2. Update the plugin (installs the new version):
+   ```text
+   /plugin update pragma
+   ```
+
+To check your current version, run `/plugin` and look under the **Installed** tab.
 
 ## Quick Start: OpenCode
 
@@ -200,7 +231,7 @@ In git worktrees, use `@import` (a Claude Code directive that includes another C
 
 ## Legacy Installation (Deprecated)
 
-The previous `make install` + `$CLAUDE_PRAGMA_PATH` approach for Claude Code is deprecated. Use the plugin marketplace instead. If migrating, remove the old symlinks and env var:
+The previous `make install` + `$CLAUDE_PRAGMA_PATH` approach for Claude Code is deprecated. Use the plugin marketplace instead — it handles updates automatically when auto-update is enabled (see [Quick Start: Claude Code](#quick-start-claude-code)). If migrating, remove the old symlinks and env var:
 
 ```bash
 make uninstall
