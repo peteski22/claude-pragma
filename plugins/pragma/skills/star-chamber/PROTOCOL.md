@@ -39,8 +39,14 @@ Before running, verify uv is available and configuration exists:
 ```bash
 command -v uv >/dev/null 2>&1 && echo "uv:ok" || echo "uv:missing"
 CONFIG_PATH="${STAR_CHAMBER_CONFIG:-$HOME/.config/star-chamber/providers.json}"
-[[ -f "$CONFIG_PATH" ]] && echo "config:exists" || echo "config:missing"
+[[ -f "$CONFIG_PATH" ]] && echo "config:exists:$CONFIG_PATH" || echo "config:missing"
 ```
+
+**NEVER echo, log, or print API key values.** Only check presence:
+```bash
+[ -n "$ANY_LLM_KEY" ] && echo "key:set" || echo "key:unset"
+```
+Do not use shell expansions like `${VAR:-default}` on key variables — these can leak the value when the variable is set.
 
 **If uv is missing**, stop and show:
 ```
@@ -614,6 +620,11 @@ Note: `api_key` fields are omitted - the library fetches them from the platform 
 - Never commit `providers.json` with actual API keys to version control.
 - The any-llm.ai platform mode is recommended for team environments.
 
+**Key Handling:**
+- **Never echo, log, or print API key values** in shell commands or debug output.
+- Only check key *presence* (e.g., `[ -n "$VAR" ]`), never key *contents*.
+- Avoid shell expansions (`${VAR:-...}`, `${VAR:+...}`) on key variables in echo/print statements — these can leak values.
+
 **Error Output:**
 - API keys are automatically redacted from error messages (patterns: `sk-*`, `ANY.v1.*`, etc.).
 - The `--list-sdks` command shows whether keys are set, not their values.
@@ -626,9 +637,9 @@ Note: `api_key` fields are omitted - the library fetches them from the platform 
 ```json
 {"provider": "openai", "success": false, "error": "Authentication failed for openai. Check OPENAI_API_KEY is set and valid."}
 ```
-- Verify the environment variable is set: `echo $OPENAI_API_KEY`
+- Verify the environment variable is set: `[ -n "$OPENAI_API_KEY" ] && echo "set" || echo "not set"`
 - Check if the key is valid (not expired or revoked)
-- For platform mode, verify `ANY_LLM_KEY` is set and the provider is configured in your any-llm.ai project
+- For platform mode, verify `ANY_LLM_KEY` is set: `[ -n "$ANY_LLM_KEY" ] && echo "set" || echo "not set"`
 
 **Request timed out:**
 ```json
