@@ -45,6 +45,7 @@ class ProviderConfig(TypedDict, total=False):
     api_key: str
     max_tokens: int
     api_base: str
+    local: bool
 
 
 class ReviewResult(TypedDict, total=False):
@@ -162,6 +163,7 @@ def get_required_sdks(provider_names: list[str]) -> list[str]:
 async def _get_review_internal(
     provider: str, model: str, prompt: str, api_key: str,
     max_tokens: int = DEFAULT_MAX_TOKENS, api_base: str = "",
+    local: bool = False,
 ) -> ReviewResult:
     """Send prompt to a single provider and return structured response.
 
@@ -235,6 +237,24 @@ async def _get_review_internal(
         env_var = env_var_map.get(provider.lower(), f"{provider.upper()}_API_KEY")
 
         # Detect common API key issues.
+        is_auth_error = (
+            "api_key" in error_msg
+            or "unauthorized" in error_msg
+            or "401" in error_msg
+            or "api key" in error_msg
+            or "apikey" in error_msg
+        )
+        if is_auth_error and local:
+            return ReviewResult(
+                provider=provider,
+                model=model,
+                success=False,
+                error=(
+                    f"Local provider {provider} returned auth error. "
+                    "If authentication is required, add the key to your any-llm platform "
+                    "project or set api_key in providers.json."
+                ),
+            )
         if "api_key" in error_msg or "unauthorized" in error_msg or "401" in error_msg:
             return ReviewResult(
                 provider=provider,
@@ -260,7 +280,7 @@ async def _get_review_internal(
 async def get_review(
     provider: str, model: str, prompt: str, api_key: str,
     timeout: float | None = None, max_tokens: int = DEFAULT_MAX_TOKENS,
-    api_base: str = "",
+    api_base: str = "", local: bool = False,
 ) -> ReviewResult:
     """Get review with optional timeout.
 
@@ -268,13 +288,15 @@ async def get_review(
     """
     if timeout is None:
         return await _get_review_internal(
-            provider, model, prompt, api_key, max_tokens=max_tokens, api_base=api_base,
+            provider, model, prompt, api_key, max_tokens=max_tokens,
+            api_base=api_base, local=local,
         )
 
     try:
         return await asyncio.wait_for(
             _get_review_internal(
-                provider, model, prompt, api_key, max_tokens=max_tokens, api_base=api_base,
+                provider, model, prompt, api_key, max_tokens=max_tokens,
+                api_base=api_base, local=local,
             ),
             timeout=timeout,
         )
@@ -287,12 +309,42 @@ async def get_review(
         )
 
 
-def resolve_api_keys(
-    providers: list[dict[str, Any]], use_platform: bool
+async def _resolve_platform_keys(
+    providers: list[dict[str, Any]], any_llm_key: str,
 ) -> list[dict[str, Any]]:
-    """Resolve API keys - from env vars or platform."""
+    """Fetch provider keys from any-llm platform, tolerating missing keys for local providers."""
+    from any_llm_platform_client import (
+        AnyLLMPlatformClient,
+        ProviderKeyFetchError,
+    )
+
+    client = AnyLLMPlatformClient()
+    for p in providers:
+        try:
+            result = await client.aget_decrypted_provider_key(any_llm_key, p["provider"])
+            p["api_key"] = result.api_key
+        except ProviderKeyFetchError:
+            if p.get("local"):
+                print(
+                    f"[star-chamber] No platform key for local provider {p['provider']}, proceeding without",
+                    file=sys.stderr,
+                )
+                p["api_key"] = ""
+            else:
+                raise
+    return providers
+
+
+def resolve_api_keys(
+    providers: list[dict[str, Any]], use_platform: bool,
+) -> list[dict[str, Any]]:
+    """Resolve API keys for direct mode (env var expansion).
+
+    Platform mode is handled by _resolve_platform_keys() in the async path.
+    """
     if use_platform:
-        # Platform mode: ignore any api_key in config, platform provides keys.
+        # Platform mode: clear keys here; actual resolution happens in
+        # _resolve_platform_keys() which is called from the async main flow.
         ignored = [p["provider"] for p in providers if p.get("api_key")]
         if ignored:
             print(
@@ -348,7 +400,7 @@ async def run_council(
         get_review(
             p["provider"], p["model"], prompt, p.get("api_key", ""),
             timeout=timeout, max_tokens=p.get("max_tokens", DEFAULT_MAX_TOKENS),
-            api_base=p.get("api_base", ""),
+            api_base=p.get("api_base", ""), local=p.get("local", False),
         )
         for p in providers
     ]
@@ -456,8 +508,11 @@ def main() -> None:
         ready = []
         missing_key = []
         platform_provided = []
+        local_providers = []
         for p in providers:
-            if platform == "any-llm":
+            if p.get("local"):
+                local_providers.append(p["provider"])
+            elif platform == "any-llm":
                 platform_provided.append(p["provider"])
             elif p.get("api_key"):
                 ready.append(p["provider"])
@@ -468,6 +523,7 @@ def main() -> None:
             "providers_configured": provider_names,
             "providers_ready": ready,
             "providers_missing_key": missing_key,
+            "providers_local": local_providers,
             "required_sdks": sdks,
             "uv_with_flags": " ".join(f"--with {sdk}" for sdk in sdks),
             "platform": platform,
@@ -511,14 +567,13 @@ def main() -> None:
                 )
                 sys.exit(1)
 
-    # Run the council (single parallel round).
-    result = asyncio.run(
-        run_council(
-            combined_prompt,
-            providers,
-            timeout=timeout,
-        )
-    )
+    # In platform mode, resolve keys from the platform before running the council.
+    async def _run() -> dict[str, Any]:
+        if platform == "any-llm":
+            await _resolve_platform_keys(providers, any_llm_key)
+        return await run_council(combined_prompt, providers, timeout=timeout)
+
+    result = asyncio.run(_run())
 
     # Separate successful and failed reviews.
     all_reviews = result.get("reviews", [])

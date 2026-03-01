@@ -18,6 +18,13 @@
       "model": "gemini-2.5-flash",
       "api_key": "${GEMINI_API_KEY}",
       "max_tokens": 65536
+    },
+    {
+      "provider": "llamafile",
+      "model": "local-model",
+      "api_base": "http://localhost:8080/v1",
+      "max_tokens": 4096,
+      "local": true
     }
   ],
   "consensus_threshold": 2,

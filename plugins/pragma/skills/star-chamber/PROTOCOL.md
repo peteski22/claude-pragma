@@ -531,6 +531,7 @@ Override config path with `STAR_CHAMBER_CONFIG` environment variable.
 | `api_key` | no | API key or `${ENV_VAR}` reference. Omit for platform mode or keyless local providers. |
 | `max_tokens` | no | Max response tokens (default: 16384) |
 | `api_base` | no | Custom base URL. Use for local/self-hosted LLMs (llamafile, ollama, vLLM, LocalAI, lmstudio). Omit for cloud providers — the SDK uses built-in defaults. |
+| `local` | no | Set to `true` for local/self-hosted providers. In platform mode, if the platform has no key for this provider, it proceeds without one instead of failing. |
 
 ### Local/self-hosted LLM examples
 
