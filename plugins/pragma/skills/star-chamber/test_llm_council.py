@@ -35,8 +35,9 @@ class TestMaxTokensPassthrough:
         mock_module.acompletion = mock_acompletion
 
         # Use gemini (non-OpenAI) to test the max_tokens path.
+        config = {"provider": "gemini", "model": "gemini-2.5-flash", "api_key": "key"}
         with patch.dict(sys.modules, {"any_llm": mock_module}):
-            asyncio.run(_get_review_internal("gemini", "gemini-2.5-flash", "test prompt", "key"))
+            asyncio.run(_get_review_internal(config, "test prompt"))
             assert mock_acompletion.call_args.kwargs.get("max_tokens") == DEFAULT_MAX_TOKENS
 
     def test_custom_max_tokens_passed_to_acompletion(self):
@@ -45,8 +46,9 @@ class TestMaxTokensPassthrough:
         mock_module = MagicMock()
         mock_module.acompletion = mock_acompletion
 
+        config = {"provider": "anthropic", "model": "claude-opus-4-6", "api_key": "key", "max_tokens": 8192}
         with patch.dict(sys.modules, {"any_llm": mock_module}):
-            asyncio.run(_get_review_internal("anthropic", "claude-opus-4-6", "test prompt", "key", max_tokens=8192))
+            asyncio.run(_get_review_internal(config, "test prompt"))
             assert mock_acompletion.call_args.kwargs.get("max_tokens") == 8192
 
     def test_openai_uses_max_completion_tokens(self):
@@ -55,8 +57,9 @@ class TestMaxTokensPassthrough:
         mock_module = MagicMock()
         mock_module.acompletion = mock_acompletion
 
+        config = {"provider": "openai", "model": "gpt-5.2", "api_key": "key", "max_tokens": 128000}
         with patch.dict(sys.modules, {"any_llm": mock_module}):
-            asyncio.run(_get_review_internal("openai", "gpt-5.2", "test prompt", "key", max_tokens=128000))
+            asyncio.run(_get_review_internal(config, "test prompt"))
             call_kwargs = mock_acompletion.call_args.kwargs
             assert call_kwargs.get("max_completion_tokens") == 128000
             assert "max_tokens" not in call_kwargs
@@ -98,13 +101,9 @@ class TestApiBasePassthrough:
         mock_module = MagicMock()
         mock_module.acompletion = mock_acompletion
 
+        config = {"provider": "llamafile", "model": "local-model", "api_key": "", "api_base": "http://gpu-box.local:8080/v1"}
         with patch.dict(sys.modules, {"any_llm": mock_module}):
-            asyncio.run(
-                _get_review_internal(
-                    "llamafile", "local-model", "test prompt", "",
-                    api_base="http://gpu-box.local:8080/v1",
-                ),
-            )
+            asyncio.run(_get_review_internal(config, "test prompt"))
             assert mock_acompletion.call_args.kwargs.get("api_base") == "http://gpu-box.local:8080/v1"
 
     def test_api_base_omitted_when_empty(self):
@@ -113,8 +112,9 @@ class TestApiBasePassthrough:
         mock_module = MagicMock()
         mock_module.acompletion = mock_acompletion
 
+        config = {"provider": "gemini", "model": "gemini-2.5-flash", "api_key": "key"}
         with patch.dict(sys.modules, {"any_llm": mock_module}):
-            asyncio.run(_get_review_internal("gemini", "gemini-2.5-flash", "test prompt", "key"))
+            asyncio.run(_get_review_internal(config, "test prompt"))
             assert "api_base" not in mock_acompletion.call_args.kwargs
 
     def test_run_council_threads_api_base_from_provider(self):
@@ -173,11 +173,44 @@ class TestResolvePlatformKeys:
             assert result[0]["api_key"] == "fetched-key-123"
             mock_client.aget_decrypted_provider_key.assert_awaited_once_with("test-key", "openai")
 
+    def test_returns_new_dicts(self):
+        """Returned provider dicts should not be the same objects as the input."""
+        mock_result = MagicMock()
+        mock_result.api_key = "fetched-key"
+
+        mock_client = MagicMock()
+        mock_client.aget_decrypted_provider_key = AsyncMock(return_value=mock_result)
+
+        original = {"provider": "openai", "model": "gpt-5.2", "api_key": ""}
+        providers = [original]
+
+        mock_mod = _mock_platform_client_module(mock_client, _ProviderKeyFetchError)
+        with patch.dict(sys.modules, {"any_llm_platform_client": mock_mod}):
+            result = asyncio.run(_resolve_platform_keys(providers, "test-key"))
+            assert result[0] is not original
+            assert original["api_key"] == ""  # original unchanged
+
     def test_local_provider_tolerates_fetch_error(self):
         """Local providers should get empty api_key when platform fetch fails."""
         mock_client = MagicMock()
         mock_client.aget_decrypted_provider_key = AsyncMock(
             side_effect=_ProviderKeyFetchError("no key"),
+        )
+
+        providers = [
+            {"provider": "llamafile", "model": "local-model", "api_key": "", "local": True},
+        ]
+
+        mock_mod = _mock_platform_client_module(mock_client, _ProviderKeyFetchError)
+        with patch.dict(sys.modules, {"any_llm_platform_client": mock_mod}):
+            result = asyncio.run(_resolve_platform_keys(providers, "test-key"))
+            assert result[0]["api_key"] == ""
+
+    def test_local_provider_tolerates_network_error(self):
+        """Local providers should survive non-ProviderKeyFetchError exceptions."""
+        mock_client = MagicMock()
+        mock_client.aget_decrypted_provider_key = AsyncMock(
+            side_effect=ConnectionError("platform unreachable"),
         )
 
         providers = [
@@ -205,30 +238,89 @@ class TestResolvePlatformKeys:
             with pytest.raises(_ProviderKeyFetchError):
                 asyncio.run(_resolve_platform_keys(providers, "test-key"))
 
+    def test_non_local_provider_raises_on_network_error(self):
+        """Non-local providers should re-raise network errors."""
+        mock_client = MagicMock()
+        mock_client.aget_decrypted_provider_key = AsyncMock(
+            side_effect=ConnectionError("platform unreachable"),
+        )
 
-class TestResolveApiKeysDirectMode:
-    """Verify resolve_api_keys() in direct mode preserves local field."""
+        providers = [
+            {"provider": "openai", "model": "gpt-5.2", "api_key": ""},
+        ]
 
-    def test_local_field_preserved_in_direct_mode(self):
+        mock_mod = _mock_platform_client_module(mock_client, _ProviderKeyFetchError)
+        with patch.dict(sys.modules, {"any_llm_platform_client": mock_mod}):
+            with pytest.raises(ConnectionError):
+                asyncio.run(_resolve_platform_keys(providers, "test-key"))
+
+    def test_local_provider_uses_platform_key_when_available(self):
+        """Local providers should use the platform key when fetching succeeds."""
+        mock_result = MagicMock()
+        mock_result.api_key = "platform-key-for-local"
+
+        mock_client = MagicMock()
+        mock_client.aget_decrypted_provider_key = AsyncMock(return_value=mock_result)
+
+        providers = [
+            {"provider": "llamafile", "model": "local-model", "api_key": "", "local": True},
+        ]
+
+        mock_mod = _mock_platform_client_module(mock_client, _ProviderKeyFetchError)
+        with patch.dict(sys.modules, {"any_llm_platform_client": mock_mod}):
+            result = asyncio.run(_resolve_platform_keys(providers, "test-key"))
+            assert result[0]["api_key"] == "platform-key-for-local"
+
+
+class TestResolveApiKeys:
+    """Verify resolve_api_keys() handles both modes correctly."""
+
+    def test_direct_mode_expands_env_vars(self):
+        """Direct mode should expand ${ENV_VAR} references."""
+        providers = [
+            {"provider": "openai", "model": "gpt-5.2", "api_key": "${OPENAI_API_KEY}"},
+        ]
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test"}):
+            result = asyncio.run(resolve_api_keys(providers, use_platform=False))
+            assert result[0]["api_key"] == "sk-test"
+
+    def test_direct_mode_returns_new_dicts(self):
+        """Direct mode should return new dicts, not mutate originals."""
+        original = {"provider": "openai", "model": "gpt-5.2", "api_key": "${OPENAI_API_KEY}"}
+        providers = [original]
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test"}):
+            result = asyncio.run(resolve_api_keys(providers, use_platform=False))
+            assert result[0] is not original
+            assert original["api_key"] == "${OPENAI_API_KEY}"  # unchanged
+
+    def test_direct_mode_preserves_local_field(self):
         """The local field should pass through env var expansion unchanged."""
         providers = [
             {"provider": "llamafile", "model": "local", "api_key": "", "local": True},
             {"provider": "openai", "model": "gpt-5.2", "api_key": "${OPENAI_API_KEY}"},
         ]
         with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test"}):
-            result = resolve_api_keys(providers, use_platform=False)
+            result = asyncio.run(resolve_api_keys(providers, use_platform=False))
             assert result[0]["local"] is True
             assert result[1]["api_key"] == "sk-test"
             assert result[0]["api_key"] == ""
 
-    def test_local_field_preserved_in_platform_mode(self):
-        """Platform mode should clear api_key but keep local field."""
+    def test_platform_mode_delegates_to_resolve_platform_keys(self):
+        """Platform mode should call _resolve_platform_keys."""
+        mock_result = MagicMock()
+        mock_result.api_key = "platform-key"
+
+        mock_client = MagicMock()
+        mock_client.aget_decrypted_provider_key = AsyncMock(return_value=mock_result)
+
         providers = [
-            {"provider": "llamafile", "model": "local", "api_key": "", "local": True},
+            {"provider": "openai", "model": "gpt-5.2"},
         ]
-        result = resolve_api_keys(providers, use_platform=True)
-        assert result[0]["local"] is True
-        assert result[0]["api_key"] == ""
+
+        mock_mod = _mock_platform_client_module(mock_client, _ProviderKeyFetchError)
+        with patch.dict(sys.modules, {"any_llm_platform_client": mock_mod}):
+            result = asyncio.run(resolve_api_keys(providers, use_platform=True, any_llm_key="test-key"))
+            assert result[0]["api_key"] == "platform-key"
 
 
 class TestLocalProviderErrorMessage:
@@ -240,10 +332,9 @@ class TestLocalProviderErrorMessage:
         mock_module = MagicMock()
         mock_module.acompletion = mock_acompletion
 
+        config = {"provider": "llamafile", "model": "local-model", "api_key": "", "local": True}
         with patch.dict(sys.modules, {"any_llm": mock_module}):
-            result = asyncio.run(
-                _get_review_internal("llamafile", "local-model", "test", "", local=True)
-            )
+            result = asyncio.run(_get_review_internal(config, "test"))
             assert not result["success"]
             assert "Local provider llamafile" in result["error"]
             assert "providers.json" in result["error"]
@@ -254,12 +345,22 @@ class TestLocalProviderErrorMessage:
         mock_module = MagicMock()
         mock_module.acompletion = mock_acompletion
 
+        config = {"provider": "openai", "model": "gpt-5.2", "api_key": ""}
         with patch.dict(sys.modules, {"any_llm": mock_module}):
-            result = asyncio.run(
-                _get_review_internal("openai", "gpt-5.2", "test", "", local=False)
-            )
+            result = asyncio.run(_get_review_internal(config, "test"))
             assert not result["success"]
             assert "Authentication failed for openai" in result["error"]
+
+    def test_auth_detection_covers_all_patterns(self):
+        """Auth detection should catch 'api key' (with space) and 'apikey' for all providers."""
+        mock_module = MagicMock()
+
+        for error_text in ["missing api key", "invalid apikey", "api_key required", "401 error", "Unauthorized"]:
+            mock_module.acompletion = AsyncMock(side_effect=Exception(error_text))
+            config = {"provider": "openai", "model": "gpt-5.2", "api_key": ""}
+            with patch.dict(sys.modules, {"any_llm": mock_module}):
+                result = asyncio.run(_get_review_internal(config, "test"))
+                assert "Authentication failed" in result["error"], f"Failed to detect auth error: {error_text}"
 
 
 class TestListSdksLocalProviders:
