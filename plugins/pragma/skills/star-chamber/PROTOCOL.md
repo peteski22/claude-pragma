@@ -272,17 +272,22 @@ done
 
 ## Step 3: Construct Review Prompt
 
-Build a structured prompt for Star-Chamber:
+Build a structured prompt for Star-Chamber. The prompt template below uses `{placeholder}` markers — replace these with actual content when constructing the prompt.
 
-```
+**Prompt construction:** Write the prompt to a temp file using `cat >` with a single-quoted heredoc for the static template, then append dynamic content (file contents, rules) with `cat >>`. Single-quoted heredocs (`<< 'EOF'`) prevent shell expansion, which is what you want for the template — but it also means `$VARIABLE` references inside the heredoc are passed as literal text, not expanded. Append dynamic content separately.
+
+Example:
+```bash
+STAR_CHAMBER_PATH="<set by caller>"; SC_TMPDIR="<set by caller>"; PROMPT_FILE="$SC_TMPDIR/prompt.txt"; cat > "$PROMPT_FILE" << 'EOF'
 You are a senior software craftsman reviewing code for quality, idioms, and architectural soundness.
 
 ## Project Context
-{Injected CLAUDE.md rules}
-{Architecture context if available}
-
-## Code to Review
-{File contents}
+EOF
+cat ".claude/rules/universal.md" >> "$PROMPT_FILE" 2>/dev/null
+cat "ARCHITECTURE.md" >> "$PROMPT_FILE" 2>/dev/null
+echo -e "\n## Code to Review" >> "$PROMPT_FILE"
+for f in file1.py file2.py; do echo -e "\n### $f"; cat "$f"; done >> "$PROMPT_FILE"
+cat >> "$PROMPT_FILE" << 'EOF'
 
 ## Review Focus
 1. Craftsmanship: Is this idiomatic, clean, well-structured?
@@ -308,6 +313,12 @@ Provide your review as structured JSON:
   "praise": ["What is done well"],
   "summary": "One paragraph overall assessment"
 }
+EOF
+```
+
+Then pipe the assembled file to `llm_council.py` in Step 4:
+```bash
+STAR_CHAMBER_PATH="<set by caller>"; SC_TMPDIR="<set by caller>"; cat "$SC_TMPDIR/prompt.txt" | uv run --project "$STAR_CHAMBER_PATH" --isolated [--with <sdk>...] "$STAR_CHAMBER_PATH/llm_council.py" [--provider <name>...] [--file <path>...]
 ```
 
 ## Step 4: Fan Out to Star-Chamber
@@ -333,15 +344,15 @@ This outputs JSON with `required_sdks` array listing needed packages (e.g., `["a
 
 The simplest approach: all providers review independently in a single round.
 
-Execute a single parallel review. Write the prompt to a temp file first, then pipe it to avoid shell quoting issues:
+Execute a single parallel review. Pipe the prompt file (built in Step 3) to `llm_council.py`:
 
 ```bash
-STAR_CHAMBER_PATH="<set by caller>"; cat << 'EOF' | uv run --project "$STAR_CHAMBER_PATH" --isolated [--with <sdk>...] "$STAR_CHAMBER_PATH/llm_council.py" [--provider <name>...] [--file <path>...]
-{prompt}
-EOF
+STAR_CHAMBER_PATH="<set by caller>"; SC_TMPDIR="<set by caller>"; cat "$SC_TMPDIR/prompt.txt" | uv run --project "$STAR_CHAMBER_PATH" --isolated [--with <sdk>...] "$STAR_CHAMBER_PATH/llm_council.py" [--provider <name>...] [--file <path>...]
 ```
 
 **Important:** The `uv run` command and all its arguments must be on a **single line**. Do NOT use `\` line continuations — they break under Claude Code's Bash tool. The core `any-llm-sdk` is pinned via `pyproject.toml`. Provider-specific SDKs (from `--list-sdks` output's `required_sdks` array) are added as `--with <sdk>` flags (e.g., `--with anthropic --with google-genai`).
+
+**Important:** Do NOT redirect stderr into the output file (no `2>&1`). `uv` prints install messages to stderr (e.g., `Installed 22 packages in 27ms`) which would corrupt the JSON output. Only redirect stdout.
 
 ```text
 Prompt → [Provider A] ──→ Response A
@@ -383,30 +394,32 @@ Context compaction can fire between rounds and destroy previous round responses.
 
 Before the first round, create the fixed parent directory and a unique run subdirectory, then inform the user:
 ```bash
-SC_PARENT="${TMPDIR:-/tmp}/star-chamber"; mkdir -p "$SC_PARENT" && chmod 700 "$SC_PARENT" && SC_TMPDIR=$(mktemp -d "$SC_PARENT/run-XXXXXX")
+SC_PARENT="${TMPDIR:-/tmp}/star-chamber"; mkdir -p "$SC_PARENT" && chmod 700 "$SC_PARENT" && SC_TMPDIR=$(mktemp -d "$SC_PARENT/run-XXXXXX") && echo "$SC_TMPDIR"
 ```
+
+**Capture the echoed path** (e.g. `/tmp/star-chamber/run-KdkPeA`) — you must re-set `SC_TMPDIR` to this literal value in every subsequent bash block, since shell variables do not persist between Bash tool invocations.
 
 Tell the user: _"Debate mode will read and write round results in `<resolved SC_PARENT path>`. Approve access to this directory to avoid repeated prompts."_ Use the resolved value of `$SC_PARENT` (e.g. `/tmp/star-chamber`) so the path the user sees matches the actual permission prompt.
 
 The fixed parent path lets the user grant blanket Bash permission once, while the unique `run-XXXXXX` subdirectory keeps concurrent star-chamber sessions isolated from each other. The `chmod 700` ensures only the current user can access the directory.
 
-For each round, redirect `llm_council.py` stdout directly to a round file instead of capturing in a shell variable:
+For each round, redirect `llm_council.py` stdout directly to a round file instead of capturing in a shell variable. **Re-set both `STAR_CHAMBER_PATH` and `SC_TMPDIR`** at the top of every bash block — they do not persist between invocations:
 ```bash
-STAR_CHAMBER_PATH="<set by caller>"; cat << 'EOF' | uv run --project "$STAR_CHAMBER_PATH" --isolated python "$STAR_CHAMBER_PATH/llm_council.py" > "$SC_TMPDIR/round-${ROUND_NUMBER}.json"
-{prompt}
-EOF
+STAR_CHAMBER_PATH="<set by caller>"; SC_TMPDIR="<literal path from mktemp output>"; cat "$SC_TMPDIR/prompt.txt" | uv run --project "$STAR_CHAMBER_PATH" --isolated [--with <sdk>...] "$STAR_CHAMBER_PATH/llm_council.py" > "$SC_TMPDIR/round-1.json"
 ```
+
+Do NOT redirect stderr into the round file (no `2>&1`) — `uv` prints install messages to stderr which would corrupt the JSON.
 
 Before starting round N+1, read back round N results from the temp file rather than relying on conversation context:
 ```bash
-cat "$SC_TMPDIR/round-$((ROUND_NUMBER - 1)).json"
+SC_TMPDIR="<literal path from mktemp output>"; cat "$SC_TMPDIR/round-1.json"
 ```
 
 This ensures the anonymous synthesis step has access to the actual provider responses even if compaction occurred between rounds.
 
 Clean up the temp directory after the final round is complete and results have been presented:
 ```bash
-rm -rf "$SC_TMPDIR"
+SC_TMPDIR="<literal path from mktemp output>"; rm -rf "$SC_TMPDIR"
 ```
 
 **Round 1:** Call llm_council.py with the original prompt (all providers, parallel).
@@ -434,7 +447,7 @@ Please provide your perspective on these points. Note where you agree, disagree,
 
 **Convergence check:** If responses in round N are substantively the same as round N-1 (providers just agree with no new points), you may stop early. This is optional - completing all requested rounds is also acceptable.
 
-**Prompt construction:** Pipe the prompt via heredoc (`cat << 'EOF' | uv run ...`) to avoid quoting issues with apostrophes and special characters. Never store the prompt in a shell variable — use heredoc piping directly.
+**Prompt construction:** Build the prompt as a temp file (see Step 3), then pipe it: `cat "$SC_TMPDIR/prompt.txt" | uv run ...`. Never store the prompt in a shell variable — file contents and special characters will break expansion.
 
 **Important:** Keep the entire `uv run` command on one line. The core `any-llm-sdk` is resolved from `pyproject.toml`; provider SDKs are added via `--with` flags from the `--list-sdks` output. Each `--with` must be a separate argument.
 
