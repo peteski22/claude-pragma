@@ -555,7 +555,7 @@ Override config path with `STAR_CHAMBER_CONFIG` environment variable.
 }
 ```
 
-Cloud providers (openai, anthropic, gemini) do not need `api_base` or `local` — omit both fields.
+Cloud-hosted providers do not need `api_base` or `local` — omit both fields.
 
 ### Platform mode and local providers
 
