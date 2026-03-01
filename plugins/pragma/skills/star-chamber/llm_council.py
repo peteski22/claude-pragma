@@ -45,6 +45,7 @@ class ProviderConfig(TypedDict, total=False):
     api_key: str
     max_tokens: int
     api_base: str
+    local: bool
 
 
 class ReviewResult(TypedDict, total=False):
@@ -160,14 +161,20 @@ def get_required_sdks(provider_names: list[str]) -> list[str]:
 
 
 async def _get_review_internal(
-    provider: str, model: str, prompt: str, api_key: str,
-    max_tokens: int = DEFAULT_MAX_TOKENS, api_base: str = "",
+    config: ProviderConfig, prompt: str,
 ) -> ReviewResult:
     """Send prompt to a single provider and return structured response.
 
     If api_key is empty and ANY_LLM_KEY is set, the SDK auto-detects platform mode.
     If api_base is set, it overrides the provider's default endpoint URL.
     """
+    provider = config["provider"]
+    model = config["model"]
+    api_key = config.get("api_key", "")
+    max_tokens = config.get("max_tokens", DEFAULT_MAX_TOKENS)
+    api_base = config.get("api_base", "")
+    local = config.get("local", False)
+
     try:
         # Import here to allow uv run --with to install the dependency.
         from any_llm import acompletion
@@ -234,20 +241,31 @@ async def _get_review_internal(
         }
         env_var = env_var_map.get(provider.lower(), f"{provider.upper()}_API_KEY")
 
-        # Detect common API key issues.
-        if "api_key" in error_msg or "unauthorized" in error_msg or "401" in error_msg:
+        # Detect common API key issues (error_msg is already lowercased above).
+        is_auth_error = (
+            "api_key" in error_msg
+            or "unauthorized" in error_msg
+            or "401" in error_msg
+            or "api key" in error_msg
+            or "apikey" in error_msg
+        )
+        if is_auth_error:
+            if local:
+                return ReviewResult(
+                    provider=provider,
+                    model=model,
+                    success=False,
+                    error=(
+                        f"Local provider {provider} returned auth error. "
+                        "If authentication is required, add the key to your any-llm platform "
+                        "project or set api_key in providers.json."
+                    ),
+                )
             return ReviewResult(
                 provider=provider,
                 model=model,
                 success=False,
                 error=f"Authentication failed for {provider}. Check {env_var} is set and valid.",
-            )
-        if "api key" in error_msg or "apikey" in error_msg:
-            return ReviewResult(
-                provider=provider,
-                model=model,
-                success=False,
-                error=f"Missing API key for {provider}. Set {env_var} in your environment.",
             )
         return ReviewResult(
             provider=provider,
@@ -258,58 +276,102 @@ async def _get_review_internal(
 
 
 async def get_review(
-    provider: str, model: str, prompt: str, api_key: str,
-    timeout: float | None = None, max_tokens: int = DEFAULT_MAX_TOKENS,
-    api_base: str = "",
+    config: ProviderConfig, prompt: str, timeout: float | None = None,
 ) -> ReviewResult:
     """Get review with optional timeout.
 
     Wraps _get_review_internal with asyncio.wait_for for timeout handling.
     """
     if timeout is None:
-        return await _get_review_internal(
-            provider, model, prompt, api_key, max_tokens=max_tokens, api_base=api_base,
-        )
+        return await _get_review_internal(config, prompt)
 
     try:
         return await asyncio.wait_for(
-            _get_review_internal(
-                provider, model, prompt, api_key, max_tokens=max_tokens, api_base=api_base,
-            ),
+            _get_review_internal(config, prompt),
             timeout=timeout,
         )
     except asyncio.TimeoutError:
         return ReviewResult(
-            provider=provider,
-            model=model,
+            provider=config["provider"],
+            model=config["model"],
             success=False,
             error=f"Request timed out after {timeout}s",
         )
 
 
-def resolve_api_keys(
-    providers: list[dict[str, Any]], use_platform: bool
+async def resolve_api_keys(
+    providers: list[dict[str, Any]],
+    use_platform: bool,
+    any_llm_key: str = "",
 ) -> list[dict[str, Any]]:
-    """Resolve API keys - from env vars or platform."""
+    """Resolve API keys for all providers, returning new provider dicts.
+
+    In platform mode, fetches keys from the any-llm platform. Local providers
+    tolerate platform failures gracefully (proceed with empty key).
+
+    In direct mode, expands ${ENV_VAR} references from the environment.
+    """
     if use_platform:
-        # Platform mode: ignore any api_key in config, platform provides keys.
         ignored = [p["provider"] for p in providers if p.get("api_key")]
         if ignored:
             print(
                 f"[star-chamber] Using platform mode, ignoring api_key for: {', '.join(ignored)}",
                 file=sys.stderr,
             )
-        for p in providers:
-            p["api_key"] = ""
-        return providers
+        return await _resolve_platform_keys(providers, any_llm_key)
 
     # Direct mode: resolve from environment variables.
+    resolved = []
     for p in providers:
+        p = {**p}
         api_key = p.get("api_key", "")
         if api_key.startswith("${") and api_key.endswith("}"):
             env_var = api_key[2:-1]
             p["api_key"] = os.environ.get(env_var, "")
-    return providers
+        resolved.append(p)
+    return resolved
+
+
+async def _resolve_platform_keys(
+    providers: list[dict[str, Any]], any_llm_key: str,
+) -> list[dict[str, Any]]:
+    """Fetch provider keys from any-llm platform, returning new provider dicts.
+
+    Tolerates failures for local providers: ProviderKeyFetchError and network/
+    transport errors result in an empty key with a warning, not a crash.
+    """
+    from any_llm_platform_client import (
+        AnyLLMPlatformClient,
+        ProviderKeyFetchError,
+    )
+
+    client = AnyLLMPlatformClient()
+    resolved = []
+    for p in providers:
+        p = {**p}
+        try:
+            result = await client.aget_decrypted_provider_key(any_llm_key, p["provider"])
+            p["api_key"] = result.api_key
+        except ProviderKeyFetchError:
+            if p.get("local"):
+                print(
+                    f"[star-chamber] No platform key for local provider {p['provider']}, proceeding without",
+                    file=sys.stderr,
+                )
+                p["api_key"] = ""
+            else:
+                raise
+        except Exception as e:
+            if p.get("local"):
+                print(
+                    f"[star-chamber] Platform error for local provider {p['provider']}: {e}, proceeding without",
+                    file=sys.stderr,
+                )
+                p["api_key"] = ""
+            else:
+                raise
+        resolved.append(p)
+    return resolved
 
 
 def get_changed_files() -> list[str]:
@@ -344,14 +406,7 @@ async def run_council(
     Fans out the prompt to all providers in parallel and returns their responses.
     Debate mode (multi-round deliberation) is handled by Claude Code in SKILL.md.
     """
-    tasks = [
-        get_review(
-            p["provider"], p["model"], prompt, p.get("api_key", ""),
-            timeout=timeout, max_tokens=p.get("max_tokens", DEFAULT_MAX_TOKENS),
-            api_base=p.get("api_base", ""),
-        )
-        for p in providers
-    ]
+    tasks = [get_review(p, prompt, timeout=timeout) for p in providers]
     results = list(await asyncio.gather(*tasks))
     return {"reviews": results}
 
@@ -399,6 +454,7 @@ def main() -> None:
         config = json.load(f)
 
     platform = config.get("platform")
+    any_llm_key = ""
 
     # Validate platform mode prerequisites.
     if platform == "any-llm":
@@ -421,7 +477,6 @@ def main() -> None:
             sys.exit(1)
 
     providers = config.get("providers", [])
-    providers = resolve_api_keys(providers, platform == "any-llm")
 
     # Filter to requested providers if specified.
     if args.provider:
@@ -453,21 +508,31 @@ def main() -> None:
                 sdks = sorted(set(sdks + [platform_sdk]))
 
         # Check which providers have API keys set.
+        # For direct mode, resolve env vars to check readiness.
         ready = []
         missing_key = []
         platform_provided = []
+        local_providers = []
         for p in providers:
-            if platform == "any-llm":
+            if p.get("local"):
+                local_providers.append(p["provider"])
+            elif platform == "any-llm":
                 platform_provided.append(p["provider"])
-            elif p.get("api_key"):
-                ready.append(p["provider"])
             else:
-                missing_key.append(p["provider"])
+                # Direct mode: resolve env var to check if key is available.
+                api_key = p.get("api_key", "")
+                if api_key.startswith("${") and api_key.endswith("}"):
+                    api_key = os.environ.get(api_key[2:-1], "")
+                if api_key:
+                    ready.append(p["provider"])
+                else:
+                    missing_key.append(p["provider"])
 
         output = {
             "providers_configured": provider_names,
             "providers_ready": ready,
             "providers_missing_key": missing_key,
+            "providers_local": local_providers,
             "required_sdks": sdks,
             "uv_with_flags": " ".join(f"--with {sdk}" for sdk in sdks),
             "platform": platform,
@@ -511,14 +576,14 @@ def main() -> None:
                 )
                 sys.exit(1)
 
-    # Run the council (single parallel round).
-    result = asyncio.run(
-        run_council(
-            combined_prompt,
-            providers,
-            timeout=timeout,
+    # Resolve API keys and run the council.
+    async def _run() -> dict[str, Any]:
+        resolved = await resolve_api_keys(
+            providers, platform == "any-llm", any_llm_key=any_llm_key,
         )
-    )
+        return await run_council(combined_prompt, resolved, timeout=timeout)
+
+    result = asyncio.run(_run())
 
     # Separate successful and failed reviews.
     all_reviews = result.get("reviews", [])

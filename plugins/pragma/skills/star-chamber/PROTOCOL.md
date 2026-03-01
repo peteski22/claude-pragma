@@ -531,6 +531,7 @@ Override config path with `STAR_CHAMBER_CONFIG` environment variable.
 | `api_key` | no | API key or `${ENV_VAR}` reference. Omit for platform mode or keyless local providers. |
 | `max_tokens` | no | Max response tokens (default: 16384) |
 | `api_base` | no | Custom base URL. Use for local/self-hosted LLMs (llamafile, ollama, vLLM, LocalAI, lmstudio). Omit for cloud providers — the SDK uses built-in defaults. |
+| `local` | no | Set to `true` for local/self-hosted providers (default: `false`). See [Platform mode and local providers](#platform-mode-and-local-providers) for behavioral details. |
 
 ### Local/self-hosted LLM examples
 
@@ -539,7 +540,8 @@ Override config path with `STAR_CHAMBER_CONFIG` environment variable.
   "provider": "llamafile",
   "model": "local-model",
   "api_base": "http://gpu-box.local:8080/v1",
-  "max_tokens": 4096
+  "max_tokens": 4096,
+  "local": true
 }
 ```
 
@@ -548,11 +550,23 @@ Override config path with `STAR_CHAMBER_CONFIG` environment variable.
   "provider": "ollama",
   "model": "llama3",
   "api_base": "http://localhost:11434",
-  "max_tokens": 4096
+  "max_tokens": 4096,
+  "local": true
 }
 ```
 
-Cloud providers (openai, anthropic, gemini) do not need `api_base` — omit the field entirely.
+Cloud-hosted providers do not need `api_base` or `local` — omit both fields.
+
+### Platform mode and local providers
+
+When `platform: "any-llm"` is configured, the council fetches API keys from the any-llm platform for each provider. Providers marked `local: true` get special treatment:
+
+- **Key fetch tolerant:** If the platform has no key for a local provider, the council proceeds with an empty key instead of failing. A warning is logged to stderr.
+- **Network fault tolerant:** If the platform is unreachable or returns an unexpected error, local providers still proceed. Non-local providers fail fast.
+- **Auth error guidance:** If a local provider returns an auth error at call time, the error message suggests adding the key to the any-llm platform project or setting `api_key` directly in `providers.json`.
+- **Diagnostic output:** `--list-sdks` reports local providers under `providers_local`, not `providers_missing_key`.
+
+Local providers can still use keys: if the platform has a key stored for a local provider (e.g., llamafile behind a reverse proxy with auth), it will be fetched and used normally. The `local` flag only affects the *failure* path.
 
 ## Using any-llm.ai Managed Platform (Optional)
 
