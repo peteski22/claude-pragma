@@ -345,7 +345,10 @@ async def _resolve_platform_keys(
         ProviderKeyFetchError,
     )
 
-    client = AnyLLMPlatformClient()
+    # Match the env var and default used by any-llm-sdk's platform provider.
+    platform_base = os.environ.get("ANY_LLM_PLATFORM_URL", "https://platform-api.any-llm.ai").rstrip("/")
+    platform_url = platform_base if platform_base.endswith("/api/v1") else f"{platform_base}/api/v1"
+    client = AnyLLMPlatformClient(any_llm_platform_url=platform_url)
     resolved = []
     for p in providers:
         p = {**p}
