@@ -210,6 +210,42 @@ class TestResolvePlatformKeys:
                     any_llm_platform_url="http://localhost:8000/api/v1",
                 )
 
+    def test_respects_platform_url_env_var_trailing_slash(self):
+        """Client should normalize ANY_LLM_PLATFORM_URL when it has a trailing slash."""
+        mock_result = MagicMock()
+        mock_result.api_key = "fetched-key"
+
+        mock_client = MagicMock()
+        mock_client.aget_decrypted_provider_key = AsyncMock(return_value=mock_result)
+
+        providers = [{"provider": "openai", "model": "gpt-5.2", "api_key": ""}]
+
+        mock_mod = _mock_platform_client_module(mock_client, _ProviderKeyFetchError)
+        with patch.dict(sys.modules, {"any_llm_platform_client": mock_mod}):
+            with patch.dict(os.environ, {"ANY_LLM_PLATFORM_URL": "http://localhost:8000/"}):
+                asyncio.run(_resolve_platform_keys(providers, "test-key"))
+                mock_mod.AnyLLMPlatformClient.assert_called_once_with(
+                    any_llm_platform_url="http://localhost:8000/api/v1",
+                )
+
+    def test_does_not_double_append_api_v1(self):
+        """Client should not append /api/v1 when URL already contains it."""
+        mock_result = MagicMock()
+        mock_result.api_key = "fetched-key"
+
+        mock_client = MagicMock()
+        mock_client.aget_decrypted_provider_key = AsyncMock(return_value=mock_result)
+
+        providers = [{"provider": "openai", "model": "gpt-5.2", "api_key": ""}]
+
+        mock_mod = _mock_platform_client_module(mock_client, _ProviderKeyFetchError)
+        with patch.dict(sys.modules, {"any_llm_platform_client": mock_mod}):
+            with patch.dict(os.environ, {"ANY_LLM_PLATFORM_URL": "http://localhost:8000/api/v1"}):
+                asyncio.run(_resolve_platform_keys(providers, "test-key"))
+                mock_mod.AnyLLMPlatformClient.assert_called_once_with(
+                    any_llm_platform_url="http://localhost:8000/api/v1",
+                )
+
     def test_returns_new_dicts(self):
         """Returned provider dicts should not be the same objects as the input."""
         mock_result = MagicMock()
