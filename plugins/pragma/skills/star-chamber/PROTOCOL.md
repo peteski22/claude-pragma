@@ -272,9 +272,11 @@ done
 
 ## Step 3: Construct Review Prompt
 
-Build a structured prompt for Star-Chamber. The prompt template below uses `{placeholder}` markers — replace these with actual content when constructing the prompt.
+Build a structured prompt for Star-Chamber. Use the example template pattern below and adapt or extend its sections as needed when constructing the prompt.
 
 **Prompt construction:** Write the prompt to a temp file using `cat >` with a single-quoted heredoc for the static template, then append dynamic content (file contents, rules) with `cat >>`. Single-quoted heredocs (`<< 'EOF'`) prevent shell expansion, which is what you want for the template — but it also means `$VARIABLE` references inside the heredoc are passed as literal text, not expanded. Append dynamic content separately.
+
+For parallel (non-debate) mode, create a temporary directory for the prompt file: `SC_TMPDIR="$(mktemp -d)"`. In debate mode, `SC_TMPDIR` is created in Step 4.
 
 Example:
 ```bash
@@ -285,8 +287,8 @@ You are a senior software craftsman reviewing code for quality, idioms, and arch
 EOF
 cat ".claude/rules/universal.md" >> "$PROMPT_FILE" 2>/dev/null
 cat "ARCHITECTURE.md" >> "$PROMPT_FILE" 2>/dev/null
-echo -e "\n## Code to Review" >> "$PROMPT_FILE"
-for f in file1.py file2.py; do echo -e "\n### $f"; cat "$f"; done >> "$PROMPT_FILE"
+printf '\n## Code to Review\n' >> "$PROMPT_FILE"
+for f in file1.py file2.py; do printf '\n### %s\n' "$f"; cat "$f"; done >> "$PROMPT_FILE"
 cat >> "$PROMPT_FILE" << 'EOF'
 
 ## Review Focus
@@ -394,7 +396,7 @@ Context compaction can fire between rounds and destroy previous round responses.
 
 Before the first round, create the fixed parent directory and a unique run subdirectory, then inform the user:
 ```bash
-SC_PARENT="${TMPDIR:-/tmp}/star-chamber"; mkdir -p "$SC_PARENT" && chmod 700 "$SC_PARENT" && SC_TMPDIR=$(mktemp -d "$SC_PARENT/run-XXXXXX") && echo "$SC_TMPDIR"
+SC_PARENT="${TMPDIR:-/tmp}/star-chamber"; mkdir -p "$SC_PARENT"; chmod 700 "$SC_PARENT"; SC_TMPDIR=$(mktemp -d "$SC_PARENT/run-XXXXXX"); echo "$SC_TMPDIR"
 ```
 
 **Capture the echoed path** (e.g. `/tmp/star-chamber/run-KdkPeA`) — you must re-set `SC_TMPDIR` to this literal value in every subsequent bash block, since shell variables do not persist between Bash tool invocations.
