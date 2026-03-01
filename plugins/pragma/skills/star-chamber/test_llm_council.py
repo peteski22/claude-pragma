@@ -173,6 +173,43 @@ class TestResolvePlatformKeys:
             assert result[0]["api_key"] == "fetched-key-123"
             mock_client.aget_decrypted_provider_key.assert_awaited_once_with("test-key", "openai")
 
+    def test_uses_production_platform_url_by_default(self):
+        """Client should be created with production URL when env var is unset."""
+        mock_result = MagicMock()
+        mock_result.api_key = "fetched-key"
+
+        mock_client = MagicMock()
+        mock_client.aget_decrypted_provider_key = AsyncMock(return_value=mock_result)
+
+        providers = [{"provider": "openai", "model": "gpt-5.2", "api_key": ""}]
+
+        mock_mod = _mock_platform_client_module(mock_client, _ProviderKeyFetchError)
+        with patch.dict(sys.modules, {"any_llm_platform_client": mock_mod}):
+            with patch.dict(os.environ, {}, clear=False):
+                os.environ.pop("ANY_LLM_PLATFORM_URL", None)
+                asyncio.run(_resolve_platform_keys(providers, "test-key"))
+                mock_mod.AnyLLMPlatformClient.assert_called_once_with(
+                    any_llm_platform_url="https://platform-api.any-llm.ai/api/v1",
+                )
+
+    def test_respects_platform_url_env_var(self):
+        """Client should use ANY_LLM_PLATFORM_URL env var when set."""
+        mock_result = MagicMock()
+        mock_result.api_key = "fetched-key"
+
+        mock_client = MagicMock()
+        mock_client.aget_decrypted_provider_key = AsyncMock(return_value=mock_result)
+
+        providers = [{"provider": "openai", "model": "gpt-5.2", "api_key": ""}]
+
+        mock_mod = _mock_platform_client_module(mock_client, _ProviderKeyFetchError)
+        with patch.dict(sys.modules, {"any_llm_platform_client": mock_mod}):
+            with patch.dict(os.environ, {"ANY_LLM_PLATFORM_URL": "http://localhost:8000"}):
+                asyncio.run(_resolve_platform_keys(providers, "test-key"))
+                mock_mod.AnyLLMPlatformClient.assert_called_once_with(
+                    any_llm_platform_url="http://localhost:8000/api/v1",
+                )
+
     def test_returns_new_dicts(self):
         """Returned provider dicts should not be the same objects as the input."""
         mock_result = MagicMock()
